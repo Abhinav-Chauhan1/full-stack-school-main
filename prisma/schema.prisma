@@ -1,0 +1,286 @@
+// Use datasource and generator blocks at the top of your schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Base User Models
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Teacher {
+  id            String        @id @default(uuid())
+  name          String
+  password      String
+  Sex           UserSex
+  FatherHusband FatherHusband
+  birthday      DateTime
+  email         String        @unique
+  phone         String        @unique
+  address       String
+  city          String
+  state         String
+  bloodgroup    BloodGroup
+  joiningdate   DateTime
+  designation   String
+  qualification String
+  EmployeeType  EmployeeType
+  img           String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Student {
+  id            String       @id @default(uuid())
+  admissiondate DateTime
+  admissionno   Int          @unique
+  name          String
+  address       String
+  city          String
+  village       String
+  Sex           UserSex
+  birthday      DateTime
+  nationality   String       @default("Indian")
+  Religion      Religion
+  tongue        MotherTongue
+  category      Category
+  SubCategory   SubCategory? @relation(fields: [subcategoryId], references: [id])
+  subcategoryId Int?
+  mothername    String
+  mphone        String       @unique
+  moccupation   String
+  fathername    String
+  fphone        String       @unique
+  foccupation   String
+  aadharcard    String
+  house         String
+  img           String?
+  bloodgroup    BloodGroup
+  previousClass String?
+  yearofpass    Int
+  board         String
+  school        String
+  grade         String
+  document      String
+  tc            Boolean      @default(true)
+  tcdate        DateTime
+  tcNo          Int
+  Class         Class?       @relation(fields: [classId], references: [id])
+  classId       Int?
+  Section       Section?     @relation(fields: [sectionId], references: [id])
+  sectionId     Int?
+  Session       Session?     @relation(fields: [sessionId], references: [id])
+  sessionId     Int?
+  marksJunior   JuniorMark[]
+  marksSenior   SeniorMark[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Academic Structure Models
+model Class {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  classNumber Int
+  sections      Section[]
+  capacity      Int
+  students      Student[]
+  classSubjects ClassSubject[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Section {
+  id              Int              @id @default(autoincrement())
+  name            String
+  class           Class            @relation(fields: [classId], references: [id])
+  classId         Int
+  students        Student[]
+  sectionSubjects SectionSubject[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([name, classId])
+}
+
+model ClassSubject {
+  id         Int          @id @default(autoincrement())
+  class      Class        @relation(fields: [classId], references: [id])
+  subject    Subject      @relation(fields: [subjectId], references: [id])
+  classId    Int
+  subjectId  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  JuniorMark JuniorMark[]
+
+  @@unique([classId, subjectId])
+}
+
+model SectionSubject {
+  id         Int          @id @default(autoincrement())
+  section    Section      @relation(fields: [sectionId], references: [id])
+  subject    Subject      @relation(fields: [subjectId], references: [id])
+  sectionId  Int
+  subjectId  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  SeniorMark SeniorMark[]
+
+  @@unique([sectionId, subjectId])
+}
+
+model Subject {
+  id              Int              @id @default(autoincrement())
+  name            String
+  code            String           @unique
+  description     String?
+  classSubjects         ClassSubject[]
+  sectionSubjects SectionSubject[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+// Marking System Models
+model JuniorMark {
+  id             Int          @id @default(autoincrement())
+  student        Student      @relation(fields: [studentId], references: [id])
+  classSubject   ClassSubject @relation(fields: [classSubjectId], references: [id])
+  examType       ExamType
+  session        Session      @relation(fields: [sessionId], references: [id])
+  ut1            Float?
+  ut2            Float?
+  ut3            Float?
+  ut4            Float?
+  noteBook       Float?
+  subEnrichment  Float?
+  examMarks      Float?
+  totalMarks     Float?
+  grade          String?
+  remarks        String?
+  studentId      String
+  classSubjectId Int
+  sessionId      Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([studentId, classSubjectId, examType, sessionId])
+}
+
+model SeniorMark {
+  id                 Int            @id @default(autoincrement())
+  student            Student        @relation(fields: [studentId], references: [id])
+  sectionSubject     SectionSubject @relation(fields: [sectionSubjectId], references: [id])
+  session            Session        @relation(fields: [sessionId], references: [id])
+  pt1                Float?
+  pt2                Float?
+  pt3                Float?
+  bestTwoPTAvg       Float?
+  multipleAssessment Float?
+  portfolio          Float?
+  subEnrichment      Float?
+  bestScore          Float?
+  finalExam          Float?
+  grandTotal         Float?
+  grade              String?
+  remarks            String?
+  studentId          String
+  sectionSubjectId   Int
+  sessionId          Int
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+model Session {
+  id          Int          @id @default(autoincrement())
+  sessionfrom DateTime
+  sessionto   DateTime
+  sessioncode String       @unique
+  description String?
+  isActive    Boolean      @default(false)
+  students    Student[]
+  marksJunior JuniorMark[]
+  marksSenior SeniorMark[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Category Management
+model SubCategory {
+  id        Int       @id @default(autoincrement())
+  category  Category
+  name      String
+  students  Student[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Enums
+enum ExamType {
+  HALF_YEARLY
+  YEARLY
+}
+
+enum Religion {
+  Hindu
+  Muslim
+  Christian
+  Sikh
+  Usmani
+  Raeen
+  MominAnsar
+}
+
+enum UserSex {
+  Male
+  Female
+  Other
+}
+
+enum BloodGroup {
+  A_plus
+  A_minus
+  B_plus
+  B_minus
+  O_plus
+  O_minus
+  AB_plus
+  AB_minus
+}
+
+enum Category {
+  General
+  SC
+  ST
+  OBC
+  Other
+}
+
+enum MotherTongue {
+  Hindi
+  English
+  Punjabi
+  Urdu
+  Bhojpuri
+  Gujarati
+}
+
+enum FatherHusband {
+  Father
+  Husband
+}
+
+enum EmployeeType {
+  Permanent
+  Temporarily
+  Peon
+}
