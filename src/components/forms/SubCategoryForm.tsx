@@ -15,10 +15,12 @@ const SubCategoryForm = ({
   type,
   data,
   setOpen,
+  relatedData,
 }: {
   type: "create" | "update";
   data?: any;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  relatedData: any;
 }) => {
   const {
     register,
@@ -38,7 +40,6 @@ const SubCategoryForm = ({
     {
       success: false,
       error: false,
-      message: "",
     }
   );
 
@@ -55,13 +56,12 @@ const SubCategoryForm = ({
     useEffect(() => {
       if (state.success) {
         toast.success(
-          state.message ||
             `Subcategory has been ${type === "create" ? "created" : "updated"}!`
         );
         setOpen(false);
         router.refresh();
       } else if (state.error) {
-        toast.error(state.message || "Something went wrong!");
+        toast.error("Something went wrong!");
       }
     }, [state, router, type, setOpen]);
 
@@ -96,7 +96,6 @@ const SubCategoryForm = ({
           name="name"
           register={register}
           error={errors.name}
-          className="w-full md:w-[48%]"
         />
 
         {type === "update" && (
@@ -106,7 +105,7 @@ const SubCategoryForm = ({
 
       {state.error && (
         <div className="text-red-500 bg-red-50 p-3 rounded-md">
-          {state.message || "Something went wrong!"}
+          {"Something went wrong!"}
         </div>
       )}
 

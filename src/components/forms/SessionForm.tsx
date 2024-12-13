@@ -129,7 +129,7 @@ const SessionForm = ({
 
       {state.error && (
         <div className="text-red-500 bg-red-50 p-3 rounded-md">
-          {state.message || "Something went wrong!"}
+          {toast.error("Something went wrong")}
         </div>
       )}
 

@@ -212,7 +212,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
       },
       classSubjects: {
         select: {
-          id: true,
+          id: true, // MISSING: Need to include ClassSubject ID
           subject: {
             select: {
               id: true,

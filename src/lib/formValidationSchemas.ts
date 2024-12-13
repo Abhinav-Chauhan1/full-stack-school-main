@@ -14,53 +14,86 @@ export type SubCategorySchema = z.infer<typeof subCategorySchema>;
 
 export const juniorMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
-  classSubjectId: z.number({ required_error: "Subject is required" }),
-  sessionId: z.number({ required_error: "Session is required" }),
-  examType: z.enum(["HALF_YEARLY", "YEARLY"], { 
-    required_error: "Exam type is required" 
-  }),
-  ut1: z.number().min(0).max(10).optional(),
-  ut2: z.number().min(0).max(10).optional(),
-  ut3: z.number().min(0).max(10).optional(),
-  ut4: z.number().min(0).max(10).optional(),
-  noteBook: z.number().min(0).max(10).optional(),
-  subEnrichment: z.number().min(0).max(10).optional(),
-  examMarks: z.number().min(0).max(50).optional(),
-  remarks: z.string().optional(),
+  classSubjectId: z.number().int().positive("Invalid Class Subject"),
+  sessionId: z.number().int().positive("Invalid Session"),
+  examType: z.enum(["HALF_YEARLY", "YEARLY"]),
+  halfYearly: z.object({
+    ut1: z.number().nullable(),
+    ut2: z.number().nullable(),
+    noteBook: z.number().nullable(),
+    subEnrichment: z.number().nullable(),
+    examMarks: z.number().nullable(),
+    totalMarks: z.number().nullable(),
+    grade: z.string().nullable(),
+    remarks: z.string().nullable()
+  }).nullable(),
+  yearly: z.object({
+    ut3: z.number().nullable(),
+    ut4: z.number().nullable(),
+    yearlynoteBook: z.number().nullable(),
+    yearlysubEnrichment: z.number().nullable(),
+    yearlyexamMarks: z.number().nullable(),
+    yearlytotalMarks: z.number().nullable(),
+    yearlygrade: z.string().nullable(),
+    yearlyremarks: z.string().nullable()
+  }).nullable(),
+  grandTotalMarks: z.number().nullable(),
+  grandTotalGrade: z.string().nullable(),
+  overallPercentage: z.number().nullable()
 });
 
 export type JuniorMarkSchema = z.infer<typeof juniorMarkSchema>;
 
-// Helper function to calculate total marks and grade
-export const calculateMarksAndGrade = (marks: Partial<JuniorMarkSchema>) => {
-  const ut1 = marks.ut1 || 0;
-  const ut2 = marks.ut2 || 0;
-  const ut3 = marks.ut3 || 0;
-  const ut4 = marks.ut4 || 0;
-  const noteBook = marks.noteBook || 0;
-  const subEnrichment = marks.subEnrichment || 0;
-  const examMarks = marks.examMarks || 0;
-
-  const totalMarks = ut1 + ut2 + ut3 + ut4 + noteBook + subEnrichment + examMarks;
-
-  const calculateGrade = (total: number) => {
-    if (total >= 91) return 'A1';
-    if (total >= 81) return 'A2';
-    if (total >= 71) return 'B1';
-    if (total >= 61) return 'B2';
-    if (total >= 51) return 'C1';
-    if (total >= 41) return 'C2';
-    if (total >= 33) return 'D';
-    if (total >= 21) return 'E1';
-    return 'E2';
+// Helper function to calculate marks and grade
+export const calculateMarksAndGrade = (markData: any) => {
+  let totalMarks = 0;
+  let grade = '';
+  
+  const examType = markData.examType;
+  const marks = markData[examType === "HALF_YEARLY" ? "halfYearly" : "yearly"];
+  
+  if (!marks) return {
+    totalMarks: null,
+    grade: null,
+    grandTotalMarks: null,
+    grandTotalGrade: null,
+    overallPercentage: null
   };
+
+  // Calculate total based on exam type
+  if (examType === "HALF_YEARLY") {
+    totalMarks = (Number(marks.ut1) || 0) +
+                 (Number(marks.ut2) || 0) +
+                 (Number(marks.noteBook) || 0) +
+                 (Number(marks.subEnrichment) || 0) +
+                 (Number(marks.examMarks) || 0);
+  } else {
+    totalMarks = (Number(marks.ut3) || 0) +
+                 (Number(marks.ut4) || 0) +
+                 (Number(marks.yearlynoteBook) || 0) +
+                 (Number(marks.yearlysubEnrichment) || 0) +
+                 (Number(marks.yearlyexamMarks) || 0);
+  }
+
+  // Calculate percentage and grade
+  const percentage = (totalMarks / 110) * 100;
+  if (percentage >= 91) grade = 'A1';
+  else if (percentage >= 81) grade = 'A2';
+  else if (percentage >= 71) grade = 'B1';
+  else if (percentage >= 61) grade = 'B2';
+  else if (percentage >= 51) grade = 'C1';
+  else if (percentage >= 41) grade = 'C2';
+  else if (percentage >= 33) grade = 'D';
+  else grade = 'E';
 
   return {
-    totalMarks: parseFloat(totalMarks.toFixed(2)),
-    grade: calculateGrade(totalMarks)
+    totalMarks,
+    grade,
+    grandTotalMarks: totalMarks,
+    grandTotalGrade: grade,
+    overallPercentage: percentage
   };
 };
-
 
 export const subjectSchema = z.object({
   id: z.number().optional(),

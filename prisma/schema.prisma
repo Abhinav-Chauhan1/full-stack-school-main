@@ -150,28 +150,61 @@ model Subject {
 
 // Marking System Models
 model JuniorMark {
-  id             Int          @id @default(autoincrement())
-  student        Student      @relation(fields: [studentId], references: [id])
+  id             String    @id @default(uuid())
+  student        Student   @relation(fields: [studentId], references: [id])
   classSubject   ClassSubject @relation(fields: [classSubjectId], references: [id])
-  examType       ExamType
-  session        Session      @relation(fields: [sessionId], references: [id])
+  session        Session   @relation(fields: [sessionId], references: [id])
+  studentId      String
+  classSubjectId Int
+  sessionId      Int
+
+  // Half Yearly Specific Marks
+  halfYearly     HalfYearlyMarks?
+  
+  // Yearly Specific Marks
+  yearly         YearlyMarks?
+
+  // Overall Performance
+  grandTotalMarks Float?
+  grandTotalGrade String?
+  overallPercentage Float?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([studentId, classSubjectId, sessionId])
+}
+
+// Embedded model for Half Yearly Marks
+model HalfYearlyMarks {
+  id             String     @id @default(uuid())
+  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+  juniorMarkId   String     @unique
+
   ut1            Float?
   ut2            Float?
-  ut3            Float?
-  ut4            Float?
   noteBook       Float?
   subEnrichment  Float?
   examMarks      Float?
   totalMarks     Float?
   grade          String?
   remarks        String?
-  studentId      String
-  classSubjectId Int
-  sessionId      Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+}
 
-  @@unique([studentId, classSubjectId, examType, sessionId])
+// Embedded model for Yearly Marks
+model YearlyMarks {
+  id             String     @id @default(uuid())
+  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+  juniorMarkId   String     @unique
+
+  ut3            Float?
+  ut4            Float?
+  yearlynoteBook       Float?
+  yearlysubEnrichment  Float?
+  yearlyexamMarks      Float?
+  yearlytotalMarks     Float?
+  yearlygrade          String?
+  yearlyremarks        String?
 }
 
 model SeniorMark {

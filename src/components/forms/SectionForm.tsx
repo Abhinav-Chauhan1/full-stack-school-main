@@ -52,7 +52,6 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
     {
       success: false,
       error: false,
-      message: "",
     }
   );
 
@@ -73,7 +72,7 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
       setOpen(false);
       router.refresh();
     } else if (state.error) {
-      toast.error(state.message || 'An error occurred');
+      toast.error('An error occurred');
     }
   }, [state, router, type, setOpen]);
 

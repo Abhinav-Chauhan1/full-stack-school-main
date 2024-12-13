@@ -28,8 +28,6 @@ const SectionListPage = async ({
   const columns = [
     { header: "Section Name", accessor: "name" },
     { header: "Class", accessor: "class.name", className: "hidden md:table-cell" },
-    { header: "Class Number", accessor: "class.classNumber", className: "hidden lg:table-cell" },
-    { header: "Subjects", accessor: "sectionSubjects", className: "hidden lg:table-cell" },
     ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
   ];
 
@@ -37,18 +35,9 @@ const SectionListPage = async ({
     <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
       <td className="p-4">{item.name}</td>
       <td className="hidden md:table-cell">{item.class.name}</td>
-      <td className="hidden lg:table-cell">{item.class.classNumber}</td>
-      <td className="hidden lg:table-cell">
-        {item.sectionSubjects.map(ss => ss.subject.name).join(", ")}
-      </td>
       {role === "admin" && (
         <td>
           <div className="flex items-center gap-2">
-            <Link href={`/list/sections/${item.id}`}>
-              <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-                <Image src="/view.png" alt="View" width={16} height={16} />
-              </button>
-            </Link>
             <FormContainer 
               table="section" 
               type="update" 

@@ -3,139 +3,252 @@
 import { revalidatePath } from "next/cache";
 import {
   ClassSchema,
-  ExamSchema,
   StudentSchema,
   SubjectSchema,
   TeacherSchema,
-  JuniorMarkSchema,
+  JuniorMarkSchema, 
   SubCategorySchema,
   SessionSchema,
   SectionSchema,
 } from "./formValidationSchemas";
 import prisma from "./prisma";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
-import { Category, ExamType } from "@prisma/client";
+import { Category } from "@prisma/client";
 
 type CurrentState = { success: boolean; error: boolean };
 
-
-
-export const createJuniorMarks = async (
-  currentState: CurrentState,
-  data: { marks: JuniorMarkSchema[] }
+export const checkExistingJuniorMarks = async (
+  data: { 
+    classSubjectId: number, 
+    sessionId: number, 
+    examType: "HALF_YEARLY" | "YEARLY" 
+  }
 ) => {
   try {
-    // Create marks for each student
-    const createdMarks = await prisma.juniorMark.createMany({
-      data: data.marks.map(mark => ({
-        studentId: mark.studentId,
-        classSubjectId: mark.classSubjectId,
-        examType: mark.examType,
-        sessionId: mark.sessionId,
-        ut1: mark.ut1,
-        ut2: mark.ut2,
-        ut3: mark.ut3,
-        ut4: mark.ut4,
-        noteBook: mark.noteBook,
-        subEnrichment: mark.subEnrichment,
-        examMarks: mark.examMarks,
-        totalMarks: mark.totalMarks,
-        grade: mark.grade,
-        remarks: mark.remarks,
-      })),
-      skipDuplicates: true, // Optional: skip if entry already exists
+    if (!data.classSubjectId || !data.sessionId || !data.examType) {
+      return { 
+        success: false, 
+        error: true,
+        message: "Missing required fields"
+      };
+    }
+
+    // Query to get only records for the specific exam type
+    const existingMarks = await prisma.juniorMark.findMany({
+      where: {
+        classSubjectId: data.classSubjectId,
+        sessionId: data.sessionId,
+        [data.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+          isNot: null
+        }
+      },
+      include: {
+        halfYearly: data.examType === "HALF_YEARLY",
+        yearly: data.examType === "YEARLY"
+      }
     });
 
-    return { success: true, error: false };
+    return { 
+      success: true, 
+      error: false, 
+      data: existingMarks 
+    };
   } catch (err) {
-    console.error(err);
-    return { success: false, error: true };
+    console.error("Check Existing Junior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
   }
 };
 
-export const updateJuniorMarks = async (
-  currentState: CurrentState,
-  data: { marks: JuniorMarkSchema[] }
-) => {
+export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
   try {
-    // Update marks for each student
-    const updatePromises = data.marks.map(async (mark) => {
-      return prisma.juniorMark.upsert({
+    const createPromises = data.marks.map(async (mark) => {
+      const examType = mark.examType;
+      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+
+      if (!marksData) return null;
+
+      // Find existing record
+      const existingRecord = await prisma.juniorMark.findUnique({
         where: {
-          // Unique constraint from the schema
-          studentId_classSubjectId_examType_sessionId: {
+          studentId_classSubjectId_sessionId: {
             studentId: mark.studentId,
             classSubjectId: mark.classSubjectId,
-            examType: mark.examType,
-            sessionId: mark.sessionId,
+            sessionId: mark.sessionId
+          }
+        }
+      });
+
+      if (existingRecord) {
+        // Update existing record with new exam type data
+        return prisma.juniorMark.update({
+          where: {
+            id: existingRecord.id
+          },
+          data: {
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              create: marksData
+            },
+            grandTotalMarks: mark.grandTotalMarks,
+            grandTotalGrade: mark.grandTotalGrade,
+            overallPercentage: mark.overallPercentage
+          }
+        });
+      } else {
+        // Create new record
+        return prisma.juniorMark.create({
+          data: {
+            student: { connect: { id: mark.studentId }},
+            classSubject: { connect: { id: mark.classSubjectId }},
+            session: { connect: { id: mark.sessionId }},
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              create: marksData
+            },
+            grandTotalMarks: mark.grandTotalMarks,
+            grandTotalGrade: mark.grandTotalGrade,
+            overallPercentage: mark.overallPercentage
+          }
+        });
+      }
+    });
+
+    const results = await Promise.all(createPromises);
+    return { success: true, error: false, results };
+  } catch (err) {
+    console.error("Create Junior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
+  try {
+    const updatePromises = data.marks.map(async (mark) => {
+      const examType = mark.examType;
+      const marksData = examType === "HALF_YEARLY" 
+        ? mark.halfYearly 
+        : mark.yearly;
+
+      if (!marksData) return null;
+
+      return prisma.juniorMark.update({
+        where: {
+          studentId_classSubjectId_sessionId: {
+            studentId: mark.studentId,
+            classSubjectId: mark.classSubjectId,
+            sessionId: mark.sessionId
           }
         },
-        update: {
-          ut1: mark.ut1,
-          ut2: mark.ut2,
-          ut3: mark.ut3,
-          ut4: mark.ut4,
-          noteBook: mark.noteBook,
-          subEnrichment: mark.subEnrichment,
-          examMarks: mark.examMarks,
-          totalMarks: mark.totalMarks,
-          grade: mark.grade,
-          remarks: mark.remarks,
-        },
-        create: {
-          studentId: mark.studentId,
-          classSubjectId: mark.classSubjectId,
-          examType: mark.examType,
-          sessionId: mark.sessionId,
-          ut1: mark.ut1,
-          ut2: mark.ut2,
-          ut3: mark.ut3,
-          ut4: mark.ut4,
-          noteBook: mark.noteBook,
-          subEnrichment: mark.subEnrichment,
-          examMarks: mark.examMarks,
-          totalMarks: mark.totalMarks,
-          grade: mark.grade,
-          remarks: mark.remarks,
+        data: {
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            upsert: {
+              create: marksData,
+              update: marksData
+            }
+          },
+          grandTotalMarks: mark.grandTotalMarks,
+          grandTotalGrade: mark.grandTotalGrade,
+          overallPercentage: mark.overallPercentage
         }
       });
     });
 
-    await Promise.all(updatePromises);
-
-    return { success: true, error: false };
+    const results = await Promise.all(updatePromises);
+    return { success: true, error: false, results };
   } catch (err) {
-    console.error(err);
-    return { success: false, error: true };
+    console.error("Update Junior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
   }
 };
 
-export const deleteJuniorMarks = async (
-  currentState: CurrentState,
-  data: { studentId: string; classSubjectId: number; examType: string; sessionId: number }
+export const deleteJuniorMark = async (
+  data: { 
+    studentId: string, 
+    classSubjectId: number, 
+    sessionId: number, 
+    examType: "HALF_YEARLY" | "YEARLY" 
+  }
 ) => {
   try {
-    const { studentId, classSubjectId, examType, sessionId } = data;
-
-    if (!studentId || !classSubjectId || !examType || !sessionId) {
-      throw new Error("Missing required parameters");
+    // Validate input data
+    if (!data.studentId || !data.classSubjectId || !data.sessionId || !data.examType) {
+      return { 
+        success: false, 
+        error: true,
+        message: "Missing required fields" 
+      };
     }
 
-    await prisma.juniorMark.delete({
+    // Find the junior mark record with proper constraints
+    const juniorMark = await prisma.juniorMark.findUnique({
       where: {
-        studentId_classSubjectId_examType_sessionId: {
-          studentId: studentId,
-          classSubjectId: classSubjectId,
-          examType: examType as ExamType,
-          sessionId: sessionId,
+        studentId_classSubjectId_sessionId: {
+          studentId: data.studentId,
+          classSubjectId: data.classSubjectId,
+          sessionId: data.sessionId
         }
+      },
+      include: {
+        halfYearly: true,
+        yearly: true
       }
     });
 
-    return { success: true, error: false };
+    if (!juniorMark) {
+      return { 
+        success: false, 
+        error: true,
+        message: "Mark record not found" 
+      };
+    }
+
+    // Start transaction for deleting marks
+    await prisma.$transaction(async (prisma) => {
+      // Delete the specific exam type marks
+      if (data.examType === "HALF_YEARLY" && juniorMark.halfYearly) {
+        await prisma.halfYearlyMarks.delete({
+          where: { juniorMarkId: juniorMark.id }
+        });
+      } else if (data.examType === "YEARLY" && juniorMark.yearly) {
+        await prisma.yearlyMarks.delete({
+          where: { juniorMarkId: juniorMark.id }
+        });
+      }
+
+      // If both types of marks are deleted, delete the parent record
+      const shouldDeleteParent = data.examType === "HALF_YEARLY" ? 
+        !juniorMark.yearly : !juniorMark.halfYearly;
+
+      if (shouldDeleteParent) {
+        await prisma.juniorMark.delete({
+          where: { id: juniorMark.id }
+        });
+      }
+    });
+
+    return { 
+      success: true, 
+      error: false,
+      message: "Marks deleted successfully" 
+    };
+
   } catch (err) {
-    console.error(err);
-    return { success: false, error: true };
+    console.error("Delete Junior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
   }
 };
 
@@ -557,110 +670,6 @@ export const deleteSession = async (
 };
 
 
-
-export const createJuniorMark = async (
-  currentState: CurrentState,
-  data: JuniorMarkSchema
-) => {
-  try {
-    await prisma.juniorMark.create({
-      data: {
-        student: { connect: { id: data.studentId } },
-        classSubject: { connect: { id: data.classSubjectId } },
-        session: { connect: { id: data.sessionId } },
-        examType: data.examType,
-        ut1: data.ut1,
-        ut2: data.ut2,
-        ut3: data.ut3,
-        ut4: data.ut4,
-        noteBook: data.noteBook,
-        subEnrichment: data.subEnrichment,
-        examMarks: data.examMarks,
-        totalMarks: data.totalMarks,
-        grade: data.grade,
-        remarks: data.remarks,
-      },
-    });
-
-    return { success: true, error: false};
-  } catch (err) {
-    console.error(err);
-    return { 
-      success: false, 
-      error: true
-    };
-  }
-};
-
-// Update JuniorMark
-export const updateJuniorMark = async (
-  currentState: CurrentState,
-  data: JuniorMarkSchema
-) => {
-  if (!data.id) {
-    return { success: false, error: true};
-  }
-
-  try {
-    await prisma.juniorMark.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        student: { connect: { id: data.studentId } },
-        classSubject: { connect: { id: data.classSubjectId } },
-        session: { connect: { id: data.sessionId } },
-        examType: data.examType,
-        ut1: data.ut1,
-        ut2: data.ut2,
-        ut3: data.ut3,
-        ut4: data.ut4,
-        noteBook: data.noteBook,
-        subEnrichment: data.subEnrichment,
-        examMarks: data.examMarks,
-        totalMarks: data.totalMarks,
-        grade: data.grade,
-        remarks: data.remarks,
-      },
-    });
-
-    return { success: true, error: false};
-  } catch (err) {
-    console.error(err);
-    return { 
-      success: false, 
-      error: true 
-    };
-  }
-};
-
-// Delete JuniorMark
-export const deleteJuniorMark = async (
-  currentState: CurrentState,
-  data: FormData
-) => {
-  const id = data.get("id");
-  
-  if (!id) {
-    return { success: false, error: true};
-  }
-
-  try {
-    await prisma.juniorMark.delete({
-      where: {
-        id: parseInt(id.toString()),
-      },
-    });
-
-    return { success: true, error: false};
-  } catch (err) {
-    console.error(err);
-    return { 
-      success: false, 
-      error: true
-    };
-  }
-};
 
 //Subjects
 
@@ -1151,106 +1160,3 @@ export const deleteStudent = async (
   }
 };
 
-export const createExam = async (
-  currentState: CurrentState,
-  data: ExamSchema
-) => {
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
-  try {
-    // if (role === "teacher") {
-    //   const teacherLesson = await prisma.lesson.findFirst({
-    //     where: {
-    //       teacherId: userId!,
-    //       id: data.lessonId,
-    //     },
-    //   });
-
-    //   if (!teacherLesson) {
-    //     return { success: false, error: true };
-    //   }
-    // }
-
-    await prisma.exam.create({
-      data: {
-        title: data.title,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        lessonId: data.lessonId,
-      },
-    });
-
-    // revalidatePath("/list/subjects");
-    return { success: true, error: false };
-  } catch (err) {
-    console.log(err);
-    return { success: false, error: true };
-  }
-};
-
-export const updateExam = async (
-  currentState: CurrentState,
-  data: ExamSchema
-) => {
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
-  try {
-    // if (role === "teacher") {
-    //   const teacherLesson = await prisma.lesson.findFirst({
-    //     where: {
-    //       teacherId: userId!,
-    //       id: data.lessonId,
-    //     },
-    //   });
-
-    //   if (!teacherLesson) {
-    //     return { success: false, error: true };
-    //   }
-    // }
-
-    await prisma.exam.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        title: data.title,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        lessonId: data.lessonId,
-      },
-    });
-
-    // revalidatePath("/list/subjects");
-    return { success: true, error: false };
-  } catch (err) {
-    console.log(err);
-    return { success: false, error: true };
-  }
-};
-
-export const deleteExam = async (
-  currentState: CurrentState,
-  data: FormData
-) => {
-  const id = data.get("id") as string;
-
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
-  try {
-    await prisma.exam.delete({
-      where: {
-        id: parseInt(id),
-        // ...(role === "teacher" ? { lesson: { teacherId: userId! } } : {}),
-      },
-    });
-
-    // revalidatePath("/list/subjects");
-    return { success: true, error: false };
-  } catch (err) {
-    console.log(err);
-    return { success: false, error: true };
-  }
-};

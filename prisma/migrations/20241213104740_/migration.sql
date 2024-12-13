@@ -160,25 +160,49 @@ CREATE TABLE "Subject" (
 
 -- CreateTable
 CREATE TABLE "JuniorMark" (
-    "id" SERIAL NOT NULL,
-    "examType" "ExamType" NOT NULL,
+    "id" TEXT NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "classSubjectId" INTEGER NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "grandTotalMarks" DOUBLE PRECISION,
+    "grandTotalGrade" TEXT,
+    "overallPercentage" DOUBLE PRECISION,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "JuniorMark_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "HalfYearlyMarks" (
+    "id" TEXT NOT NULL,
+    "juniorMarkId" TEXT NOT NULL,
     "ut1" DOUBLE PRECISION,
     "ut2" DOUBLE PRECISION,
-    "ut3" DOUBLE PRECISION,
-    "ut4" DOUBLE PRECISION,
     "noteBook" DOUBLE PRECISION,
     "subEnrichment" DOUBLE PRECISION,
     "examMarks" DOUBLE PRECISION,
     "totalMarks" DOUBLE PRECISION,
     "grade" TEXT,
     "remarks" TEXT,
-    "studentId" TEXT NOT NULL,
-    "classSubjectId" INTEGER NOT NULL,
-    "sessionId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "JuniorMark_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "HalfYearlyMarks_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "YearlyMarks" (
+    "id" TEXT NOT NULL,
+    "juniorMarkId" TEXT NOT NULL,
+    "ut3" DOUBLE PRECISION,
+    "ut4" DOUBLE PRECISION,
+    "yearlynoteBook" DOUBLE PRECISION,
+    "yearlysubEnrichment" DOUBLE PRECISION,
+    "yearlyexamMarks" DOUBLE PRECISION,
+    "yearlytotalMarks" DOUBLE PRECISION,
+    "yearlygrade" TEXT,
+    "yearlyremarks" TEXT,
+
+    CONSTRAINT "YearlyMarks_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -264,7 +288,13 @@ CREATE UNIQUE INDEX "SectionSubject_sectionId_subjectId_key" ON "SectionSubject"
 CREATE UNIQUE INDEX "Subject_code_key" ON "Subject"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "JuniorMark_studentId_classSubjectId_examType_sessionId_key" ON "JuniorMark"("studentId", "classSubjectId", "examType", "sessionId");
+CREATE UNIQUE INDEX "JuniorMark_studentId_classSubjectId_sessionId_key" ON "JuniorMark"("studentId", "classSubjectId", "sessionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HalfYearlyMarks_juniorMarkId_key" ON "HalfYearlyMarks"("juniorMarkId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "YearlyMarks_juniorMarkId_key" ON "YearlyMarks"("juniorMarkId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SeniorMark_studentId_sectionSubjectId_sessionId_key" ON "SeniorMark"("studentId", "sectionSubjectId", "sessionId");
@@ -307,6 +337,12 @@ ALTER TABLE "JuniorMark" ADD CONSTRAINT "JuniorMark_classSubjectId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "JuniorMark" ADD CONSTRAINT "JuniorMark_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HalfYearlyMarks" ADD CONSTRAINT "HalfYearlyMarks_juniorMarkId_fkey" FOREIGN KEY ("juniorMarkId") REFERENCES "JuniorMark"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "YearlyMarks" ADD CONSTRAINT "YearlyMarks_juniorMarkId_fkey" FOREIGN KEY ("juniorMarkId") REFERENCES "JuniorMark"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SeniorMark" ADD CONSTRAINT "SeniorMark_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
