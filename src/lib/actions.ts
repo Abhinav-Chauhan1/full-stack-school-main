@@ -33,7 +33,20 @@ export const checkExistingJuniorMarks = async (
       };
     }
 
-    // Query to get only records for the specific exam type
+    // First verify that the ClassSubject exists
+    const classSubject = await prisma.classSubject.findUnique({
+      where: { id: data.classSubjectId }
+    });
+
+    if (!classSubject) {
+      return {
+        success: false,
+        error: true,
+        message: "Could not find matching Class Subject"
+      };
+    }
+
+    // Then query the marks
     const existingMarks = await prisma.juniorMark.findMany({
       where: {
         classSubjectId: data.classSubjectId,
@@ -92,9 +105,9 @@ export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
             [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
               create: marksData
             },
-            grandTotalMarks: mark.grandTotalMarks,
-            grandTotalGrade: mark.grandTotalGrade,
-            overallPercentage: mark.overallPercentage
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
           }
         });
       } else {
@@ -107,9 +120,9 @@ export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
             [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
               create: marksData
             },
-            grandTotalMarks: mark.grandTotalMarks,
-            grandTotalGrade: mark.grandTotalGrade,
-            overallPercentage: mark.overallPercentage
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
           }
         });
       }
@@ -131,19 +144,46 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
   try {
     const updatePromises = data.marks.map(async (mark) => {
       const examType = mark.examType;
-      const marksData = examType === "HALF_YEARLY" 
-        ? mark.halfYearly 
-        : mark.yearly;
+      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
 
       if (!marksData) return null;
 
-      return prisma.juniorMark.update({
+      // First check if there's an existing record
+      const existingMark = await prisma.juniorMark.findUnique({
         where: {
           studentId_classSubjectId_sessionId: {
             studentId: mark.studentId,
             classSubjectId: mark.classSubjectId,
             sessionId: mark.sessionId
           }
+        },
+        include: {
+          halfYearly: true,
+          yearly: true
+        }
+      });
+
+      if (!existingMark) {
+        // If no record exists, create a new one
+        return prisma.juniorMark.create({
+          data: {
+            student: { connect: { id: mark.studentId }},
+            classSubject: { connect: { id: mark.classSubjectId }},
+            session: { connect: { id: mark.sessionId }},
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              create: marksData
+            },
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
+          }
+        });
+      }
+
+      // Update existing record
+      return prisma.juniorMark.update({
+        where: {
+          id: existingMark.id
         },
         data: {
           [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
@@ -152,9 +192,9 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
               update: marksData
             }
           },
-          grandTotalMarks: mark.grandTotalMarks,
-          grandTotalGrade: mark.grandTotalGrade,
-          overallPercentage: mark.overallPercentage
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
         }
       });
     });
@@ -320,29 +360,22 @@ export const createSection = async (
   formData: SectionSchema
 ) => {
   try {
-    if (!formData.name || !formData.classId) {
-      return { success: false, error: true};
-    }
-
     await prisma.section.create({
       data: {
         name: formData.name,
-        classId: parseInt(formData.classId.toString()),
+        classId: formData.classId,
         sectionSubjects: {
           create: formData.subjects?.map((subjectId) => ({
             subject: { connect: { id: subjectId } }
-          })) || [],
-        },
+          }))
+        }
       },
     });
 
-    return { success: true, error: false};
+    return { success: true, error: false };
   } catch (err) {
     console.error("Error creating section:", err);
-    return {
-      success: false,
-      error: true
-    };
+    return { success: false, error: true };
   }
 };
 
@@ -352,49 +385,43 @@ export const updateSection = async (
 ) => {
   try {
     if (!formData.id) {
-      return { success: false, error: true};
+      return { success: false, error: true };
     }
 
-    const sectionId = parseInt(formData.id.toString());
+    await prisma.$transaction(async (tx) => {
+      // Delete existing section-subject relationships
+      await tx.sectionSubject.deleteMany({
+        where: { sectionId: formData.id }
+      });
 
-    // Start a transaction
-    await prisma.$transaction(async (prisma) => {
-      // First, delete related SeniorMark records
-      await prisma.seniorMark.deleteMany({
+      // Delete related senior marks first
+      await tx.seniorMark.deleteMany({
         where: {
           sectionSubject: {
-            sectionId: sectionId
+            sectionId: formData.id
           }
         }
       });
 
-      // Then, delete existing sectionSubjects
-      await prisma.sectionSubject.deleteMany({
-        where: { sectionId },
-      });
-
-      // Finally, update section and create new sectionSubjects
-      await prisma.section.update({
-        where: { id: sectionId },
+      // Update section and create new relationships
+      await tx.section.update({
+        where: { id: formData.id },
         data: {
           name: formData.name,
-          classId: parseInt(formData.classId.toString()),
+          classId: formData.classId,
           sectionSubjects: {
             create: formData.subjects?.map((subjectId) => ({
               subject: { connect: { id: subjectId } }
-            })) || [],
-          },
+            }))
+          }
         },
       });
     });
 
-    return { success: true, error: false};
+    return { success: true, error: false };
   } catch (err) {
     console.error("Error updating section:", err);
-    return {
-      success: false,
-      error: true
-    };
+    return { success: false, error: true };
   }
 };
 
@@ -678,18 +705,33 @@ export const createSubject = async (
   data: SubjectSchema
 ) => {
   try {
+    // Check if subject with same code already exists
+    const existingSubject = await prisma.subject.findUnique({
+      where: { code: data.code }
+    });
+
+    if (existingSubject) {
+      return { 
+        success: false, 
+        error: true, 
+      };
+    }
+
     await prisma.subject.create({
       data: {
         name: data.name,
         code: data.code,
-        description: data.description,
+        description: data.description || "",
       },
     });
 
-    return { success: true, error: false};
+    return { success: true, error: false };
   } catch (err) {
-    console.error(err);
-    return { success: false, error: true};
+    console.error("Create subject error:", err);
+    return { 
+      success: false, 
+      error: true, 
+    };
   }
 };
 
@@ -698,21 +740,44 @@ export const updateSubject = async (
   data: SubjectSchema
 ) => {
   try {
-    await prisma.subject.update({
+    // Check if another subject with same code exists
+    const existingSubject = await prisma.subject.findFirst({
       where: {
-        id: data.id,
-      },
+        code: data.code,
+        NOT: { id: data.id }
+      }
+    });
+
+    if (existingSubject) {
+      return { 
+        success: false, 
+        error: true, 
+      };
+    }
+
+    if (!data.id) {
+      return { 
+        success: false, 
+        error: true, 
+      };
+    }
+
+    await prisma.subject.update({
+      where: { id: data.id },
       data: {
         name: data.name,
         code: data.code,
-        description: data.description,
+        description: data.description || "",
       },
     });
 
-    return { success: true, error: false};
+    return { success: true, error: false };
   } catch (err) {
-    console.error(err);
-    return { success: false, error: true};
+    console.error("Update subject error:", err);
+    return { 
+      success: false, 
+      error: true, 
+    };
   }
 };
 
@@ -745,8 +810,8 @@ export const createClass = async (
     await prisma.class.create({
       data: {
         name: data.name,
-        capacity: Number(data.capacity),
         classNumber: Number(data.classNumber),
+        capacity: Number(data.capacity),
         classSubjects: {
           create: data.subjects.map((subjectId: number) => ({
             subject: {
@@ -759,7 +824,7 @@ export const createClass = async (
 
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
+    console.error("Create class error:", err);
     return { success: false, error: true };
   }
 };
@@ -769,38 +834,24 @@ export const updateClass = async (
   data: ClassSchema
 ) => {
   try {
-    // Start a transaction
     await prisma.$transaction(async (tx) => {
-      // First, find all ClassSubject IDs for this class
-      const classSubjects = await tx.classSubject.findMany({
-        where: { classId: Number(data.id) },
-        select: { id: true }
-      });
-
-      // Delete all JuniorMark records associated with these ClassSubjects
-      await tx.juniorMark.deleteMany({
-        where: {
-          classSubjectId: {
-            in: classSubjects.map(cs => cs.id)
-          }
-        }
-      });
-
-      // Now delete the ClassSubject records
+      // First delete all existing classSubjects
       await tx.classSubject.deleteMany({
         where: { classId: Number(data.id) }
       });
 
-      // Finally, update the class and create new relationships
+      // Then update the class with new relationships
       await tx.class.update({
         where: { id: Number(data.id) },
         data: {
           name: data.name,
-          capacity: Number(data.capacity),
           classNumber: Number(data.classNumber),
+          capacity: Number(data.capacity),
           classSubjects: {
             create: data.subjects.map((subjectId: number) => ({
-              subject: { connect: { id: subjectId } }
+              subject: {
+                connect: { id: subjectId }
+              }
             }))
           }
         },
@@ -809,7 +860,7 @@ export const updateClass = async (
 
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
+    console.error("Update class error:", err);
     return { success: false, error: true };
   }
 };

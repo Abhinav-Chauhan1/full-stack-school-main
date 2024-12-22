@@ -61,63 +61,91 @@ const JuniorMarkListPage = async ({
     });
   }
 
-  const columns = [
-    {
-      header: "Student Name",
-      accessor: "student.name",
-    },
-    {
-      header: "Admission No",
-      accessor: "student.admissionno",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: examType === "HALF_YEARLY" ? "UT1" : "UT3",
-      accessor: examType === "HALF_YEARLY" ? "halfYearly.ut1" : "yearly.ut3",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: examType === "HALF_YEARLY" ? "UT2" : "UT4",
-      accessor: examType === "HALF_YEARLY" ? "halfYearly.ut2" : "yearly.ut4",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Notebook",
-      accessor:
-        examType === "HALF_YEARLY"
-          ? "halfYearly.noteBook"
-          : "yearly.yearlynoteBook",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Sub Enrichment",
-      accessor:
-        examType === "HALF_YEARLY"
-          ? "halfYearly.subEnrichment"
-          : "yearly.yearlysubEnrichment",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Exam Marks",
-      accessor:
-        examType === "HALF_YEARLY"
-          ? "halfYearly.examMarks"
-          : "yearly.yearlyexamMarks",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Total Marks",
-      accessor:
-        examType === "HALF_YEARLY"
-          ? "halfYearly.totalMarks"
-          : "yearly.yearlytotalMarks",
-    },
-    {
-      header: "Grade",
-      accessor:
-        examType === "HALF_YEARLY" ? "halfYearly.grade" : "yearly.yearlygrade",
-    },
-  ];
+  const getColumns = (examType: string = 'HALF_YEARLY') => {
+    const baseColumns = [
+      {
+        header: "Student Name",
+        accessor: "student.name",
+      },
+      {
+        header: "Admission No",
+        accessor: "student.admissionno",
+        className: "hidden md:table-cell",
+      },
+    ];
+  
+    const examSpecificColumns = examType === 'HALF_YEARLY' ? [
+      {
+        header: "UT1",
+        accessor: "halfYearly.ut1",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "UT2",
+        accessor: "halfYearly.ut2",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Notebook",
+        accessor: "halfYearly.noteBook",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Sub Enrichment",
+        accessor: "halfYearly.subEnrichment",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Exam Marks",
+        accessor: "halfYearly.examMarks",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Total Marks",
+        accessor: "halfYearly.totalMarks",
+      },
+      {
+        header: "Grade",
+        accessor: "halfYearly.grade",
+      },
+    ] : [
+      {
+        header: "UT3",
+        accessor: "yearly.ut3",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "UT4",
+        accessor: "yearly.ut4",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Notebook",
+        accessor: "yearly.yearlynoteBook",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Sub Enrichment",
+        accessor: "yearly.yearlysubEnrichment",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Exam Marks",
+        accessor: "yearly.yearlyexamMarks",
+        className: "hidden md:table-cell",
+      },
+      {
+        header: "Total Marks",
+        accessor: "yearly.yearlytotalMarks",
+      },
+      {
+        header: "Grade",
+        accessor: "yearly.yearlygrade",
+      },
+    ];
+  
+    return [...baseColumns, ...examSpecificColumns];
+  };
 
   // Build query for marks
   const query: any = {};
@@ -127,7 +155,7 @@ const JuniorMarkListPage = async ({
   }
 
   // Determine which marks model to include based on exam type
-  const includeOptions: any = {
+  const includeOptions = {
     student: true,
     classSubject: {
       include: {
@@ -136,13 +164,9 @@ const JuniorMarkListPage = async ({
       },
     },
     session: true,
+    halfYearly: true, // Always include both to avoid null issues
+    yearly: true,     // Always include both to avoid null issues
   };
-
-  if (examType === "HALF_YEARLY") {
-    includeOptions.halfYearly = true;
-  } else if (examType === "YEARLY") {
-    includeOptions.yearly = true;
-  }
 
   if (classId) {
     query.classSubject = {
@@ -206,7 +230,7 @@ const JuniorMarkListPage = async ({
           <Select
             name="sessionId"
             label="Session"
-            options={sessions.map((session) => ({
+            options={sessions.map((session: any) => ({
               value: session.id.toString(),
               label: session.sessioncode,
             }))}
@@ -259,8 +283,8 @@ const JuniorMarkListPage = async ({
         <h2 className="text-md font-semibold mb-3">Students</h2>
         {data.length > 0 ? (
           <Table
-            columns={columns}
-            renderRow={(item) => renderRow(item, examType)}
+            columns={getColumns(examType)}
+            renderRow={(item) => renderRow(item, examType, role)}
             data={data}
           />
         ) : (
@@ -272,45 +296,36 @@ const JuniorMarkListPage = async ({
   );
 };
 
-const renderRow = (item: any, examType?: string) => {
-  // Determine which marks to use based on exam type
-  const marks = examType === "HALF_YEARLY" ? item.halfYearly : item.yearly;
-
+const renderRow = (item: any, examType?: string, role?: string) => {
+  const examData = examType === 'HALF_YEARLY' ? item.halfYearly : item.yearly;
+  
   return (
     <tr
       key={item.id}
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
-      <td className="p-4">{item.student.name}</td>
-      <td className="hidden md:table-cell">{item.student.admissionno}</td>
+      <td className="p-4">{item.student?.name || '-'}</td>
+      <td className="hidden md:table-cell">{item.student?.admissionno || '-'}</td>
       <td className="hidden md:table-cell">
-        {examType === "HALF_YEARLY" ? marks?.ut1 : marks?.ut3 ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.ut1 || '-' : examData?.ut3 || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === "HALF_YEARLY" ? marks?.ut2 : marks?.ut4 ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.ut2 || '-' : examData?.ut4 || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === "HALF_YEARLY"
-          ? marks?.noteBook
-          : marks?.yearlynoteBook ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.noteBook || '-' : examData?.yearlynoteBook || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === "HALF_YEARLY"
-          ? marks?.subEnrichment
-          : marks?.yearlysubEnrichment ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.subEnrichment || '-' : examData?.yearlysubEnrichment || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === "HALF_YEARLY"
-          ? marks?.examMarks
-          : marks?.yearlyexamMarks ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.examMarks || '-' : examData?.yearlyexamMarks || '-'}
       </td>
       <td>
-        {examType === "HALF_YEARLY"
-          ? marks?.totalMarks
-          : marks?.yearlytotalMarks ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.totalMarks || '-' : examData?.yearlytotalMarks || '-'}
       </td>
       <td>
-        {examType === "HALF_YEARLY" ? marks?.grade : marks?.yearlygrade ?? "-"}
+        {examType === 'HALF_YEARLY' ? examData?.grade || '-' : examData?.yearlygrade || '-'}
       </td>
     </tr>
   );

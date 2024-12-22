@@ -22,20 +22,32 @@ const ClassForm = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData?: any;
 }) => {
+  console.log("Form Data:", data);
+  console.log("Related Data:", relatedData);
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
+    setValue,
   } = useForm<ClassSchema>({
     resolver: zodResolver(classSchema),
     defaultValues: {
       name: data?.name || "",
       capacity: data?.capacity || "",
       classNumber: data?.classNumber || "",
-      subjects: data?.classSubjects?.map((cs: any) => cs.subjectId) || [],
+      subjects: data?.subjects || [],
+      id: data?.id
     },
   });
+
+  // Set initial values for subjects when editing
+  useEffect(() => {
+    if (type === "update" && data?.subjects) {
+      setValue("subjects", data.subjects);
+    }
+  }, [type, data, setValue]);
 
   const [state, formAction] = useFormState(
     type === "create" ? createClass : updateClass,
@@ -60,10 +72,14 @@ const ClassForm = ({
     }
   }, [state, router, type, setOpen]);
 
-  const subjectOptions = relatedData.subjects.map((subject: { id: any; name: any; }) => ({
+  const subjectOptions = relatedData?.subjects?.map((subject: { id: any; name: any; code: any; }) => ({
     value: subject.id,
-    label: subject.name,
-  }));
+    label: `${subject.name} (${subject.code})`,
+  })) || [];
+
+  const defaultSubjects = subjectOptions.filter(option => 
+    data?.subjects?.includes(option.value)
+  );
 
   return (
     <>
@@ -79,18 +95,18 @@ const ClassForm = ({
           error={errors?.name}
         />
         <InputField
-          label="Capacity"
-          name="capacity"
-          type="number"
-          register={register}
-          error={errors?.capacity}
-        />
-        <InputField
           label="Class Number"
           name="classNumber"
           type="number"
           register={register}
           error={errors?.classNumber}
+        />
+        <InputField
+          label="Capacity"
+          name="capacity"
+          type="number"
+          register={register}
+          error={errors?.capacity}
         />
         {data && (
           <InputField
@@ -102,6 +118,7 @@ const ClassForm = ({
             hidden
           />
         )}
+
         <div className="w-full mb-4">
           <label className="block text-sm font-medium text-gray-700">Subjects</label>
           <Controller
@@ -109,17 +126,22 @@ const ClassForm = ({
             control={control}
             render={({ field }) => (
               <Select
-                {...field}
                 isMulti
                 options={subjectOptions}
                 className="basic-multi-select"
                 classNamePrefix="select"
-                value={subjectOptions.filter((option: { value: number; }) => field.value.includes(option.value))}
-                onChange={(selectedOptions) => field.onChange(selectedOptions.map(option => option.value))}
+                value={subjectOptions.filter(option => 
+                  field.value?.includes(option.value)
+                )}
+                onChange={(selectedOptions) => 
+                  field.onChange(selectedOptions ? selectedOptions.map(option => option.value) : [])
+                }
               />
             )}
           />
-          {errors.subjects && <p className="text-red-500">{errors.subjects.message}</p>}
+          {errors.subjects && (
+            <p className="text-red-500">{errors.subjects.message}</p>
+          )}
         </div>
       </div>
       <button

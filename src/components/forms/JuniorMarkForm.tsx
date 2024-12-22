@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Dispatch, SetStateAction } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,6 +40,7 @@ type JuniorMarkFormProps = {
         }>;
       }>;
       classSubjects: Array<{
+        id: number;
         subject: {
           id: number;
           name: string;
@@ -48,14 +49,14 @@ type JuniorMarkFormProps = {
     }>;
   };
   initialData?: any; // Optional initial data for update
-  onClose: () => void;
+  setOpen: Dispatch<SetStateAction<boolean>>;
 };
 
 const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   type: initialType = "create",
   relatedData,
   initialData,
-  onClose,
+  setOpen,
 }) => {
   // State for form selections
   const [selectedSession, setSelectedSession] = useState<number | null>(null);
@@ -106,35 +107,25 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         return;
       }
   
-      const selectedClassSubject = selectedClassData?.classSubjects.find(
-        (cs) => cs.subject.id === selectedSubject
-      );
-  
-      if (!selectedClassSubject) {
-        toast.error("Could not find matching Class Subject");
-        return;
-      }
-  
+      // Now using selectedSubject directly since it's already the classSubject.id
       setIsLoading(true);
       try {
         const result = await checkExistingJuniorMarks({
-          classSubjectId: selectedClassSubject.subject.id,
+          classSubjectId: selectedSubject, // Use directly as it's now the classSubject.id
           sessionId: selectedSession,
           examType: examType,
         });
   
         if (result.success && result.data && result.data.length > 0) {
-          // Check if the returned data has marks for the specific exam type
-          const hasExamTypeData = result.data.some(mark => 
+            const hasExamTypeData: boolean = result.data.some((mark: { halfYearly: any; yearly: any; }) => 
             examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
-          );
+            );
   
           if (hasExamTypeData) {
             setExistingMarksData(result.data);
             setFormType("update");
             toast.info(`Existing ${examType.toLowerCase().replace('_', ' ')} marks found. Switching to update mode.`);
           } else {
-            // If no marks exist for this specific exam type, allow creation
             setExistingMarksData(null);
             setFormType("create");
           }
@@ -151,7 +142,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
     };
   
     checkExistingMarks();
-  }, [selectedSession, selectedClass, selectedSection, selectedSubject, examType, selectedClassData]);
+  }, [selectedSession, selectedClass, selectedSection, selectedSubject, examType]);
 
   // Form setup with updated schema to match new database structure
   const {
@@ -200,41 +191,36 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   });
 
   const defaultValues = useMemo(() => ({
-    marks: selectedSectionStudents.map((student) => {
-      const selectedClassSubject = selectedClassData?.classSubjects.find(
-        (cs) => cs.subject.id === selectedSubject
-      );
-      return {
-        studentId: student.id,
-        classSubjectId: selectedClassSubject?.subject.id || 0,
-        sessionId: selectedSession || 0,
-        examType: examType,
-        halfYearly: examType === "HALF_YEARLY" ? {
-          ut1: null,
-          ut2: null,
-          noteBook: null,
-          subEnrichment: null,
-          examMarks: null,
-          totalMarks: null,
-          grade: null,
-          remarks: null
-        } : null,
-        yearly: examType === "YEARLY" ? {
-          ut3: null,
-          ut4: null,
-          yearlynoteBook: null,
-          yearlysubEnrichment: null,
-          yearlyexamMarks: null,
-          yearlytotalMarks: null,
-          yearlygrade: null,
-          yearlyremarks: null
-        } : null,
-        grandTotalMarks: null,
-        grandTotalGrade: null,
-        overallPercentage: null
-      };
-    })
-  }), [selectedSectionStudents, selectedSubject, selectedSession, examType, selectedClassData]);
+    marks: selectedSectionStudents.map((student) => ({
+      studentId: student.id,
+      classSubjectId: selectedSubject || 0, // Use selectedSubject directly
+      sessionId: selectedSession || 0,
+      examType: examType,
+      halfYearly: examType === "HALF_YEARLY" ? {
+        ut1: null,
+        ut2: null,
+        noteBook: null,
+        subEnrichment: null,
+        examMarks: null,
+        totalMarks: null,
+        grade: null,
+        remarks: null
+      } : null,
+      yearly: examType === "YEARLY" ? {
+        ut3: null,
+        ut4: null,
+        yearlynoteBook: null,
+        yearlysubEnrichment: null,
+        yearlyexamMarks: null,
+        yearlytotalMarks: null,
+        yearlygrade: null,
+        yearlyremarks: null
+      } : null,
+      grandTotalMarks: null,
+      grandTotalGrade: null,
+      overallPercentage: null
+    }))
+  }), [selectedSectionStudents, selectedSubject, selectedSession, examType]);
 
   // Update form when defaultValues change
   useEffect(() => {
@@ -300,30 +286,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   // Updated submit handler to match new schema
   const onSubmit = async (formData: { marks: JuniorMarkSchema[] }) => {
     // Existing validation checks...
-    if (!selectedSession) {
-      toast.error("Please select a Session");
-      return;
-    }
-    if (!selectedClass) {
-      toast.error("Please select a Class");
-      return;
-    }
-    if (!selectedSection) {
-      toast.error("Please select a Section");
-      return;
-    }
-    if (!selectedSubject) {
-      toast.error("Please select a Subject");
-      return;
-    }
-
-    // Find the correct ClassSubject ID
-    const selectedClassSubject = selectedClassData?.classSubjects.find(
-      (cs) => cs.subject.id === selectedSubject
-    );
-
-    if (!selectedClassSubject) {
-      toast.error("Could not find matching Class Subject");
+    if (!selectedSession || !selectedClass || !selectedSection || !selectedSubject) {
+      toast.error("Please select all required fields");
       return;
     }
 
@@ -336,47 +300,11 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             mark.examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
         });
 
-        const baseMarkData = {
-          studentId: mark.studentId,
-          classSubjectId: selectedClassSubject!.subject.id,
-          sessionId: selectedSession!,
-          examType: mark.examType,
-          grandTotalMarks: calculatedResults.grandTotalMarks,
-          grandTotalGrade: calculatedResults.grandTotalGrade,
-          overallPercentage: calculatedResults.overallPercentage
+        return {
+          ...mark,
+          classSubjectId: selectedSubject, // Use selectedSubject directly as it's now the classSubject.id
+          ...calculatedResults
         };
-
-        if (mark.examType === "HALF_YEARLY") {
-          return {
-            ...baseMarkData,
-            halfYearly: {
-              ut1: mark.halfYearly?.ut1 ?? null,
-              ut2: mark.halfYearly?.ut2 ?? null,
-              noteBook: mark.halfYearly?.noteBook ?? null,
-              subEnrichment: mark.halfYearly?.subEnrichment ?? null,
-              examMarks: mark.halfYearly?.examMarks ?? null,
-              totalMarks: calculatedResults.totalMarks,
-              grade: calculatedResults.grade,
-              remarks: mark.halfYearly?.remarks ?? null
-            },
-            yearly: null
-          };
-        } else {
-          return {
-            ...baseMarkData,
-            halfYearly: null,
-            yearly: {
-              ut3: mark.yearly?.ut3 ?? null,
-              ut4: mark.yearly?.ut4 ?? null,
-              yearlynoteBook: mark.yearly?.yearlynoteBook ?? null,
-              yearlysubEnrichment: mark.yearly?.yearlysubEnrichment ?? null,
-              yearlyexamMarks: mark.yearly?.yearlyexamMarks ?? null,
-              yearlytotalMarks: calculatedResults.totalMarks,
-              yearlygrade: calculatedResults.grade,
-              yearlyremarks: mark.yearly?.yearlyremarks ?? null
-            }
-          };
-        }
       });
 
       const result = formType === "create"
@@ -385,6 +313,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
 
       if (result.success) {
         toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
+        setOpen(false);
         router.refresh();
       } else {
         toast.error(result.message || "Failed to save marks");
@@ -624,7 +553,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                       <td className="p-2 border">
                         <input
                           type="number"
-                          step="0.1"
                           className="w-full p-1 border rounded text-sm"
                           {...register(`marks.${index}.yearly.yearlynoteBook`, { valueAsNumber: true })}
                         />

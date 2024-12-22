@@ -11,7 +11,6 @@ export const subCategorySchema = z.object({
 
 export type SubCategorySchema = z.infer<typeof subCategorySchema>;
 
-
 export const juniorMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   classSubjectId: z.number().int().positive("Invalid Class Subject"),
@@ -46,9 +45,6 @@ export type JuniorMarkSchema = z.infer<typeof juniorMarkSchema>;
 
 // Helper function to calculate marks and grade
 export const calculateMarksAndGrade = (markData: any) => {
-  let totalMarks = 0;
-  let grade = '';
-  
   const examType = markData.examType;
   const marks = markData[examType === "HALF_YEARLY" ? "halfYearly" : "yearly"];
   
@@ -60,23 +56,36 @@ export const calculateMarksAndGrade = (markData: any) => {
     overallPercentage: null
   };
 
-  // Calculate total based on exam type
+  let totalMarks = 0;
+  let grade = '';
+
+  // Calculate total marks based on exam type
   if (examType === "HALF_YEARLY") {
-    totalMarks = (Number(marks.ut1) || 0) +
-                 (Number(marks.ut2) || 0) +
-                 (Number(marks.noteBook) || 0) +
-                 (Number(marks.subEnrichment) || 0) +
-                 (Number(marks.examMarks) || 0);
+    // UT1 (10) + UT2 (10) + Notebook (5) + SubEnrichment (5) + ExamMarks (70) = Total (100)
+    totalMarks = 
+      Math.min(10, (Number(marks.ut1) || 0)) +
+      Math.min(10, (Number(marks.ut2) || 0)) +
+      Math.min(5, (Number(marks.noteBook) || 0)) +
+      Math.min(5, (Number(marks.subEnrichment) || 0)) +
+      Math.min(70, (Number(marks.examMarks) || 0));
+
+    // Update the marks object with calculated total
+    marks.totalMarks = totalMarks;
   } else {
-    totalMarks = (Number(marks.ut3) || 0) +
-                 (Number(marks.ut4) || 0) +
-                 (Number(marks.yearlynoteBook) || 0) +
-                 (Number(marks.yearlysubEnrichment) || 0) +
-                 (Number(marks.yearlyexamMarks) || 0);
+    // UT3 (10) + UT4 (10) + Notebook (5) + SubEnrichment (5) + ExamMarks (70) = Total (100)
+    totalMarks = 
+      Math.min(10, (Number(marks.ut3) || 0)) +
+      Math.min(10, (Number(marks.ut4) || 0)) +
+      Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+      Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
+      Math.min(70, (Number(marks.yearlyexamMarks) || 0));
+
+    // Update the marks object with calculated total
+    marks.yearlytotalMarks = totalMarks;
   }
 
-  // Calculate percentage and grade
-  const percentage = (totalMarks / 110) * 100;
+  // Calculate grade based on percentage
+  const percentage = totalMarks; // Since total is already out of 100
   if (percentage >= 91) grade = 'A1';
   else if (percentage >= 81) grade = 'A2';
   else if (percentage >= 71) grade = 'B1';
@@ -85,6 +94,13 @@ export const calculateMarksAndGrade = (markData: any) => {
   else if (percentage >= 41) grade = 'C2';
   else if (percentage >= 33) grade = 'D';
   else grade = 'E';
+
+  // Update grade in marks object
+  if (examType === "HALF_YEARLY") {
+    marks.grade = grade;
+  } else {
+    marks.yearlygrade = grade;
+  }
 
   return {
     totalMarks,
@@ -108,7 +124,7 @@ export const classSchema = z.object({
   id: z.coerce.number().optional(),
   name: z.string().min(1, { message: "Class name is required!" }),
   capacity: z.coerce.number().min(1, { message: "Capacity is required!" }),
-  classNumber: z.coerce.number(),
+  classNumber: z.coerce.number().min(1, { message: "Class number is required!" }),
   subjects: z.array(z.number()).min(1, "At least one subject is required"),
 });
 
@@ -154,16 +170,13 @@ export const sessionSchema = z.object({
 export type SessionSchema = z.infer<typeof sessionSchema>;
 
 export const sectionSchema = z.object({
+  id: z.number().optional(),
   name: z.string().min(1, "Section name is required"),
   classId: z.coerce.number().min(1, "Class is required"),
   subjects: z.array(z.number()).optional(),
-  id: z.number().optional(),
 });
 
 export type SectionSchema = z.infer<typeof sectionSchema>;
-
-
-
 
 export const studentSchema = z.object({
   id: z.string().optional(),

@@ -25,13 +25,14 @@ const SubjectForm = ({
     register,
     handleSubmit,
     formState: { errors },
+    setError,
   } = useForm<SubjectSchema>({
     resolver: zodResolver(subjectSchema),
     defaultValues: type === "update" ? {
       id: data?.id,
       name: data?.name,
       code: data?.code,
-      description: data?.description,
+      description: data?.description || "",
     } : {}
   });
 
@@ -40,7 +41,6 @@ const SubjectForm = ({
     {
       success: false,
       error: false,
-      message: "",
     }
   );
 
@@ -56,15 +56,14 @@ const SubjectForm = ({
   useEffect(() => {
     if (state.success) {
       toast.success(
-        state.message ||
-          `Subject has been ${type === "create" ? "created" : "updated"}!`
+        `Subject has been ${type === "create" ? "created" : "updated"} successfully!`
       );
       setOpen(false);
       router.refresh();
     } else if (state.error) {
-      toast.error(state.message || "Something went wrong!");
+      toast.error("Something went wrong!");
     }
-  }, [state, router, type, setOpen]);
+  }, [state, router, type, setOpen, setError]);
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -78,7 +77,6 @@ const SubjectForm = ({
           name="name"
           register={register}
           error={errors?.name}
-          className="w-full md:w-[48%]"
         />
 
         <InputField
@@ -86,7 +84,6 @@ const SubjectForm = ({
           name="code"
           register={register}
           error={errors?.code}
-          className="w-full md:w-[48%]"
         />
 
         <InputField
@@ -94,7 +91,6 @@ const SubjectForm = ({
           name="description"
           register={register}
           error={errors?.description}
-          textarea
         />
 
         {type === "update" && (
@@ -107,7 +103,7 @@ const SubjectForm = ({
 
       {state.error && (
         <span className="text-red-500">
-          {state.message || "Something went wrong!"}
+          {"Something went wrong!"}
         </span>
       )}
 

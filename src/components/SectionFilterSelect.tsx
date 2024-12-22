@@ -1,4 +1,3 @@
-// SectionFilterSelect.tsx
 "use client"; // This marks the component as a client component
 
 import { useRouter } from "next/navigation";

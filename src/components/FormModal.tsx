@@ -9,6 +9,8 @@ import {
   deleteSection,
   deleteSubCategory,
   deleteJuniorMark,
+  deleteHalfYearlyMarks,
+  deleteYearlyMarks,
 } from "@/lib/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -19,8 +21,7 @@ import { toast } from "react-toastify";
 import { FormContainerProps } from "./FormContainer";
 
 
-
-const deleteActionMap = {
+const deleteActionMap: { [key: string]: (currentState: any, data: any) => Promise<{ success: boolean; error: boolean }> } = {
   subject: deleteSubject,
   class: deleteClass,
   teacher: deleteTeacher,
@@ -30,7 +31,6 @@ const deleteActionMap = {
   section: deleteSection,
   subCategory: deleteSubCategory,
 };
-
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
   loading: () => <h1>Loading...</h1>,
@@ -101,7 +101,6 @@ const forms: {
   juniorMark: (setOpen, type, data, relatedData) => (
     <JuniorMarkForm
       type={type}
-      data={data}
       setOpen={setOpen}
       relatedData={relatedData}
     />
@@ -133,6 +132,10 @@ const forms: {
   // TODO OTHER LIST ITEMS
 };
 
+const PdfGenerator = dynamic(() => import("./PdfGenerator"), {
+  ssr: false
+});
+
 const FormModal = ({
   table,
   type,
@@ -146,7 +149,9 @@ const FormModal = ({
       ? "bg-lamaYellow"
       : type === "update"
         ? "bg-lamaSky"
-        : "bg-lamaPurple";
+        : type === "print"
+          ? "bg-lamaGreen"  // New color for print button
+          : "bg-lamaPurple";
 
   const [open, setOpen] = useState(false);
 
@@ -168,6 +173,12 @@ const FormModal = ({
 
     const FormComponent = forms[table];
 
+    // Handle print type
+    if (type === "print" && relatedData?.studentResult) {
+      return <PdfGenerator studentResult={relatedData.studentResult} onClose={() => setOpen(false)} />;
+    }
+
+    // Existing form handling
     return type === "delete" && id ? (
       <form action={formAction} className="p-4 flex flex-col gap-4">
         <input type="text | number" name="id" value={id} hidden />
@@ -195,7 +206,12 @@ const FormModal = ({
         className={`${size} flex items-center justify-center rounded-full ${bgColor}`}
         onClick={() => setOpen(true)}
       >
-        <Image src={`/${type}.png`} alt="" width={16} height={16} />
+        <Image 
+          src={type === "print" ? "/print.png" : `/${type}.png`} 
+          alt="" 
+          width={16} 
+          height={16} 
+        />
       </button>
       {open && (
         <div className={`w-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center ${table === "juniorMark" || table === "student" ? "h-auto" : "h-screen"}`}>

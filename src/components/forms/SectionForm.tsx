@@ -14,7 +14,12 @@ import Select from 'react-select';
 
 interface SectionFormProps {
   type: "create" | "update";
-  data?: any;
+  data?: {
+    id: number;
+    name: string;
+    classId: number;
+    sectionSubjects: { subject: { id: number } }[];
+  };
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData: {
     classes: Class[];
@@ -24,6 +29,7 @@ interface SectionFormProps {
 
 const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => {
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [showSubjects, setShowSubjects] = useState(false);
 
   const {
     register,
@@ -35,8 +41,8 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
     resolver: zodResolver(sectionSchema),
     defaultValues: {
       name: data?.name || "",
-      classId: data?.classId || "",
-      subjects: data?.sectionSubjects?.map((ss: any) => ss.subject.id) || [],
+      classId: data?.classId ?? undefined,
+      subjects: data?.sectionSubjects?.map((ss) => ss.subject.id) || [],
     },
   });
 
@@ -45,6 +51,8 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
   useEffect(() => {
     const selectedClass = relatedData.classes.find(c => c.id === Number(watchClassId));
     setSelectedClass(selectedClass || null);
+    // Check if class grade is 9 or above
+    setShowSubjects(selectedClass ? parseInt(selectedClass.name.match(/\d+/)?.[0] || "0") >= 9 : false);
   }, [watchClassId, relatedData.classes]);
 
   const [state, formAction] = useFormState(
@@ -116,25 +124,27 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
           )}
         </div>
 
-        <div className="w-full">
-          <label className="block text-sm font-medium text-gray-700">Subjects</label>
-          <Controller
-            name="subjects"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                isMulti
-                options={subjectOptions}
-                className="basic-multi-select"
-                classNamePrefix="select"
-                value={subjectOptions.filter(option => (field.value ?? []).includes(option.value))}
-                onChange={(selectedOptions) => field.onChange(selectedOptions.map(option => option.value))}
-              />
-            )}
-          />
-          {errors.subjects && <p className="text-red-500">{errors.subjects.message}</p>}
-        </div>
+        {showSubjects && (
+          <div className="w-full">
+            <label className="block text-sm font-medium text-gray-700">Subjects</label>
+            <Controller
+              name="subjects"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  isMulti
+                  options={subjectOptions}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                  value={subjectOptions.filter(option => (field.value ?? []).includes(option.value))}
+                  onChange={(selectedOptions) => field.onChange(selectedOptions.map(option => option.value))}
+                />
+              )}
+            />
+            {errors.subjects && <p className="text-red-500">{errors.subjects.message}</p>}
+          </div>
+        )}
       </div>
 
       {state.error && <span className="text-red-500">Something went wrong!</span>}
