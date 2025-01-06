@@ -22,8 +22,6 @@ const ClassForm = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData?: any;
 }) => {
-  console.log("Form Data:", data);
-  console.log("Related Data:", relatedData);
 
   const {
     register,
@@ -58,7 +56,6 @@ const ClassForm = ({
   );
 
   const onSubmit = handleSubmit((data) => {
-    console.log(data);
     formAction(data);
   });
 
@@ -76,10 +73,6 @@ const ClassForm = ({
     value: subject.id,
     label: `${subject.name} (${subject.code})`,
   })) || [];
-
-  const defaultSubjects = subjectOptions.filter(option => 
-    data?.subjects?.includes(option.value)
-  );
 
   return (
     <>
@@ -119,30 +112,33 @@ const ClassForm = ({
           />
         )}
 
-        <div className="w-full mb-4">
-          <label className="block text-sm font-medium text-gray-700">Subjects</label>
-          <Controller
-            name="subjects"
-            control={control}
-            render={({ field }) => (
-              <Select
-                isMulti
-                options={subjectOptions}
-                className="basic-multi-select"
-                classNamePrefix="select"
-                value={subjectOptions.filter(option => 
-                  field.value?.includes(option.value)
-                )}
-                onChange={(selectedOptions) => 
-                  field.onChange(selectedOptions ? selectedOptions.map(option => option.value) : [])
-                }
-              />
+        {Number(data?.classNumber) !< 9 && (
+          <div className="w-full mb-4">
+            <label className="block text-sm font-medium text-gray-700">Subjects</label>
+            <Controller
+              name="subjects"
+              control={control}
+              defaultValue={data?.subjects || []}
+              render={({ field: { onChange, value } }) => (
+                <Select
+                  isMulti
+                  options={subjectOptions}
+                  className="basic-multi-select"
+                  classNamePrefix="select"
+                  value={subjectOptions.filter(option => 
+                    value?.includes(option.value)
+                  )}
+                  onChange={(selectedOptions) => 
+                    onChange(selectedOptions ? selectedOptions.map(option => option.value) : [])
+                  }
+                />
+              )}
+            />
+            {errors.subjects && (
+              <p className="text-red-500">{errors.subjects.message}</p>
             )}
-          />
-          {errors.subjects && (
-            <p className="text-red-500">{errors.subjects.message}</p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       <button
         type="submit"

@@ -9,7 +9,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import ClassFilterSelect from "./ClassFilterSelect"; // Add this import
-import ExcelUpload from "@/lib/excelUpload"; 
 
 interface StudentWithDetails extends Student {
   Class: Class | null;
@@ -61,10 +60,11 @@ const StudentListPage = async ({
       <td className="flex items-center gap-4 p-4">
         <Image
           src={item.img || "/noAvatar.png"}
-          alt=""
+          alt={`${item.name}'s avatar`}
           width={40}
           height={40}
           className="rounded-full object-cover"
+          style={{ width: '40px', height: '40px' }}
         />
         <div className="flex flex-col">
           <h3 className="font-semibold">{item.name}</h3>
@@ -90,11 +90,6 @@ const StudentListPage = async ({
       </td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/students/${item.id}`}>
-            <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-              <Image src="/view.png" alt="View" width={16} height={16} />
-            </button>
-          </Link>
           {role === "admin" && (
             <>
               <FormContainer
@@ -126,7 +121,7 @@ const StudentListPage = async ({
         switch (key) {
           case "search":
             query.OR = [
-              { name: { contains: value, mode: "insensitive" } },
+              { name: { contains: value, mode: Prisma.QueryMode.insensitive } },
               { admissionno: !isNaN(parseInt(value)) ? parseInt(value) : undefined },
               { mphone: { contains: value } },
               { fphone: { contains: value } }
@@ -204,12 +199,19 @@ const StudentListPage = async ({
               selectedClassId={queryParams.classId} 
             />
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="Sort" width={14} height={14} />
+              <Image 
+                src="/sort.png" 
+                alt="Sort" 
+                width={14} 
+                height={14}
+                style={{ width: 'auto', height: 'auto' }}
+              />
             </button>
             {role === "admin" && (
               <FormContainer
                 table="student"
                 type="create"
+                data={null}
                 relatedData={{ classes, sections, sessions }}
               />
             )}
@@ -218,10 +220,6 @@ const StudentListPage = async ({
       </div>
       <Table columns={columns} renderRow={renderRow} data={data} />
       <Pagination page={p} count={count} />
-      <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Import Students</h1>
-      <ExcelUpload />
-    </div>
     </div>
   );
 };

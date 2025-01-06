@@ -1,4 +1,3 @@
-// Use datasource and generator blocks at the top of your schema file
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -23,15 +22,15 @@ model Teacher {
   Sex           UserSex
   FatherHusband FatherHusband
   birthday      DateTime
-  email         String        @unique
-  phone         String        @unique
-  address       String
-  city          String
-  state         String
+  email         String?        @unique
+  phone         String?        @unique
+  address       String?
+  city          String?
+  state         String?
   bloodgroup    BloodGroup
   joiningdate   DateTime
-  designation   String
-  qualification String
+  designation   String?
+  qualification String?
   EmployeeType  EmployeeType
   img           String?
   createdAt     DateTime      @default(now())
@@ -54,25 +53,25 @@ model Student {
   category      Category
   SubCategory   SubCategory? @relation(fields: [subcategoryId], references: [id])
   subcategoryId Int?
-  mothername    String
-  mphone        String       @unique
-  moccupation   String
-  fathername    String
-  fphone        String       @unique
-  foccupation   String
-  aadharcard    String
-  house         String
+  mothername    String?
+  mphone        String?       
+  moccupation   String?
+  fathername    String?
+  fphone        String?       
+  foccupation   String?
+  aadharcard    String?
+  house         String?
   img           String?
   bloodgroup    BloodGroup
   previousClass String?
-  yearofpass    Int
-  board         String
-  school        String
-  grade         String
-  document      String
-  tc            Boolean      @default(true)
-  tcdate        DateTime
-  tcNo          Int
+  yearofpass    Int?
+  board         String?
+  school        String?
+  grade         String?
+  document      String?
+  tc            Boolean?      @default(true)
+  tcdate        DateTime?
+  tcNo          Int?
   Class         Class?       @relation(fields: [classId], references: [id])
   classId       Int?
   Section       Section?     @relation(fields: [sectionId], references: [id])
@@ -81,6 +80,7 @@ model Student {
   sessionId     Int?
   marksJunior   JuniorMark[]
   marksSenior   SeniorMark[]
+  markHigher    HigherMark[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -133,6 +133,7 @@ model SectionSubject {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   SeniorMark SeniorMark[]
+  HigherMark HigherMark[]
 
   @@unique([sectionId, subjectId])
 }
@@ -223,12 +224,38 @@ model SeniorMark {
   finalExam          Float?
   grandTotal         Float?
   grade              String?
+  overallTotal       Float?
+  overallMarks       Float?
+  overallGrade       String?
   remarks            String?
   studentId          String
   sectionSubjectId   Int
   sessionId          Int
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
+
+  @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+model HigherMark {
+  id                 Int            @id @default(autoincrement())
+  student            Student        @relation(fields: [studentId], references: [id])
+  sectionSubject     SectionSubject @relation(fields: [sectionSubjectId], references: [id])
+  session            Session        @relation(fields: [sessionId], references: [id])
+  studentId          String
+  sectionSubjectId   Int
+  sessionId          Int
+  unitTest1          Float?
+  halfYearly         Float?
+  unitTest2          Float?
+  theory             Float?
+  practical          Float?
+  totalWithout       Float?
+  grandTotal         Float?
+  overallGrade       String?        // Changed from Float? to String?
+  total              Float?
+  percentage         Float?
+  grade              String?
 
   @@unique([studentId, sectionSubjectId, sessionId])
 }
@@ -243,6 +270,7 @@ model Session {
   students    Student[]
   marksJunior JuniorMark[]
   marksSenior SeniorMark[]
+  markHigher  HigherMark[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }

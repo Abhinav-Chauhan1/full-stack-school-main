@@ -40,15 +40,15 @@ CREATE TABLE "Teacher" (
     "Sex" "UserSex" NOT NULL,
     "FatherHusband" "FatherHusband" NOT NULL,
     "birthday" TIMESTAMP(3) NOT NULL,
-    "email" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
-    "address" TEXT NOT NULL,
-    "city" TEXT NOT NULL,
-    "state" TEXT NOT NULL,
+    "email" TEXT,
+    "phone" TEXT,
+    "address" TEXT,
+    "city" TEXT,
+    "state" TEXT,
     "bloodgroup" "BloodGroup" NOT NULL,
     "joiningdate" TIMESTAMP(3) NOT NULL,
-    "designation" TEXT NOT NULL,
-    "qualification" TEXT NOT NULL,
+    "designation" TEXT,
+    "qualification" TEXT,
     "EmployeeType" "EmployeeType" NOT NULL,
     "img" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,21 +74,21 @@ CREATE TABLE "Student" (
     "category" "Category" NOT NULL,
     "subcategoryId" INTEGER,
     "mothername" TEXT NOT NULL,
-    "mphone" TEXT NOT NULL,
-    "moccupation" TEXT NOT NULL,
-    "fathername" TEXT NOT NULL,
-    "fphone" TEXT NOT NULL,
-    "foccupation" TEXT NOT NULL,
-    "aadharcard" TEXT NOT NULL,
-    "house" TEXT NOT NULL,
+    "mphone" TEXT,
+    "moccupation" TEXT,
+    "fathername" TEXT,
+    "fphone" TEXT,
+    "foccupation" TEXT,
+    "aadharcard" TEXT,
+    "house" TEXT,
     "img" TEXT,
     "bloodgroup" "BloodGroup" NOT NULL,
     "previousClass" TEXT,
     "yearofpass" INTEGER NOT NULL,
-    "board" TEXT NOT NULL,
-    "school" TEXT NOT NULL,
-    "grade" TEXT NOT NULL,
-    "document" TEXT NOT NULL,
+    "board" TEXT,
+    "school" TEXT,
+    "grade" TEXT,
+    "document" TEXT,
     "tc" BOOLEAN NOT NULL DEFAULT true,
     "tcdate" TIMESTAMP(3) NOT NULL,
     "tcNo" INTEGER NOT NULL,
@@ -219,6 +219,9 @@ CREATE TABLE "SeniorMark" (
     "finalExam" DOUBLE PRECISION,
     "grandTotal" DOUBLE PRECISION,
     "grade" TEXT,
+    "overallTotal" DOUBLE PRECISION,
+    "overallMarks" DOUBLE PRECISION,
+    "overallGrade" DOUBLE PRECISION,
     "remarks" TEXT,
     "studentId" TEXT NOT NULL,
     "sectionSubjectId" INTEGER NOT NULL,
@@ -227,6 +230,27 @@ CREATE TABLE "SeniorMark" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "SeniorMark_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "HigherMark" (
+    "id" SERIAL NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "sectionSubjectId" INTEGER NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "unitTest1" DOUBLE PRECISION,
+    "halfYearly" DOUBLE PRECISION,
+    "unitTest2" DOUBLE PRECISION,
+    "theory" DOUBLE PRECISION,
+    "practical" DOUBLE PRECISION,
+    "totalWithout" DOUBLE PRECISION,
+    "grandTotal" DOUBLE PRECISION,
+    "overallGrade" TEXT,
+    "total" DOUBLE PRECISION,
+    "percentage" DOUBLE PRECISION,
+    "grade" TEXT,
+
+    CONSTRAINT "HigherMark_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -300,6 +324,9 @@ CREATE UNIQUE INDEX "YearlyMarks_juniorMarkId_key" ON "YearlyMarks"("juniorMarkI
 CREATE UNIQUE INDEX "SeniorMark_studentId_sectionSubjectId_sessionId_key" ON "SeniorMark"("studentId", "sectionSubjectId", "sessionId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "HigherMark_studentId_sectionSubjectId_sessionId_key" ON "HigherMark"("studentId", "sectionSubjectId", "sessionId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Session_sessioncode_key" ON "Session"("sessioncode");
 
 -- AddForeignKey
@@ -352,3 +379,12 @@ ALTER TABLE "SeniorMark" ADD CONSTRAINT "SeniorMark_sectionSubjectId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "SeniorMark" ADD CONSTRAINT "SeniorMark_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HigherMark" ADD CONSTRAINT "HigherMark_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HigherMark" ADD CONSTRAINT "HigherMark_sectionSubjectId_fkey" FOREIGN KEY ("sectionSubjectId") REFERENCES "SectionSubject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "HigherMark" ADD CONSTRAINT "HigherMark_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

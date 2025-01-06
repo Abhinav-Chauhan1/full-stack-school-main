@@ -9,14 +9,28 @@ export type FormContainerProps = {
     | "subject"
     | "class"
     | "exam"
+    | "section"
     | "subCategory"
     | "juniorMark"
     | "session"
-    | "section"
-    | "result";  
+    | "seniorMark"
+    | "higherMark"  // Add this new type
+    | "result"
+    | "result9";  // Add this new type
   type: "create" | "update" | "delete" | "print"; 
   data?: any;
   id?: number | string;
+  relatedData?: {
+    classes?: any[];
+    sections?: any[];
+    sessions?: any[];
+    subjects?: any[];
+    currentClass?: any;
+    currentSection?: any;
+    currentStudent?: any;
+    existingMarks?: any[];
+    studentResult?: any;
+  };
 };
 
 const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
@@ -81,74 +95,72 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         break;
 
         case "student":
-          // Fetch classes, sections, and sessions for assigning students
-          const studentClasses = await prisma.class.findMany({
-            include: { 
-              _count: { select: { students: true } },
-              sections: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            },
-            orderBy: {
-              classNumber: 'asc'
-            }
-          });
-          
-          const sessions = await prisma.session.findMany({
-            select: { 
-              id: true, 
-              sessioncode: true,
-              sessionfrom: true,
-              sessionto: true,
-              isActive: true
-            },
-            orderBy: {
-              sessionfrom: 'desc'
-            }
-          });
-        
-          // Fetch subcategories for the category dropdown
-          const subcategories = await prisma.subCategory.findMany({
-            select: {
-              id: true,
-              name: true,
-              category: true
-            },
-            orderBy: {
-              category: 'asc'
-            }
-          });
-        
-          // If updating, fetch current student data with all relations
-          if (type === "update" && id) {
-            const currentStudent = await prisma.student.findUnique({
-              where: { id: id as string },
-              include: {
-                Class: true,
-                Section: true,
-                Session: true,
-                SubCategory: true
-              }
-            });
-        
-            if (currentStudent) {
-              relatedData = {
-                ...relatedData,
-                currentStudent
-              };
-            }
-          }
-        
-          relatedData = { 
-            classes: studentClasses,
-            sessions,
-            subcategories,
-            sections: studentClasses.flatMap(c => c.sections)
-          };
-          break;
+  // Get classes with sections, students count, and capacity
+  const studentClasses = await prisma.class.findMany({
+    select: {
+      id: true,
+      name: true,
+      capacity: true,
+      classNumber: true,
+      _count: { 
+        select: { students: true } 
+      },
+      sections: {
+        select: {
+          id: true,
+          name: true,
+          classId: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      }
+    },
+    orderBy: {
+      classNumber: 'asc'
+    }
+  });
+
+  // Get active sessions only
+  const studentSessions = await prisma.session.findMany({
+    where: {
+      isActive: true
+    },
+    select: {
+      id: true,
+      sessioncode: true
+    },
+    orderBy: {
+      sessionfrom: 'desc'
+    }
+  });
+
+  // If updating, get current student data
+  if (type === "update" && id) {
+    const currentStudent = await prisma.student.findUnique({
+      where: { id: id as string },
+      include: {
+        Class: true,
+        Section: true,
+        Session: true
+      }
+    });
+
+    if (currentStudent) {
+      relatedData = {
+        classes: studentClasses,
+        sessions: studentSessions,
+        currentStudent
+      };
+      data = currentStudent;
+    }
+  } else {
+    relatedData = {
+      classes: studentClasses,
+      sessions: studentSessions
+    };
+  }
+  break;
 
       case "section":
         // Fetch classes for assigning to sections
@@ -339,88 +351,253 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
   break;
 
     case "result":
-      if (type === "print") {
-        if (id) {
-          // Single student result
-          const studentResult = await prisma.juniorMark.findMany({
-            where: {
-              studentId: id as string,
-              session: {
-                isActive: true
-              }
-            },
-            include: {
-              student: {
-                select: {
-                  name: true,
-                  admissionno: true,
-                  Class: {
-                    select: {
-                      name: true
-                    }
-                  },
-                  Section: {
-                    select: {
-                      name: true
-                    }
+      if (type === "print" && id) {
+        // Single student result with complete data
+        const studentData = await prisma.student.findUnique({
+          where: { id: id as string },
+          include: {
+            Class: true,
+            Section: true,
+            Session: true,
+            marksJunior: {
+              include: {
+                classSubject: {
+                  include: {
+                    subject: true
+                  }
+                },
+                halfYearly: true,
+                yearly: true,
+                session: {
+                  select: {
+                    sessioncode: true,
+                    sessionfrom: true,
+                    sessionto: true
                   }
                 }
               },
-              classSubject: {
-                include: {
-                  subject: true
-                }
-              },
-              session: {
-                select: {
-                  sessioncode: true
-                }
-              },
-              halfYearly: true, // Include the new halfYearly relation
-              yearly: true     // Include the new yearly relation
-            },
-            orderBy: {
-              classSubject: {
-                subject: {
-                  name: 'asc'
+              where: {
+                session: {
+                  isActive: true
                 }
               }
             }
-          });
-
-          if (studentResult.length > 0) {
-            relatedData = {
-              studentResult: {
-                student: studentResult[0].student,
-                marks: studentResult,
-                session: studentResult[0].session
-              }
-            };
           }
-        } else if (data?.classId && data?.sectionId) {
-          // Class-wise results
-          // Add logic for class-wise result generation
-          const classResults = await prisma.juniorMark.findMany({
-            where: {
-              student: {
-                classId: parseInt(data.classId),
-                sectionId: parseInt(data.sectionId)
-              },
-              session: {
-                isActive: true
-              }
-            },
-            include: {
-              // Similar include as above
-            }
-          });
+        });
 
+        if (studentData) {
           relatedData = {
-            classResults
+            studentResult: {
+              student: studentData,
+              marksJunior: studentData.marksJunior,
+              session: studentData.Session
+            }
           };
         }
       }
       break;
+
+      case "result9":
+        if (type === "print" && id) {
+          const studentData = await prisma.student.findUnique({
+            where: { id: id as string },
+            include: {
+              Class: true,
+              Section: true,
+              Session: true,
+              marksSenior: {
+                include: {
+                  sectionSubject: {
+                    include: {
+                      subject: true
+                    }
+                  },
+                  session: true
+                },
+                where: {
+                  session: {
+                    isActive: true
+                  }
+                },
+                orderBy: {
+                  sectionSubject: {
+                    subject: {
+                      name: 'asc'
+                    }
+                  }
+                }
+              }
+            }
+          });
+
+          if (studentData) {
+            relatedData = {
+              studentResult: {
+                student: studentData,
+                marksSenior: studentData.marksSenior,
+                session: studentData.Session
+              }
+            };
+          }
+        }
+        break;
+
+      case "seniorMark":
+    const classes4SeniorMark = await prisma.class.findMany({
+      select: {
+        id: true,
+        name: true,
+        classNumber: true,
+        sections: {
+          select: {
+            id: true,
+            name: true,
+            students: {
+              select: {
+                id: true,
+                name: true,
+                admissionno: true,
+              },
+              orderBy: {
+                name: 'asc',
+              },
+            },
+            sectionSubjects: {
+              select: {
+                id: true,
+                subject: {
+                  select: {
+                    id: true,
+                    name: true,
+                    code: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        classNumber: 'asc',
+      },
+    });
+
+    const sessions4senior = await prisma.session.findMany({
+      select: {
+        id: true,
+        sessioncode: true,
+        isActive: true,
+      },
+      orderBy: {
+        sessioncode: 'asc',
+      },
+    });
+
+    let existingSeniorMarks = null;
+    if (type === "update" && id) {
+      existingSeniorMarks = await prisma.seniorMark.findMany({
+        where: {
+          sectionSubjectId: Number(id),
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              admissionno: true,
+            },
+          },
+        },
+      });
+    }
+
+    relatedData = {
+      classes: classes4SeniorMark,
+      sessions: sessions4senior,
+      existingMarks: existingSeniorMarks || [],
+    };
+    break;
+
+      case "higherMark":
+        const classes4HigherMark = await prisma.class.findMany({
+          select: {
+            id: true,
+            name: true,
+            classNumber: true,
+            sections: {
+              select: {
+                id: true,
+                name: true,
+                students: {
+                  select: {
+                    id: true,
+                    name: true,
+                    admissionno: true,
+                  },
+                  orderBy: {
+                    name: 'asc',
+                  },
+                },
+                sectionSubjects: {
+                  select: {
+                    id: true,
+                    subject: {
+                      select: {
+                        id: true,
+                        name: true,
+                        code: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          where: {
+            classNumber: {
+              in: [11, 12] // Only fetch classes 11 and 12
+            }
+          },
+          orderBy: {
+            classNumber: 'asc',
+          },
+        });
+
+        const sessions4higher = await prisma.session.findMany({
+          select: {
+            id: true,
+            sessioncode: true,
+            isActive: true,
+          },
+          orderBy: {
+            sessioncode: 'asc',
+          },
+        });
+
+        let existingHigherMarks = null;
+        if (type === "update" && id) {
+          existingHigherMarks = await prisma.higherMark.findMany({
+            where: {
+              sectionSubjectId: Number(id),
+            },
+            include: {
+              student: {
+                select: {
+                  id: true,
+                  name: true,
+                  admissionno: true,
+                },
+              },
+            },
+          });
+        }
+
+        relatedData = {
+          classes: classes4HigherMark,
+          sessions: sessions4higher,
+          existingMarks: existingHigherMarks || [],
+        };
+        break;
 
       default:
         break;

@@ -39,7 +39,6 @@ const TeacherForm = ({
     {
       success: false,
       error: false,
-      message: "",
     }
   );
 

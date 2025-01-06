@@ -6,6 +6,7 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
+import RecalculateButton from "@/components/RecalculateButton"; // Add this import
 
 /**
  * JuniorMarkList page component
@@ -31,6 +32,21 @@ const JuniorMarkListPage = async ({
   });
 
   const classes = await prisma.class.findMany({
+    where: {
+      OR: [
+        { name: { equals: "Nursery" } },
+        { name: { equals: "KG" } },
+        { name: { equals: "UKG" } },
+        { name: { equals: "1" } },
+        { name: { equals: "2" } },
+        { name: { equals: "3" } },
+        { name: { equals: "4" } },
+        { name: { equals: "5" } },
+        { name: { equals: "6" } },
+        { name: { equals: "7" } },
+        { name: { equals: "8" } },
+      ]
+    },
     orderBy: { name: "asc" },
     include: {
       sections: true,
@@ -219,7 +235,10 @@ const JuniorMarkListPage = async ({
                 <Image src="/sort.png" alt="Sort" width={14} height={14} />
               </button>
               {role === "admin" && (
-                <FormContainer table="juniorMark" type="create" />
+                <>
+                  <FormContainer table="juniorMark" type="create" />
+                  <RecalculateButton />
+                </>
               )}
             </div>
           </div>

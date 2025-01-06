@@ -5,9 +5,8 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
-import Image from "next/image";
 
-const ResultsPage = async ({
+const Results9Page = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
@@ -15,22 +14,18 @@ const ResultsPage = async ({
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const { page, sessionId, classId, sectionId, examType } = searchParams;
+  const { page, sessionId, classId, sectionId } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  // Fetch all sessions and classes for filters
+  // Fetch all sessions
   const sessions = await prisma.session.findMany({
     orderBy: { sessionfrom: "desc" },
   });
 
+  // Only fetch class 9
   const classes = await prisma.class.findMany({
     where: {
-      classNumber: {
-        lte: 8  // Only get classes up to 8
-      }
-    },
-    orderBy: { 
-      classNumber: "asc"  // Order by class number instead of name
+      classNumber: 9
     },
     include: {
       sections: true,
@@ -38,7 +33,11 @@ const ResultsPage = async ({
   });
 
   // Build query for students
-  const query: any = {};
+  const query: any = {
+    Class: {
+      classNumber: 9
+    }
+  };
 
   if (classId) {
     query.classId = parseInt(classId);
@@ -48,7 +47,7 @@ const ResultsPage = async ({
     query.sectionId = parseInt(sectionId);
   }
 
-  // Update the students query to include all necessary relations
+  // Fetch students with their marks
   const [students, count] = await prisma.$transaction([
     prisma.student.findMany({
       where: query,
@@ -56,19 +55,12 @@ const ResultsPage = async ({
         Class: true,
         Section: true,
         Session: true,
-        marksJunior: {
+        marksSenior: {
           include: {
             session: true,
-            halfYearly: true,
-            yearly: true,
-            classSubject: {
+            sectionSubject: {
               include: {
-                subject: {
-                  select: {
-                    name: true,
-                    code: true
-                  }
-                }
+                subject: true
               }
             }
           },
@@ -109,24 +101,15 @@ const ResultsPage = async ({
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
-      {/* TOP */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="hidden md:block text-lg font-semibold">
-            Student Results
+            Class 9 Results
           </h1>
-          <div className="flex items-center gap-4">
-            {classId && sectionId && (
-              <FormContainer
-                table="result"
-                type="print"
-                data={{ classId, sectionId, examType }}
-              />
-            )}
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             name="sessionId"
             label="Session"
@@ -140,9 +123,7 @@ const ResultsPage = async ({
             label="Class"
             options={classes.map((cls) => ({
               value: cls.id.toString(),
-              label: cls.classNumber === 0 
-                ? cls.name 
-                : `Class ${cls.classNumber}` 
+              label: cls.name,
             }))}
           />
           <Select
@@ -160,19 +141,11 @@ const ResultsPage = async ({
             }
             disabled={!classId}
           />
-          <Select
-            name="examType"
-            label="Exam Type"
-            options={[
-              { value: "HALF_YEARLY", label: "Half Yearly" },
-              { value: "YEARLY", label: "Yearly" },
-            ]}
-          />
         </div>
       </div>
 
       {/* Students List */}
-      <div className="mt-6"></div>
+      <div className="mt-6">
         <Table
           columns={columns}
           data={students}
@@ -188,12 +161,9 @@ const ResultsPage = async ({
               <td>
                 <div className="flex items-center gap-2">
                   <FormContainer
-                    table="result"
+                    table="result9"
                     type="print"
                     id={student.id}
-                    data={{ 
-                      examType: searchParams.examType || 'YEARLY'  // Provide default value
-                    }}
                   />
                 </div>
               </td>
@@ -206,4 +176,4 @@ const ResultsPage = async ({
   );
 };
 
-export default ResultsPage;
+export default Results9Page;

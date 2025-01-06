@@ -9,8 +9,7 @@ import {
   deleteSection,
   deleteSubCategory,
   deleteJuniorMark,
-  deleteHalfYearlyMarks,
-  deleteYearlyMarks,
+  deleteSeniorMark,
 } from "@/lib/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -30,6 +29,7 @@ const deleteActionMap: { [key: string]: (currentState: any, data: any) => Promis
   session: deleteSession,
   section: deleteSection,
   subCategory: deleteSubCategory,
+  seniorMark: deleteSeniorMark,
 };
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
@@ -54,6 +54,12 @@ const JuniorMarkForm = dynamic(() => import("./forms/JuniorMarkForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const SubCategoryForm = dynamic(() => import("./forms/SubCategoryForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const SeniorMarkForm = dynamic(() => import("./forms/SeniorMarkForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const HigherMarkForm = dynamic(() => import("./forms/HigherMarkForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 // TODO: OTHER FORMS
@@ -129,10 +135,28 @@ const forms: {
       relatedData={relatedData}
     />
   ),
+  seniorMark: (setOpen, type, data, relatedData) => (
+    <SeniorMarkForm
+      type={type}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  higherMark: (setOpen, type, data, relatedData) => (
+    <HigherMarkForm
+      type={type}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
   // TODO OTHER LIST ITEMS
 };
 
 const PdfGenerator = dynamic(() => import("./PdfGenerator"), {
+  ssr: false
+});
+
+const PdfGenerator9 = dynamic(() => import("./PdfGenerator9"), {
   ssr: false
 });
 
@@ -175,7 +199,14 @@ const FormModal = ({
 
     // Handle print type
     if (type === "print" && relatedData?.studentResult) {
-      return <PdfGenerator studentResult={relatedData.studentResult} onClose={() => setOpen(false)} />;
+      return (
+        <div className="w-full max-w-4xl mx-auto">
+          <PdfGenerator 
+            studentResult={relatedData.studentResult} 
+            onClose={() => setOpen(false)} 
+          />
+        </div>
+      );
     }
 
     // Existing form handling
@@ -200,6 +231,29 @@ const FormModal = ({
     );
   };
 
+  const renderContent = () => {
+    switch (table) {
+      case "result":
+        return (
+          <PdfGenerator
+            studentResult={relatedData?.studentResult}
+            onClose={() => setOpen(false)}
+          />
+        );
+
+      case "result9":
+        return (
+          <PdfGenerator9
+            studentResult={relatedData?.studentResult}
+            onClose={() => setOpen(false)}
+          />
+        );
+
+      default:
+        return <Form />;
+    }
+  };
+
   return (
     <>
       <button
@@ -214,23 +268,21 @@ const FormModal = ({
         />
       </button>
       {open && (
-        <div className={`w-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center ${table === "juniorMark" || table === "student" ? "h-auto" : "h-screen"}`}>
+        <div className={`w-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center ${table === "juniorMark" || table === "seniorMark" || table === "higherMark" || table === "student" ? "h-auto" : "h-screen"}`}>
 
           <div
-            className={`bg-white p-4 rounded-md relative ${table === "juniorMark" || table === "student"
+            className={`bg-white p-4 rounded-md relative ${table === "juniorMark" || table === "student" || table === "seniorMark" || table === "higherMark"
                 ? "w-full"
                 : "w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]"
               }`}
           >
-            <Form />
+            {renderContent()}
             <div
               className="absolute top-4 right-4 cursor-pointer"
               onClick={() => setOpen(false)}
             >
               <Image src="/close.png" alt="" width={14} height={14} />
-            </div>
-          </div>
-        </div>
+            </div>          </div>        </div>
       )}
     </>
   );

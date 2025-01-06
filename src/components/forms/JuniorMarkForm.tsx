@@ -77,9 +77,12 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   // Filtered data based on selections
   const filteredClasses = useMemo(
     () =>
-      relatedData.classes.filter((cls) =>
-        initialType === "create" ? true : initialData?.classId === cls.id
-      ),
+      relatedData.classes.filter((cls) => {
+        const isJuniorClass = ["Nursery", "KG", "UKG"].includes(cls.name) || 
+          (parseInt(cls.name) >= 1 && parseInt(cls.name) <= 8);
+        return isJuniorClass && 
+          (initialType === "create" ? true : initialData?.classId === cls.id);
+      }),
     [relatedData.classes, initialType, initialData?.classId]
   );
 
@@ -285,32 +288,44 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
 
   // Updated submit handler to match new schema
   const onSubmit = async (formData: { marks: JuniorMarkSchema[] }) => {
-    // Existing validation checks...
     if (!selectedSession || !selectedClass || !selectedSection || !selectedSubject) {
       toast.error("Please select all required fields");
       return;
     }
-
+  
     try {
       // Process marks and calculate grades
-      const processedMarks = formData.marks.map((mark) => {
+      const processedMarks = formData.marks.map(async (mark) => {
+        // First, get existing marks if we're in yearly exam
+        let existingHalfYearlyMarks = null;
+        if (mark.examType === "YEARLY") {
+          const existingMarks = existingMarksData?.find(
+            (existing) => existing.studentId === mark.studentId
+          );
+          existingHalfYearlyMarks = existingMarks?.halfYearly || null;
+        }
+  
+        // Calculate current term's marks
         const calculatedResults = calculateMarksAndGrade({
           examType: mark.examType,
           [mark.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: 
-            mark.examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
+            mark.examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly,
+          halfYearly: existingHalfYearlyMarks // Pass existing half yearly marks for grand total calculation
         });
-
+  
         return {
           ...mark,
-          classSubjectId: selectedSubject, // Use selectedSubject directly as it's now the classSubject.id
+          classSubjectId: selectedSubject,
           ...calculatedResults
         };
       });
-
+  
+      const resolvedMarks = await Promise.all(processedMarks);
+      
       const result = formType === "create"
-        ? await createJuniorMarks({ marks: processedMarks })
-        : await updateJuniorMarks({ marks: processedMarks });
-
+        ? await createJuniorMarks({ marks: resolvedMarks })
+        : await updateJuniorMarks({ marks: resolvedMarks });
+  
       if (result.success) {
         toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
         setOpen(false);

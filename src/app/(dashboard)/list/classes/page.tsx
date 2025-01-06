@@ -21,12 +21,12 @@ const ClassListPage = async ({
       accessor: "name",
     },
     {
-      header: "Class Number",
-      accessor: "classNumber",
-    },
-    {
       header: "Capacity",
       accessor: "capacity",
+    },
+    {
+      header: "Subjects",
+      accessor: "subjects",
     },
     ...(role === "admin"
       ? [
@@ -38,18 +38,36 @@ const ClassListPage = async ({
       : []),
   ];
 
-  const renderRow = (item: { id: number; name: string; classNumber: number; capacity: number; }) => (
+  const renderRow = (item: { 
+    id: number; 
+    name: string; 
+    classNumber: number; 
+    capacity: number;
+    classSubjects?: {
+      subject: {
+        name: string;
+        code: string;
+      }
+    }[];
+  }) => (
     <tr
       key={item.id}
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
       <td className="p-4">{item.name}</td>
-      <td className="p-4">{item.classNumber}</td>
       <td className="p-4">{item.capacity}</td>
+      <td className="p-4">
+        {item.classSubjects?.map(cs => 
+          `${cs.subject.name} (${cs.subject.code})`
+        ).join(", ")}
+      </td>
       {role === "admin" && (
         <td>
           <div className="flex items-center gap-2">
-            <FormContainer table="class" type="update" data={item} />
+            <FormContainer table="class" type="update" data={{
+              ...item,
+              subjects: item.classSubjects?.map(cs => cs.subject.id)
+            }} />
             <FormContainer table="class" type="delete" id={item.id} />
           </div>
         </td>
@@ -81,6 +99,19 @@ const ClassListPage = async ({
       orderBy: {
         classNumber: "asc",
       },
+      include: {
+        classSubjects: {
+          include: {
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                code: true
+              }
+            }
+          }
+        }
+      }
     }),
     prisma.class.count({ where: query }),
   ]);

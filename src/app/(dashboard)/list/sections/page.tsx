@@ -28,31 +28,53 @@ const SectionListPage = async ({
   const columns = [
     { header: "Section Name", accessor: "name" },
     { header: "Class", accessor: "class.name", className: "hidden md:table-cell" },
+    { header: "Subjects", accessor: "subjects" }, // New column for subjects
     ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
   ];
 
-  const renderRow = (item: SectionWithDetails) => (
-    <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
-      <td className="p-4">{item.name}</td>
-      <td className="hidden md:table-cell">{item.class.name}</td>
-      {role === "admin" && (
-        <td>
-          <div className="flex items-center gap-2">
-            <FormContainer 
-              table="section" 
-              type="update" 
-              data={{
-                ...item,
-                classId: item.class.id,
-                subjects: item.sectionSubjects.map(ss => ss.subject.id)
-              }} 
-            />
-            <FormContainer table="section" type="delete" id={item.id} />
-          </div>
+  const renderRow = (item: SectionWithDetails) => {
+    // Only show subjects for classes 9 and above
+    const showSubjects = parseInt(item.class.name.match(/\d+/)?.[0] || "0") >= 9;
+    
+    return (
+      <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
+        <td className="p-4">{item.name}</td>
+        <td className="hidden md:table-cell">{item.class.name}</td>
+        <td className="p-4">
+          {showSubjects ? (
+            <div className="flex flex-wrap gap-1">
+              {item.sectionSubjects.map((ss) => (
+                <span 
+                  key={ss.subject.id}
+                  className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded"
+                >
+                  {ss.subject.code}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-gray-400">N/A</span>
+          )}
         </td>
-      )}
-    </tr>
-  );
+        {role === "admin" && (
+          <td>
+            <div className="flex items-center gap-2">
+              <FormContainer 
+                table="section" 
+                type="update" 
+                data={{
+                  ...item,
+                  classId: item.class.id,
+                  subjects: item.sectionSubjects.map(ss => ss.subject.id)
+                }} 
+              />
+              <FormContainer table="section" type="delete" id={item.id} />
+            </div>
+          </td>
+        )}
+      </tr>
+    );
+  };
 
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;

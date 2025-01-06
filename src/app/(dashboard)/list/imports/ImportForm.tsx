@@ -67,10 +67,33 @@ const ImportForm = ({ classes }: ImportFormProps) => {
         }
 
         // Convert and validate dates
-        const admissiondate = row.admissiondate ? new Date(row.admissiondate) : new Date();
-        const birthday = new Date(row.birthday);
-        if (isNaN(birthday.getTime())) {
-          throw new Error('Invalid birthday format');
+        const parseExcelDate = (excelDate: any) => {
+          if (!excelDate) return new Date();
+          
+          // If it's already a date string, try to parse it directly
+          if (typeof excelDate === 'string') {
+            const date = new Date(excelDate);
+            if (!isNaN(date.getTime())) return date;
+          }
+          
+          // Handle Excel serial number dates
+          if (typeof excelDate === 'number') {
+            // Excel dates are counted from 1900-01-01
+            const utcDate = new Date(Date.UTC(1900, 0, -1));
+            utcDate.setUTCDate(utcDate.getUTCDate() + Math.floor(excelDate));
+            return utcDate;
+          }
+          
+          throw new Error('Invalid date format');
+        };
+
+        // Parse dates
+        let admissiondate, birthday;
+        try {
+          admissiondate = parseExcelDate(row.admissiondate);
+          birthday = parseExcelDate(row.birthday);
+        } catch (error) {
+          throw new Error('Invalid date format for birthday or admission date');
         }
 
         // Validate phone numbers

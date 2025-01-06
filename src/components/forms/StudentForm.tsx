@@ -11,7 +11,6 @@ import { createStudent, updateStudent } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { CldUploadWidget } from "next-cloudinary";
-import ExcelUpload from "@/lib/excelUpload";
 
 const StudentForm = ({
   type,
@@ -28,6 +27,8 @@ const StudentForm = ({
     register,
     handleSubmit,
     formState: { errors },
+    setValue, // Add setValue from useForm
+    watch, // Add watch to monitor classId changes
   } = useForm<StudentSchema>({
     resolver: zodResolver(studentSchema),
   });
@@ -46,6 +47,49 @@ const StudentForm = ({
   });
 
   const router = useRouter();
+  const { classes, sections, sessions } = relatedData;
+
+  const [selectedClassId, setSelectedClassId] = useState<string>(
+    data?.classId?.toString() || ""
+  );
+  const [filteredSections, setFilteredSections] = useState<any[]>([]);
+
+  // Watch for classId changes
+  const watchedClassId = watch("classId");
+
+  // Update filtered sections when class changes
+  useEffect(() => {
+    if (relatedData?.classes) {
+      const selectedClass = relatedData.classes.find(
+        (c: any) => c.id.toString() === selectedClassId
+      );
+      if (selectedClass) {
+        setFilteredSections(selectedClass.sections || []);
+      } else {
+        setFilteredSections([]);
+      }
+    }
+  }, [selectedClassId, relatedData?.classes]);
+
+  // Initialize sections when component mounts with data
+  useEffect(() => {
+    if (data && data.classId && relatedData?.classes) {
+      const classId = data.classId.toString();
+      setSelectedClassId(classId);
+      const selectedClass = relatedData.classes.find(
+        (c: any) => c.id.toString() === classId
+      );
+      if (selectedClass) {
+        setFilteredSections(selectedClass.sections || []);
+      }
+    }
+  }, [data, relatedData?.classes]);
+
+  const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newClassId = e.target.value;
+    setSelectedClassId(newClassId);
+    setValue("sectionId", ""); // Reset section when class changes
+  };
 
   useEffect(() => {
     if (state.success) {
@@ -54,8 +98,6 @@ const StudentForm = ({
       router.refresh();
     }
   }, [state, router, type, setOpen]);
-
-  const { classes, sections, sessions } = relatedData;
 
   return (
     <form className="flex flex-col  gap-8" onSubmit={onSubmit}>
@@ -92,17 +134,38 @@ const StudentForm = ({
       </span>
       <CldUploadWidget
         uploadPreset="school"
-        onSuccess={(result, { widget }) => {
-          setImg(result.info);
-          widget.close();
+        onSuccess={(result: any, { widget }) => {
+          if (result.info) {
+            setImg(result.info);
+            toast.success("Image uploaded successfully!");
+            widget.close();
+          }
+        }}
+        onError={(error: any) => {
+          console.error("Upload error:", error);
+          toast.error("Failed to upload image. Please try again.");
+        }}
+        options={{
+          cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+          maxFiles: 1,
+          resourceType: "image",
+          clientAllowedFormats: ["images", "jpg", "jpeg", "png", "gif"],
+          maxFileSize: 2000000,
         }}
       >
         {({ open }) => (
           <div
             className="text-xs text-gray-500 flex items-center gap-2 cursor-pointer"
-            onClick={() => open()}
+            onClick={() => open?.()}
           >
-            <Image src="/upload.png" alt="" width={28} height={28} />
+            <Image 
+              src="/upload.png" 
+              alt="Upload" 
+              width={28} 
+              height={28} 
+              className="opacity-70 hover:opacity-100"
+              style={{ width: 'auto', height: 'auto' }}
+            />
             <span>Upload a photo</span>
           </div>
         )}
@@ -231,8 +294,13 @@ const StudentForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("classId")}
-            defaultValue={data?.classId}
+            value={selectedClassId}
+            onChange={(e) => {
+              handleClassChange(e);
+              register("classId").onChange(e); // Ensure form state is updated
+            }}
           >
+            <option value="">Select a class</option>
             {classes?.map((classItem: any) => (
               <option value={classItem.id} key={classItem.id}>
                 {classItem.name} ({classItem._count.students}/{classItem.capacity})
@@ -249,9 +317,11 @@ const StudentForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sectionId")}
-            defaultValue={data?.sectionId}
+            defaultValue={data?.sectionId || ""}
+            disabled={!selectedClassId} // Disable if no class is selected
           >
-            {sections?.map((section: any) => (
+            <option value="">Select a section</option>
+            {filteredSections?.map((section: any) => (
               <option value={section.id} key={section.id}>
                 {section.name}
               </option>
@@ -382,7 +452,7 @@ const StudentForm = ({
           label="Year of Pass"
           name="yearofpass"
           type="number"
-          defaultValue={data?.yearofpass}
+          defaultValue={data?.yearofpass || 0}  // Set default value to 0
           register={register}
           error={errors.yearofpass}
         />

@@ -6,14 +6,19 @@ import {
   StudentSchema,
   SubjectSchema,
   TeacherSchema,
-  JuniorMarkSchema, 
+  JuniorMarkSchema,
+  HigherMarkSchema, 
   SubCategorySchema,
   SessionSchema,
   SectionSchema,
+  SeniorMarkSchema,
 } from "./formValidationSchemas";
-import prisma from "./prisma";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Category } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
+import { calculateMarksAndGrade , calculateSeniorMarksAndGrade} from './formValidationSchemas';
+
+const prisma = new PrismaClient();
 
 type CurrentState = { success: boolean; error: boolean };
 
@@ -84,52 +89,23 @@ export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
 
       if (!marksData) return null;
 
-      // Find existing record
-      const existingRecord = await prisma.juniorMark.findUnique({
-        where: {
-          studentId_classSubjectId_sessionId: {
-            studentId: mark.studentId,
-            classSubjectId: mark.classSubjectId,
-            sessionId: mark.sessionId
-          }
+      return prisma.juniorMark.create({
+        data: {
+          student: { connect: { id: mark.studentId }},
+          classSubject: { connect: { id: mark.classSubjectId }},
+          session: { connect: { id: mark.sessionId }},
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            create: marksData
+          },
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
         }
       });
-
-      if (existingRecord) {
-        // Update existing record with new exam type data
-        return prisma.juniorMark.update({
-          where: {
-            id: existingRecord.id
-          },
-          data: {
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              create: marksData
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      } else {
-        // Create new record
-        return prisma.juniorMark.create({
-          data: {
-            student: { connect: { id: mark.studentId }},
-            classSubject: { connect: { id: mark.classSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              create: marksData
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      }
     });
 
-    const results = await Promise.all(createPromises);
-    return { success: true, error: false, results };
+    await Promise.all(createPromises);
+    return { success: true, error: false };
   } catch (err) {
     console.error("Create Junior Marks Error:", err);
     return { 
@@ -389,18 +365,18 @@ export const updateSection = async (
     }
 
     await prisma.$transaction(async (tx) => {
-      // Delete existing section-subject relationships
-      await tx.sectionSubject.deleteMany({
-        where: { sectionId: formData.id }
-      });
-
-      // Delete related senior marks first
+      // First delete any associated senior marks
       await tx.seniorMark.deleteMany({
         where: {
           sectionSubject: {
             sectionId: formData.id
           }
         }
+      });
+
+      // Then delete existing section-subject relationships
+      await tx.sectionSubject.deleteMany({
+        where: { sectionId: formData.id }
       });
 
       // Update section and create new relationships
@@ -835,12 +811,27 @@ export const updateClass = async (
 ) => {
   try {
     await prisma.$transaction(async (tx) => {
-      // First delete all existing classSubjects
+      // First get all ClassSubject IDs for this class
+      const existingClassSubjects = await tx.classSubject.findMany({
+        where: { classId: Number(data.id) },
+        select: { id: true }
+      });
+
+      // Delete all related JuniorMark records first
+      await tx.juniorMark.deleteMany({
+        where: {
+          classSubjectId: {
+            in: existingClassSubjects.map(cs => cs.id)
+          }
+        }
+      });
+
+      // Now delete existing ClassSubject records
       await tx.classSubject.deleteMany({
         where: { classId: Number(data.id) }
       });
 
-      // Then update the class with new relationships
+      // Update the class with new relationships
       await tx.class.update({
         where: { id: Number(data.id) },
         data: {
@@ -848,7 +839,7 @@ export const updateClass = async (
           classNumber: Number(data.classNumber),
           capacity: Number(data.capacity),
           classSubjects: {
-            create: data.subjects.map((subjectId: number) => ({
+            create: data.subjects?.map((subjectId: number) => ({
               subject: {
                 connect: { id: subjectId }
               }
@@ -914,17 +905,12 @@ export const createTeacher = async (
   formData: TeacherSchema
 ) => {
   try {
-    // Validate required fields
-    if (!formData.name || !formData.email || !formData.password) {
-      return { success: false, error: true};
-    }
-
     // Create user in Clerk with required fields
     const user = await clerkClient().users.createUser({
-      password: formData.password,
+      password: formData.password || Math.random().toString(36).slice(-8),
       firstName: formData.name,
-      lastName: "", // Required by Clerk, using empty string as default
-      username: formData.name, // Generate username from email
+      lastName: "",
+      username: formData.name,
       publicMetadata: { 
         role: "teacher",
       },
@@ -949,18 +935,15 @@ export const createTeacher = async (
         qualification: formData.qualification,
         EmployeeType: formData.EmployeeType,
         img: formData.img,
+        password: formData.password || "", // Store password in Prisma
         createdAt: new Date(),
-        password: formData.password, // Store hashed password in Prisma
       },
     });
 
     return { success: true, error: false };
   } catch (err) {
     console.error("Error creating teacher:", err);
-    return { 
-      success: false, 
-      error: true, 
-    };
+    return { success: false, error: true };
   }
 };
 
@@ -1210,4 +1193,614 @@ export const deleteStudent = async (
     return { success: false, error: true };
   }
 };
+
+export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => {
+  try {
+    if (type === 'senior') {
+      const marks = await prisma.seniorMark.findMany();
+      
+      for (const mark of marks) {
+        // Calculate bestTwoPTAvg
+        const ptScores = [mark.pt1, mark.pt2, mark.pt3]
+          .filter((score): score is number => score !== null)
+          .sort((a, b) => b - a);
+        
+        const bestTwoPTAvg = ptScores.length >= 2 ? 
+          (ptScores[0] + ptScores[1]) / 2 : null;
+
+        // Calculate best score (20 marks total)
+        const bestScore = bestTwoPTAvg !== null ? 
+          bestTwoPTAvg + 
+          (mark.multipleAssessment || 0) + 
+          (mark.portfolio || 0) + 
+          (mark.subEnrichment || 0) : null;
+
+        // Calculate grand total (best score + final exam)
+        const grandTotal = bestScore !== null && mark.finalExam !== null ?
+          bestScore + mark.finalExam : null;
+
+        // Determine grade based on grand total
+        let grade = null;
+        if (grandTotal !== null) {
+          if (grandTotal >= 91) grade = 'A1';
+          else if (grandTotal >= 81) grade = 'A2';
+          else if (grandTotal >= 71) grade = 'B1';
+          else if (grandTotal >= 61) grade = 'B2';
+          else if (grandTotal >= 51) grade = 'C1';
+          else if (grandTotal >= 41) grade = 'C2';
+          else if (grandTotal >= 33) grade = 'D';
+          else grade = 'E';
+        }
+        
+        // Update the mark record
+        await prisma.seniorMark.update({
+          where: { id: mark.id },
+          data: {
+            bestTwoPTAvg,
+            bestScore,
+            grandTotal,
+            grade
+          }
+        });
+      }
+    } else if (type === 'higher') {
+      const marks = await prisma.higherMark.findMany();
+      
+      for (const mark of marks) {
+        const calculations = calculateHigherMarksAndGrade({
+          unitTest1: mark.unitTest1,
+          halfYearly: mark.halfYearly,
+          unitTest2: mark.unitTest2,
+          theory: mark.theory,
+          practical: mark.practical
+        });
+
+        // Update the mark record
+        await prisma.higherMark.update({
+          where: { id: mark.id },
+          data: {
+            totalWithout: calculations.totalWithout,
+            grandTotal: calculations.grandTotal,
+            total: calculations.total,
+            percentage: calculations.percentage,
+            grade: calculations.grade
+          }
+        });
+      }
+    } else {
+      // Existing junior marks recalculation logic
+      const marks = await prisma.juniorMark.findMany({
+        include: {
+          halfYearly: true,
+          yearly: true,
+        }
+      });
+
+      for (const mark of marks) {
+        // Half Yearly calculations
+        if (mark.halfYearly) {
+          const totalMarks = calculateTotalMarks(
+            mark.halfYearly.ut1,
+            mark.halfYearly.ut2,
+            mark.halfYearly.noteBook,
+            mark.halfYearly.subEnrichment,
+            mark.halfYearly.examMarks
+          );
+
+          await prisma.halfYearlyMarks.update({
+            where: { id: mark.halfYearly.id },
+            data: {
+              totalMarks,
+              grade: calculateGrade(totalMarks)
+            }
+          });
+        }
+
+        // Yearly calculations
+        if (mark.yearly) {
+          const yearlytotalMarks = calculateTotalMarks(
+            mark.yearly.ut3,
+            mark.yearly.ut4,
+            mark.yearly.yearlynoteBook,
+            mark.yearly.yearlysubEnrichment,
+            mark.yearly.yearlyexamMarks
+          );
+
+          await prisma.yearlyMarks.update({
+            where: { id: mark.yearly.id },
+            data: {
+              yearlytotalMarks,
+              yearlygrade: calculateGrade(yearlytotalMarks)
+            }
+          });
+        }
+      }
+    }
+
+    return { success: true, message: "Marks recalculated successfully" };
+  } catch (error) {
+    console.error("Error recalculating marks:", error);
+    return { success: false, message: "Failed to recalculate marks" };
+  }
+}
+
+function calculateTotalMarks(
+  ut1?: number | null,
+  ut2?: number | null,
+  noteBook?: number | null,
+  subEnrichment?: number | null,
+  examMarks?: number | null
+): number {
+  const utAvg = ((ut1 || 0) + (ut2 || 0)) / 2 * 0.1; // 10%
+  const internal = ((noteBook || 0) + (subEnrichment || 0)) * 0.1; // 20% (10% each)
+  const exam = (examMarks || 0) * 0.7; // 70%
+  return Math.round(utAvg + internal + exam);
+}
+
+function calculateGrade(totalMarks: number): string {
+  if (totalMarks >= 91) return 'A1';
+  if (totalMarks >= 81) return 'A2';
+  if (totalMarks >= 71) return 'B1';
+  if (totalMarks >= 61) return 'B2';
+  if (totalMarks >= 51) return 'C1';
+  if (totalMarks >= 41) return 'C2';
+  if (totalMarks >= 33) return 'D';
+  return 'F';
+}
+
+export const checkExistingSeniorMarks = async (
+  data: { 
+    sectionSubjectId: number, 
+    sessionId: number
+  }
+) => {
+  try {
+    const existingMarks = await prisma.seniorMark.findMany({
+      where: {
+        sectionSubjectId: data.sectionSubjectId,
+        sessionId: data.sessionId
+      }
+    });
+
+    return { 
+      success: true, 
+      error: false, 
+      data: existingMarks 
+    };
+  } catch (err) {
+    console.error("Check Existing Senior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const createSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
+  try {
+    const createPromises = data.marks.map(async (mark) => {
+      // Calculate marks and grade
+      const calculations = calculateSeniorMarksAndGrade(mark);
+      
+      // Check for existing record first
+      const existing = await prisma.seniorMark.findUnique({
+        where: {
+          studentId_sectionSubjectId_sessionId: {
+            studentId: mark.studentId,
+            sectionSubjectId: mark.sectionSubjectId,
+            sessionId: mark.sessionId
+          }
+        }
+      });
+
+      if (existing) {
+        // Update if exists
+        return prisma.seniorMark.update({
+          where: { id: existing.id },
+          data: {
+            pt1: mark.pt1,
+            pt2: mark.pt2,
+            pt3: mark.pt3,
+            bestTwoPTAvg: calculations.bestTwoPTAvg,
+            multipleAssessment: mark.multipleAssessment,
+            portfolio: mark.portfolio,
+            subEnrichment: mark.subEnrichment,
+            bestScore: calculations.bestScore,
+            finalExam: mark.finalExam,
+            grandTotal: calculations.grandTotal,
+            grade: calculations.grade,
+            remarks: mark.remarks
+          }
+        });
+      }
+
+      // Create new record if doesn't exist
+      return prisma.seniorMark.create({
+        data: {
+          student: { connect: { id: mark.studentId }},
+          sectionSubject: { connect: { id: mark.sectionSubjectId }},
+          session: { connect: { id: mark.sessionId }},
+          pt1: mark.pt1,
+          pt2: mark.pt2,
+          pt3: mark.pt3,
+          bestTwoPTAvg: calculations.bestTwoPTAvg,
+          multipleAssessment: mark.multipleAssessment,
+          portfolio: mark.portfolio,
+          subEnrichment: mark.subEnrichment,
+          bestScore: calculations.bestScore,
+          finalExam: mark.finalExam,
+          grandTotal: calculations.grandTotal,
+          grade: calculations.grade,
+          remarks: mark.remarks
+        }
+      });
+    });
+
+    await Promise.all(createPromises);
+    return { success: true, error: false };
+  } catch (err) {
+    console.error("Create Senior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
+  try {
+    const updatePromises = data.marks.map(async (mark) => {
+      return prisma.seniorMark.upsert({
+        where: {
+          studentId_sectionSubjectId_sessionId: {
+            studentId: mark.studentId,
+            sectionSubjectId: mark.sectionSubjectId,
+            sessionId: mark.sessionId
+          }
+        },
+        create: {
+          student: { connect: { id: mark.studentId }},
+          sectionSubject: { connect: { id: mark.sectionSubjectId }},
+          session: { connect: { id: mark.sessionId }},
+          pt1: mark.pt1,
+          pt2: mark.pt2,
+          pt3: mark.pt3,
+          bestTwoPTAvg: mark.bestTwoPTAvg,
+          multipleAssessment: mark.multipleAssessment,
+          portfolio: mark.portfolio,
+          subEnrichment: mark.subEnrichment,
+          bestScore: mark.bestScore,
+          finalExam: mark.finalExam,
+          grandTotal: mark.grandTotal,
+          grade: mark.grade,
+          overallTotal: mark.overallTotal,
+          overallMarks: mark.overallMarks,
+          overallGrade: mark.overallGrade,
+          remarks: mark.remarks
+        },
+        update: {
+          pt1: mark.pt1,
+          pt2: mark.pt2,
+          pt3: mark.pt3,
+          bestTwoPTAvg: mark.bestTwoPTAvg,
+          multipleAssessment: mark.multipleAssessment,
+          portfolio: mark.portfolio,
+          subEnrichment: mark.subEnrichment,
+          bestScore: mark.bestScore,
+          finalExam: mark.finalExam,
+          grandTotal: mark.grandTotal,
+          grade: mark.grade,
+          overallTotal: mark.overallTotal,
+          overallMarks: mark.overallMarks,
+          overallGrade: mark.overallGrade,
+          remarks: mark.remarks
+        }
+      });
+    });
+
+    const results = await Promise.all(updatePromises);
+    return { success: true, error: false, results };
+  } catch (err) {
+    console.error("Update Senior Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const deleteSeniorMark = async (
+  data: { 
+    studentId: string, 
+    sectionSubjectId: number, 
+    sessionId: number
+  }
+) => {
+  try {
+    await prisma.seniorMark.delete({
+      where: {
+        studentId_sectionSubjectId_sessionId: {
+          studentId: data.studentId,
+          sectionSubjectId: data.sectionSubjectId,
+          sessionId: data.sessionId
+        }
+      }
+    });
+
+    return { 
+      success: true, 
+      error: false,
+      message: "Mark deleted successfully" 
+    };
+  } catch (err) {
+    console.error("Delete Senior Mark Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const checkExistingHigherMarks = async (
+  data: { 
+    sectionSubjectId: number, 
+    sessionId: number
+  }
+) => {
+  try {
+    const existingMarks = await prisma.higherMark.findMany({
+      where: {
+        sectionSubjectId: data.sectionSubjectId,
+        sessionId: data.sessionId
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            admissionno: true,
+          }
+        }
+      }
+    });
+
+    return { 
+      success: true, 
+      error: false, 
+      data: existingMarks 
+    };
+  } catch (err) {
+    console.error("Check Existing Higher Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const createHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
+  try {
+    const createPromises = data.marks
+      .filter(mark => 
+        mark.unitTest1 !== null || 
+        mark.halfYearly !== null || 
+        mark.unitTest2 !== null ||
+        mark.theory !== null ||
+        mark.practical !== null
+      )
+      .map(async (mark) => {
+        const calculations = calculateHigherMarksAndGrade(mark);
+        
+        // Check for existing record
+        const existing = await prisma.higherMark.findUnique({
+          where: {
+            studentId_sectionSubjectId_sessionId: {
+              studentId: mark.studentId,
+              sectionSubjectId: mark.sectionSubjectId,
+              sessionId: mark.sessionId
+            }
+          }
+        });
+
+        if (existing) {
+          // Update if exists
+          return prisma.higherMark.update({
+            where: { id: existing.id },
+            data: {
+              unitTest1: mark.unitTest1,
+              halfYearly: mark.halfYearly,
+              unitTest2: mark.unitTest2,
+              theory: mark.theory,
+              practical: mark.practical,
+              totalWithout: calculations.totalWithout,
+              grandTotal: calculations.grandTotal,
+              total: calculations.total,
+              percentage: calculations.percentage,
+              grade: calculations.grade,
+              overallGrade: calculations.overallGrade
+            }
+          });
+        }
+
+        // Create new record if doesn't exist
+        return prisma.higherMark.create({
+          data: {
+            student: { connect: { id: mark.studentId }},
+            sectionSubject: { connect: { id: mark.sectionSubjectId }},
+            session: { connect: { id: mark.sessionId }},
+            unitTest1: mark.unitTest1,
+            halfYearly: mark.halfYearly,
+            unitTest2: mark.unitTest2,
+            theory: mark.theory,
+            practical: mark.practical,
+            totalWithout: calculations.totalWithout,
+            grandTotal: calculations.grandTotal,
+            total: calculations.total,
+            percentage: calculations.percentage,
+            grade: calculations.grade,
+            overallGrade: calculations.overallGrade
+          }
+        });
+    });
+
+    await Promise.all(createPromises);
+    return { success: true, error: false };
+  } catch (err) {
+    console.error("Create Higher Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const updateHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
+  try {
+    const updatePromises = data.marks
+      .filter(mark => 
+        mark.unitTest1 !== null || 
+        mark.halfYearly !== null || 
+        mark.unitTest2 !== null ||
+        mark.theory !== null ||
+        mark.practical !== null
+      )
+      .map(async (mark) => {
+        const calculations = calculateHigherMarksAndGrade(mark);
+
+        return prisma.higherMark.upsert({
+          where: {
+            studentId_sectionSubjectId_sessionId: {
+              studentId: mark.studentId,
+              sectionSubjectId: mark.sectionSubjectId,
+              sessionId: mark.sessionId
+            }
+          },
+          create: {
+            student: { connect: { id: mark.studentId }},
+            sectionSubject: { connect: { id: mark.sectionSubjectId }},
+            session: { connect: { id: mark.sessionId }},
+            unitTest1: mark.unitTest1,
+            halfYearly: mark.halfYearly,
+            unitTest2: mark.unitTest2,
+            theory: mark.theory,
+            practical: mark.practical,
+            totalWithout: calculations.totalWithout,
+            grandTotal: calculations.grandTotal,
+            total: calculations.total,
+            percentage: calculations.percentage,
+            grade: calculations.grade,
+            overallGrade: calculations.overallGrade
+          },
+          update: {
+            unitTest1: mark.unitTest1,
+            halfYearly: mark.halfYearly,
+            unitTest2: mark.unitTest2,
+            theory: mark.theory,
+            practical: mark.practical,
+            totalWithout: calculations.totalWithout,
+            grandTotal: calculations.grandTotal,
+            total: calculations.total,
+            percentage: calculations.percentage,
+            grade: calculations.grade,
+            overallGrade: calculations.overallGrade
+          }
+        });
+    });
+
+    const results = await Promise.all(updatePromises);
+    return { success: true, error: false, results };
+  } catch (err) {
+    console.error("Update Higher Marks Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const calculateHigherMarksAndGrade = (markData: Partial<HigherMarkSchema>) => {
+  if (!markData) {
+    return {
+      totalWithout: null,
+      grandTotal: null,
+      total: null,
+      percentage: null,
+      grade: null
+    };
+  }
+
+  // Calculate total without practical
+  const totalWithout = 
+    (markData.unitTest1 || 0) + 
+    (markData.halfYearly || 0) + 
+    (markData.unitTest2 || 0) +
+    (markData.theory || 0);
+
+  // Calculate grand total including practical
+  const grandTotal = totalWithout + (markData.practical || 0);
+
+  // Calculate total percentage
+  const percentage = Math.round(grandTotal);
+
+  // Calculate grade based on percentage
+  let grade = null;
+  if (percentage >= 91) grade = 'A1';
+  else if (percentage >= 81) grade = 'A2';
+  else if (percentage >= 71) grade = 'B1';
+  else if (percentage >= 61) grade = 'B2';
+  else if (percentage >= 51) grade = 'C1';
+  else if (percentage >= 41) grade = 'C2';
+  else if (percentage >= 33) grade = 'D';
+  else grade = 'E';
+
+  return {
+    totalWithout,
+    grandTotal,
+    total: grandTotal,
+    percentage,
+    grade
+  };
+};
+
+export const deleteHigherMark = async (
+  data: { 
+    studentId: string, 
+    sectionSubjectId: number, 
+    sessionId: number
+  }
+) => {
+  try {
+    await prisma.higherMark.delete({
+      where: {
+        studentId_sectionSubjectId_sessionId: {
+          studentId: data.studentId,
+          sectionSubjectId: data.sectionSubjectId,
+          sessionId: data.sessionId
+        }
+      }
+    });
+
+    return { 
+      success: true, 
+      error: false,
+      message: "Mark deleted successfully" 
+    };
+  } catch (err) {
+    console.error("Delete Higher Mark Error:", err);
+    return { 
+      success: false, 
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+
 
