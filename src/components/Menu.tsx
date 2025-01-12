@@ -112,12 +112,6 @@ const menuItems = [
         href: "/profile",
         visible: ["admin", "teacher"],
       },
-      {
-        icon: "/setting.png",
-        label: "Settings",
-        href: "/settings",
-        visible: ["admin", "teacher"],
-      },
     ],
   },
 ];
