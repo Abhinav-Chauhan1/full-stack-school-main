@@ -17,7 +17,7 @@ import {
   createJuniorMarks,
   updateJuniorMarks,
   checkExistingJuniorMarks,
-} from "@/lib/actions";
+} from '@/app/(dashboard)/list/juniorMark/actions'
 
 // Props type for the form
 type JuniorMarkFormProps = {
@@ -31,6 +31,7 @@ type JuniorMarkFormProps = {
     classes: Array<{
       id: number;
       name: string;
+      classNumber: number;
       sections: Array<{
         id: number;
         name: string;
@@ -47,6 +48,9 @@ type JuniorMarkFormProps = {
         };
       }>;
     }>;
+    userRole?: string;
+    assignedClass?: string;
+    existingMarks?: any[];
   };
   initialData?: any; // Optional initial data for update
   setOpen: Dispatch<SetStateAction<boolean>>;
@@ -74,16 +78,31 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
 
   const router = useRouter();
 
+  // Extract role and assigned class from relatedData
+  const userRole = relatedData.userRole || "teacher";
+  const assignedClassStr = relatedData.assignedClass || "";
+  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/)
+    ? assignedClassStr
+    : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
+
   // Filtered data based on selections
   const filteredClasses = useMemo(
     () =>
       relatedData.classes.filter((cls) => {
-        const isJuniorClass = ["Nursery", "KG", "UKG"].includes(cls.name) || 
-          (parseInt(cls.name) >= 1 && parseInt(cls.name) <= 8);
-        return isJuniorClass && 
-          (initialType === "create" ? true : initialData?.classId === cls.id);
+        if (userRole === "admin") {
+          return true;
+        }
+
+        if (userRole === "teacher" && assignedClass) {
+          if (typeof assignedClass === "number") {
+            return cls.classNumber === assignedClass;
+          }
+          return cls.name === assignedClass;
+        }
+
+        return false;
       }),
-    [relatedData.classes, initialType, initialData?.classId]
+    [relatedData.classes, userRole, assignedClass]
   );
 
   const selectedClassData = useMemo(

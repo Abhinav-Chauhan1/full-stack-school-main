@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "SeniorMark" ADD COLUMN     "practical" DOUBLE PRECISION,
+ADD COLUMN     "theory" DOUBLE PRECISION,
+ADD COLUMN     "total" DOUBLE PRECISION;

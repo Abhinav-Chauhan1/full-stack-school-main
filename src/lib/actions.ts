@@ -1,272 +1,23 @@
 "use server";
 
+import { PrismaClient } from '@prisma/client';
 import { revalidatePath } from "next/cache";
 import {
   ClassSchema,
   StudentSchema,
-  SubjectSchema,
   TeacherSchema,
-  JuniorMarkSchema,
-  HigherMarkSchema, 
   SubCategorySchema,
   SessionSchema,
   SectionSchema,
-  SeniorMarkSchema,
 } from "./formValidationSchemas";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Category } from "@prisma/client";
-import { PrismaClient } from '@prisma/client';
 import { calculateMarksAndGrade , calculateSeniorMarksAndGrade} from './formValidationSchemas';
+import { calculateHigherMarksAndGrade } from './markCalculations';
 
 const prisma = new PrismaClient();
 
 type CurrentState = { success: boolean; error: boolean };
-
-export const checkExistingJuniorMarks = async (
-  data: { 
-    classSubjectId: number, 
-    sessionId: number, 
-    examType: "HALF_YEARLY" | "YEARLY" 
-  }
-) => {
-  try {
-    if (!data.classSubjectId || !data.sessionId || !data.examType) {
-      return { 
-        success: false, 
-        error: true,
-        message: "Missing required fields"
-      };
-    }
-
-    // First verify that the ClassSubject exists
-    const classSubject = await prisma.classSubject.findUnique({
-      where: { id: data.classSubjectId }
-    });
-
-    if (!classSubject) {
-      return {
-        success: false,
-        error: true,
-        message: "Could not find matching Class Subject"
-      };
-    }
-
-    // Then query the marks
-    const existingMarks = await prisma.juniorMark.findMany({
-      where: {
-        classSubjectId: data.classSubjectId,
-        sessionId: data.sessionId,
-        [data.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-          isNot: null
-        }
-      },
-      include: {
-        halfYearly: data.examType === "HALF_YEARLY",
-        yearly: data.examType === "YEARLY"
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false, 
-      data: existingMarks 
-    };
-  } catch (err) {
-    console.error("Check Existing Junior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
-  try {
-    const createPromises = data.marks.map(async (mark) => {
-      const examType = mark.examType;
-      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
-
-      if (!marksData) return null;
-
-      return prisma.juniorMark.create({
-        data: {
-          student: { connect: { id: mark.studentId }},
-          classSubject: { connect: { id: mark.classSubjectId }},
-          session: { connect: { id: mark.sessionId }},
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            create: marksData
-          },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        }
-      });
-    });
-
-    await Promise.all(createPromises);
-    return { success: true, error: false };
-  } catch (err) {
-    console.error("Create Junior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
-  try {
-    const updatePromises = data.marks.map(async (mark) => {
-      const examType = mark.examType;
-      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
-
-      if (!marksData) return null;
-
-      // First check if there's an existing record
-      const existingMark = await prisma.juniorMark.findUnique({
-        where: {
-          studentId_classSubjectId_sessionId: {
-            studentId: mark.studentId,
-            classSubjectId: mark.classSubjectId,
-            sessionId: mark.sessionId
-          }
-        },
-        include: {
-          halfYearly: true,
-          yearly: true
-        }
-      });
-
-      if (!existingMark) {
-        // If no record exists, create a new one
-        return prisma.juniorMark.create({
-          data: {
-            student: { connect: { id: mark.studentId }},
-            classSubject: { connect: { id: mark.classSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              create: marksData
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      }
-
-      // Update existing record
-      return prisma.juniorMark.update({
-        where: {
-          id: existingMark.id
-        },
-        data: {
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            upsert: {
-              create: marksData,
-              update: marksData
-            }
-          },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        }
-      });
-    });
-
-    const results = await Promise.all(updatePromises);
-    return { success: true, error: false, results };
-  } catch (err) {
-    console.error("Update Junior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const deleteJuniorMark = async (
-  data: { 
-    studentId: string, 
-    classSubjectId: number, 
-    sessionId: number, 
-    examType: "HALF_YEARLY" | "YEARLY" 
-  }
-) => {
-  try {
-    // Validate input data
-    if (!data.studentId || !data.classSubjectId || !data.sessionId || !data.examType) {
-      return { 
-        success: false, 
-        error: true,
-        message: "Missing required fields" 
-      };
-    }
-
-    // Find the junior mark record with proper constraints
-    const juniorMark = await prisma.juniorMark.findUnique({
-      where: {
-        studentId_classSubjectId_sessionId: {
-          studentId: data.studentId,
-          classSubjectId: data.classSubjectId,
-          sessionId: data.sessionId
-        }
-      },
-      include: {
-        halfYearly: true,
-        yearly: true
-      }
-    });
-
-    if (!juniorMark) {
-      return { 
-        success: false, 
-        error: true,
-        message: "Mark record not found" 
-      };
-    }
-
-    // Start transaction for deleting marks
-    await prisma.$transaction(async (prisma) => {
-      // Delete the specific exam type marks
-      if (data.examType === "HALF_YEARLY" && juniorMark.halfYearly) {
-        await prisma.halfYearlyMarks.delete({
-          where: { juniorMarkId: juniorMark.id }
-        });
-      } else if (data.examType === "YEARLY" && juniorMark.yearly) {
-        await prisma.yearlyMarks.delete({
-          where: { juniorMarkId: juniorMark.id }
-        });
-      }
-
-      // If both types of marks are deleted, delete the parent record
-      const shouldDeleteParent = data.examType === "HALF_YEARLY" ? 
-        !juniorMark.yearly : !juniorMark.halfYearly;
-
-      if (shouldDeleteParent) {
-        await prisma.juniorMark.delete({
-          where: { id: juniorMark.id }
-        });
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false,
-      message: "Marks deleted successfully" 
-    };
-
-  } catch (err) {
-    console.error("Delete Junior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
 
 //subCategory
 export const createSubCategory = async (
@@ -674,108 +425,6 @@ export const deleteSession = async (
 
 
 
-//Subjects
-
-export const createSubject = async (
-  currentState: CurrentState,
-  data: SubjectSchema
-) => {
-  try {
-    // Check if subject with same code already exists
-    const existingSubject = await prisma.subject.findUnique({
-      where: { code: data.code }
-    });
-
-    if (existingSubject) {
-      return { 
-        success: false, 
-        error: true, 
-      };
-    }
-
-    await prisma.subject.create({
-      data: {
-        name: data.name,
-        code: data.code,
-        description: data.description || "",
-      },
-    });
-
-    return { success: true, error: false };
-  } catch (err) {
-    console.error("Create subject error:", err);
-    return { 
-      success: false, 
-      error: true, 
-    };
-  }
-};
-
-export const updateSubject = async (
-  currentState: CurrentState,
-  data: SubjectSchema
-) => {
-  try {
-    // Check if another subject with same code exists
-    const existingSubject = await prisma.subject.findFirst({
-      where: {
-        code: data.code,
-        NOT: { id: data.id }
-      }
-    });
-
-    if (existingSubject) {
-      return { 
-        success: false, 
-        error: true, 
-      };
-    }
-
-    if (!data.id) {
-      return { 
-        success: false, 
-        error: true, 
-      };
-    }
-
-    await prisma.subject.update({
-      where: { id: data.id },
-      data: {
-        name: data.name,
-        code: data.code,
-        description: data.description || "",
-      },
-    });
-
-    return { success: true, error: false };
-  } catch (err) {
-    console.error("Update subject error:", err);
-    return { 
-      success: false, 
-      error: true, 
-    };
-  }
-};
-
-export const deleteSubject = async (
-  currentState: CurrentState,
-  data: FormData
-) => {
-  const id = data.get("id") as string;
-  try {
-    await prisma.subject.delete({
-      where: {
-        id: parseInt(id),
-      },
-    });
-
-    return { success: true, error: false};
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: true};
-  }
-};
-
 //Classes
 
 export const createClass = async (
@@ -905,6 +554,16 @@ export const createTeacher = async (
   formData: TeacherSchema
 ) => {
   try {
+    // Get class name if assignedClassId is provided
+    let className = null;
+    if (formData.assignedClassId) {
+      const classData = await prisma.class.findUnique({
+        where: { id: Number(formData.assignedClassId) },
+        select: { name: true }
+      });
+      className = classData?.name;
+    }
+
     // Create user in Clerk with required fields
     const user = await clerkClient().users.createUser({
       password: formData.password || Math.random().toString(36).slice(-8),
@@ -913,6 +572,7 @@ export const createTeacher = async (
       username: formData.name,
       publicMetadata: { 
         role: "teacher",
+        assignedClass: className
       },
     });
 
@@ -935,7 +595,8 @@ export const createTeacher = async (
         qualification: formData.qualification,
         EmployeeType: formData.EmployeeType,
         img: formData.img,
-        password: formData.password || "", // Store password in Prisma
+        password: formData.password || "",
+        assignedClassId: formData.assignedClassId ? Number(formData.assignedClassId) : null,
         createdAt: new Date(),
       },
     });
@@ -953,23 +614,32 @@ export const updateTeacher = async (
 ) => {
   try {
     if (!formData.id) {
-      return { success: false, error: true};
+      return { success: false, error: true };
+    }
+
+    // Get class name if assignedClassId is provided
+    let className = null;
+    if (formData.assignedClassId) {
+      const classData = await prisma.class.findUnique({
+        where: { id: Number(formData.assignedClassId) },
+        select: { name: true }
+      });
+      className = classData?.name;
     }
 
     // Only update Clerk user if necessary fields changed
     const clerkUpdateData: any = {
       firstName: formData.name,
       lastName: "",
+      publicMetadata: { 
+        role: "teacher",
+        assignedClass: className
+      },
     };
 
     // Only include password if it's provided
     if (formData.password) {
       clerkUpdateData.password = formData.password;
-    }
-
-    // Only update username if name changed
-    if (formData.name) {
-      clerkUpdateData.username = formData.name;
     }
 
     // Update Clerk user
@@ -991,6 +661,7 @@ export const updateTeacher = async (
       designation: formData.designation,
       qualification: formData.qualification,
       EmployeeType: formData.EmployeeType,
+      assignedClassId: formData.assignedClassId ? Number(formData.assignedClassId) : null,
     };
 
     // Only include optional fields if they're provided
@@ -1008,17 +679,10 @@ export const updateTeacher = async (
       data: prismaUpdateData,
     });
       
-    return { 
-      success: true, 
-      error: false,
-    };
-
+    return { success: true, error: false };
   } catch (err: any) {
     console.error("Error updating teacher:", err);
-    return { 
-      success: false, 
-      error: true, 
-    };
+    return { success: false, error: true };
   }
 };
 
@@ -1089,7 +753,7 @@ export const createStudent = async (
         Religion: data.Religion,
         tongue: data.tongue,
         category: data.category,
-        mothername: data.mothername,
+        mothername: data.mothername || '',
         mphone: data.mphone,
         moccupation: data.moccupation,
         fathername: data.fathername,
@@ -1239,14 +903,15 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
             bestTwoPTAvg,
             bestScore,
             grandTotal,
-            grade
+            grade,
+            overallGrade: grade
           }
         });
       }
     } else if (type === 'higher') {
       const marks = await prisma.higherMark.findMany();
       
-      for (const mark of marks) {
+      const updatePromises = marks.map(async (mark) => {
         const calculations = calculateHigherMarksAndGrade({
           unitTest1: mark.unitTest1,
           halfYearly: mark.halfYearly,
@@ -1255,18 +920,20 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
           practical: mark.practical
         });
 
-        // Update the mark record
-        await prisma.higherMark.update({
+        return prisma.higherMark.update({
           where: { id: mark.id },
           data: {
             totalWithout: calculations.totalWithout,
             grandTotal: calculations.grandTotal,
             total: calculations.total,
             percentage: calculations.percentage,
-            grade: calculations.grade
+            grade: calculations.grade,
+            overallGrade: calculations.overallGrade
           }
         });
-      }
+      });
+
+      await Promise.all(updatePromises);
     } else {
       // Existing junior marks recalculation logic
       const marks = await prisma.juniorMark.findMany({
@@ -1347,460 +1014,6 @@ function calculateGrade(totalMarks: number): string {
   if (totalMarks >= 33) return 'D';
   return 'F';
 }
-
-export const checkExistingSeniorMarks = async (
-  data: { 
-    sectionSubjectId: number, 
-    sessionId: number
-  }
-) => {
-  try {
-    const existingMarks = await prisma.seniorMark.findMany({
-      where: {
-        sectionSubjectId: data.sectionSubjectId,
-        sessionId: data.sessionId
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false, 
-      data: existingMarks 
-    };
-  } catch (err) {
-    console.error("Check Existing Senior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const createSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
-  try {
-    const createPromises = data.marks.map(async (mark) => {
-      // Calculate marks and grade
-      const calculations = calculateSeniorMarksAndGrade(mark);
-      
-      // Check for existing record first
-      const existing = await prisma.seniorMark.findUnique({
-        where: {
-          studentId_sectionSubjectId_sessionId: {
-            studentId: mark.studentId,
-            sectionSubjectId: mark.sectionSubjectId,
-            sessionId: mark.sessionId
-          }
-        }
-      });
-
-      if (existing) {
-        // Update if exists
-        return prisma.seniorMark.update({
-          where: { id: existing.id },
-          data: {
-            pt1: mark.pt1,
-            pt2: mark.pt2,
-            pt3: mark.pt3,
-            bestTwoPTAvg: calculations.bestTwoPTAvg,
-            multipleAssessment: mark.multipleAssessment,
-            portfolio: mark.portfolio,
-            subEnrichment: mark.subEnrichment,
-            bestScore: calculations.bestScore,
-            finalExam: mark.finalExam,
-            grandTotal: calculations.grandTotal,
-            grade: calculations.grade,
-            remarks: mark.remarks
-          }
-        });
-      }
-
-      // Create new record if doesn't exist
-      return prisma.seniorMark.create({
-        data: {
-          student: { connect: { id: mark.studentId }},
-          sectionSubject: { connect: { id: mark.sectionSubjectId }},
-          session: { connect: { id: mark.sessionId }},
-          pt1: mark.pt1,
-          pt2: mark.pt2,
-          pt3: mark.pt3,
-          bestTwoPTAvg: calculations.bestTwoPTAvg,
-          multipleAssessment: mark.multipleAssessment,
-          portfolio: mark.portfolio,
-          subEnrichment: mark.subEnrichment,
-          bestScore: calculations.bestScore,
-          finalExam: mark.finalExam,
-          grandTotal: calculations.grandTotal,
-          grade: calculations.grade,
-          remarks: mark.remarks
-        }
-      });
-    });
-
-    await Promise.all(createPromises);
-    return { success: true, error: false };
-  } catch (err) {
-    console.error("Create Senior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
-  try {
-    const updatePromises = data.marks.map(async (mark) => {
-      return prisma.seniorMark.upsert({
-        where: {
-          studentId_sectionSubjectId_sessionId: {
-            studentId: mark.studentId,
-            sectionSubjectId: mark.sectionSubjectId,
-            sessionId: mark.sessionId
-          }
-        },
-        create: {
-          student: { connect: { id: mark.studentId }},
-          sectionSubject: { connect: { id: mark.sectionSubjectId }},
-          session: { connect: { id: mark.sessionId }},
-          pt1: mark.pt1,
-          pt2: mark.pt2,
-          pt3: mark.pt3,
-          bestTwoPTAvg: mark.bestTwoPTAvg,
-          multipleAssessment: mark.multipleAssessment,
-          portfolio: mark.portfolio,
-          subEnrichment: mark.subEnrichment,
-          bestScore: mark.bestScore,
-          finalExam: mark.finalExam,
-          grandTotal: mark.grandTotal,
-          grade: mark.grade,
-          overallTotal: mark.overallTotal,
-          overallMarks: mark.overallMarks,
-          overallGrade: mark.overallGrade,
-          remarks: mark.remarks
-        },
-        update: {
-          pt1: mark.pt1,
-          pt2: mark.pt2,
-          pt3: mark.pt3,
-          bestTwoPTAvg: mark.bestTwoPTAvg,
-          multipleAssessment: mark.multipleAssessment,
-          portfolio: mark.portfolio,
-          subEnrichment: mark.subEnrichment,
-          bestScore: mark.bestScore,
-          finalExam: mark.finalExam,
-          grandTotal: mark.grandTotal,
-          grade: mark.grade,
-          overallTotal: mark.overallTotal,
-          overallMarks: mark.overallMarks,
-          overallGrade: mark.overallGrade,
-          remarks: mark.remarks
-        }
-      });
-    });
-
-    const results = await Promise.all(updatePromises);
-    return { success: true, error: false, results };
-  } catch (err) {
-    console.error("Update Senior Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const deleteSeniorMark = async (
-  data: { 
-    studentId: string, 
-    sectionSubjectId: number, 
-    sessionId: number
-  }
-) => {
-  try {
-    await prisma.seniorMark.delete({
-      where: {
-        studentId_sectionSubjectId_sessionId: {
-          studentId: data.studentId,
-          sectionSubjectId: data.sectionSubjectId,
-          sessionId: data.sessionId
-        }
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false,
-      message: "Mark deleted successfully" 
-    };
-  } catch (err) {
-    console.error("Delete Senior Mark Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const checkExistingHigherMarks = async (
-  data: { 
-    sectionSubjectId: number, 
-    sessionId: number
-  }
-) => {
-  try {
-    const existingMarks = await prisma.higherMark.findMany({
-      where: {
-        sectionSubjectId: data.sectionSubjectId,
-        sessionId: data.sessionId
-      },
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            admissionno: true,
-          }
-        }
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false, 
-      data: existingMarks 
-    };
-  } catch (err) {
-    console.error("Check Existing Higher Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const createHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
-  try {
-    const createPromises = data.marks
-      .filter(mark => 
-        mark.unitTest1 !== null || 
-        mark.halfYearly !== null || 
-        mark.unitTest2 !== null ||
-        mark.theory !== null ||
-        mark.practical !== null
-      )
-      .map(async (mark) => {
-        const calculations = calculateHigherMarksAndGrade(mark);
-        
-        // Check for existing record
-        const existing = await prisma.higherMark.findUnique({
-          where: {
-            studentId_sectionSubjectId_sessionId: {
-              studentId: mark.studentId,
-              sectionSubjectId: mark.sectionSubjectId,
-              sessionId: mark.sessionId
-            }
-          }
-        });
-
-        if (existing) {
-          // Update if exists
-          return prisma.higherMark.update({
-            where: { id: existing.id },
-            data: {
-              unitTest1: mark.unitTest1,
-              halfYearly: mark.halfYearly,
-              unitTest2: mark.unitTest2,
-              theory: mark.theory,
-              practical: mark.practical,
-              totalWithout: calculations.totalWithout,
-              grandTotal: calculations.grandTotal,
-              total: calculations.total,
-              percentage: calculations.percentage,
-              grade: calculations.grade,
-              overallGrade: calculations.overallGrade
-            }
-          });
-        }
-
-        // Create new record if doesn't exist
-        return prisma.higherMark.create({
-          data: {
-            student: { connect: { id: mark.studentId }},
-            sectionSubject: { connect: { id: mark.sectionSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
-            totalWithout: calculations.totalWithout,
-            grandTotal: calculations.grandTotal,
-            total: calculations.total,
-            percentage: calculations.percentage,
-            grade: calculations.grade,
-            overallGrade: calculations.overallGrade
-          }
-        });
-    });
-
-    await Promise.all(createPromises);
-    return { success: true, error: false };
-  } catch (err) {
-    console.error("Create Higher Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const updateHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
-  try {
-    const updatePromises = data.marks
-      .filter(mark => 
-        mark.unitTest1 !== null || 
-        mark.halfYearly !== null || 
-        mark.unitTest2 !== null ||
-        mark.theory !== null ||
-        mark.practical !== null
-      )
-      .map(async (mark) => {
-        const calculations = calculateHigherMarksAndGrade(mark);
-
-        return prisma.higherMark.upsert({
-          where: {
-            studentId_sectionSubjectId_sessionId: {
-              studentId: mark.studentId,
-              sectionSubjectId: mark.sectionSubjectId,
-              sessionId: mark.sessionId
-            }
-          },
-          create: {
-            student: { connect: { id: mark.studentId }},
-            sectionSubject: { connect: { id: mark.sectionSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
-            totalWithout: calculations.totalWithout,
-            grandTotal: calculations.grandTotal,
-            total: calculations.total,
-            percentage: calculations.percentage,
-            grade: calculations.grade,
-            overallGrade: calculations.overallGrade
-          },
-          update: {
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
-            totalWithout: calculations.totalWithout,
-            grandTotal: calculations.grandTotal,
-            total: calculations.total,
-            percentage: calculations.percentage,
-            grade: calculations.grade,
-            overallGrade: calculations.overallGrade
-          }
-        });
-    });
-
-    const results = await Promise.all(updatePromises);
-    return { success: true, error: false, results };
-  } catch (err) {
-    console.error("Update Higher Marks Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
-
-export const calculateHigherMarksAndGrade = (markData: Partial<HigherMarkSchema>) => {
-  if (!markData) {
-    return {
-      totalWithout: null,
-      grandTotal: null,
-      total: null,
-      percentage: null,
-      grade: null
-    };
-  }
-
-  // Calculate total without practical
-  const totalWithout = 
-    (markData.unitTest1 || 0) + 
-    (markData.halfYearly || 0) + 
-    (markData.unitTest2 || 0) +
-    (markData.theory || 0);
-
-  // Calculate grand total including practical
-  const grandTotal = totalWithout + (markData.practical || 0);
-
-  // Calculate total percentage
-  const percentage = Math.round(grandTotal);
-
-  // Calculate grade based on percentage
-  let grade = null;
-  if (percentage >= 91) grade = 'A1';
-  else if (percentage >= 81) grade = 'A2';
-  else if (percentage >= 71) grade = 'B1';
-  else if (percentage >= 61) grade = 'B2';
-  else if (percentage >= 51) grade = 'C1';
-  else if (percentage >= 41) grade = 'C2';
-  else if (percentage >= 33) grade = 'D';
-  else grade = 'E';
-
-  return {
-    totalWithout,
-    grandTotal,
-    total: grandTotal,
-    percentage,
-    grade
-  };
-};
-
-export const deleteHigherMark = async (
-  data: { 
-    studentId: string, 
-    sectionSubjectId: number, 
-    sessionId: number
-  }
-) => {
-  try {
-    await prisma.higherMark.delete({
-      where: {
-        studentId_sectionSubjectId_sessionId: {
-          studentId: data.studentId,
-          sectionSubjectId: data.sectionSubjectId,
-          sessionId: data.sessionId
-        }
-      }
-    });
-
-    return { 
-      success: true, 
-      error: false,
-      message: "Mark deleted successfully" 
-    };
-  } catch (err) {
-    console.error("Delete Higher Mark Error:", err);
-    return { 
-      success: false, 
-      error: true,
-      message: err instanceof Error ? err.message : "Unknown error occurred"
-    };
-  }
-};
 
 
 

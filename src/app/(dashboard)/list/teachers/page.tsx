@@ -9,8 +9,12 @@ import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 
-// Enhanced type to include subjects
-type TeacherWithSubjects = Teacher;
+// Enhanced type to include subjects and assignedClass
+type TeacherWithSubjects = Teacher & {
+  assignedClass?: {
+    name: string;
+  };
+};
 const TeacherListPage = async ({
   searchParams,
 }: {
@@ -33,6 +37,11 @@ const TeacherListPage = async ({
     {
       header: "Designation",
       accessor: "designation",
+      className: "hidden lg:table-cell",
+    },
+    {
+      header: "Assigned Class",
+      accessor: "assignedClass.name",
       className: "hidden lg:table-cell",
     },
     ...(role === "admin"
@@ -65,14 +74,12 @@ const TeacherListPage = async ({
       </td>
       <td className="hidden md:table-cell">{item.phone}</td>
       <td className="hidden lg:table-cell">{item.designation}</td>
+      <td className="hidden lg:table-cell">
+        {item.assignedClass?.name || "Not Assigned"}
+      </td>
       {role === "admin" && (
         <td>
           <div className="flex items-center gap-2">
-            <Link href={`/list/teachers/${item.id}`}>
-              <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-                <Image src="/view.png" alt="View" width={16} height={16} />
-              </button>
-            </Link>
             <FormContainer table="teacher" type="update" data={item} />
             <FormContainer table="teacher" type="delete" id={item.id} />
           </div>
@@ -105,7 +112,11 @@ const TeacherListPage = async ({
     prisma.teacher.findMany({
       where: query,
       include: {
-       
+        assignedClass: {
+          select: {
+            name: true,
+          },
+        },
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),

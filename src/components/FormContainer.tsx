@@ -16,7 +16,8 @@ export type FormContainerProps = {
     | "seniorMark"
     | "higherMark"  // Add this new type
     | "result"
-    | "result9";  // Add this new type
+    | "result9"  // Add this new type
+    | "result11";  // Add this new type
   type: "create" | "update" | "delete" | "print"; 
   data?: any;
   id?: number | string;
@@ -42,7 +43,36 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
 
   if (type !== "delete") {
     switch (table) {
-       
+      case "teacher":
+        // Add this new case to fetch all classes for teacher form
+        const teacherClasses = await prisma.class.findMany({
+          select: {
+            id: true,
+            name: true,
+            classNumber: true
+          },
+          orderBy: {
+            classNumber: 'asc'
+          }
+        });
+
+        if (type === "update" && id) {
+          const currentTeacher = await prisma.teacher.findUnique({
+            where: { id: id as string },
+            include: {
+              assignedClass: true
+            }
+          });
+
+          relatedData = {
+            classes: teacherClasses,
+            currentTeacher
+          };
+          data = currentTeacher;
+        } else {
+          relatedData = { classes: teacherClasses };
+        }
+        break;
 
       case "class":
         const subjectsForClass = await prisma.subject.findMany({
@@ -286,6 +316,8 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
     classes: classes4JuniorMark,
     sessions: sessions4junior,
     existingMarks: existingMarks || [],
+    userRole: role,
+    assignedClass: ((sessionClaims?.metadata as { assignedClass?: string })?.assignedClass) || ""
   };
 
   if (type === "print") {
@@ -351,53 +383,198 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
   break;
 
     case "result":
-      if (type === "print" && id) {
-        // Single student result with complete data
-        const studentData = await prisma.student.findUnique({
-          where: { id: id as string },
-          include: {
-            Class: true,
-            Section: true,
-            Session: true,
-            marksJunior: {
-              include: {
-                classSubject: {
-                  include: {
-                    subject: true
+      if (type === "print") {
+        if (id) {
+          // Single student result with complete data
+          const studentData = await prisma.student.findUnique({
+            where: { id: id as string },
+            include: {
+              Class: true,
+              Section: true,
+              Session: true,
+              marksJunior: {
+                include: {
+                  classSubject: {
+                    include: {
+                      subject: true
+                    }
+                  },
+                  halfYearly: true,
+                  yearly: true,
+                  session: {
+                    select: {
+                      sessioncode: true,
+                      sessionfrom: true,
+                      sessionto: true
+                    }
                   }
                 },
-                halfYearly: true,
-                yearly: true,
-                session: {
-                  select: {
-                    sessioncode: true,
-                    sessionfrom: true,
-                    sessionto: true
+                where: {
+                  session: {
+                    isActive: true
                   }
-                }
-              },
-              where: {
-                session: {
-                  isActive: true
                 }
               }
             }
-          }
-        });
+          });
 
-        if (studentData) {
-          relatedData = {
-            studentResult: {
-              student: studentData,
-              marksJunior: studentData.marksJunior,
-              session: studentData.Session
+          if (studentData) {
+            relatedData = {
+              studentResult: {
+                student: studentData,
+                marksJunior: studentData.marksJunior,
+                session: studentData.Session
+              }
+            };
+          }
+        } else if (data?.classId && data?.sectionId) {
+          // Bulk print for entire section
+          const studentsData = await prisma.student.findMany({
+            where: {
+              classId: parseInt(data.classId),
+              sectionId: parseInt(data.sectionId),
+              Session: {
+                isActive: true
+              }
+            },
+            include: {
+              Class: true,
+              Section: true,
+              Session: true,
+              marksJunior: {
+                include: {
+                  classSubject: {
+                    include: {
+                      subject: true
+                    }
+                  },
+                  halfYearly: true,
+                  yearly: true,
+                  session: {
+                    select: {
+                      sessioncode: true,
+                      sessionfrom: true,
+                      sessionto: true
+                    }
+                  }
+                },
+                where: {
+                  session: {
+                    isActive: true
+                  }
+                }
+              }
             }
+          });
+
+          relatedData = {
+            studentsResults: studentsData.map(student => ({
+              student,
+              marksJunior: student.marksJunior,
+              session: student.Session
+            }))
           };
         }
       }
       break;
 
       case "result9":
+  if (type === "print") {
+    if (id) {
+      const studentData = await prisma.student.findUnique({
+        where: { id: id as string },
+        include: {
+          Class: true,
+          Section: true,
+          Session: true,
+          marksSenior: {
+            include: {
+              sectionSubject: {
+                include: {
+                  subject: true
+                }
+              },
+              session: true
+            },
+            where: {
+              session: {
+                isActive: true
+              }
+            },
+            orderBy: {
+              sectionSubject: {
+                subject: {
+                  name: 'asc'
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (studentData) {
+        relatedData = {
+          studentResult: {
+            student: {
+              ...studentData,
+              Class: studentData.Class,
+              Section: studentData.Section
+            },
+            marksSenior: studentData.marksSenior,
+            session: studentData.Session
+          }
+        };
+      }
+    } else if (data?.classId && data?.sectionId) {
+      const studentsData = await prisma.student.findMany({
+        where: {
+          classId: parseInt(data.classId),
+          sectionId: parseInt(data.sectionId),
+          Session: {
+            isActive: true
+          }
+        },
+        include: {
+          Class: true,
+          Section: true,
+          Session: true,
+          marksSenior: {
+            include: {
+              sectionSubject: {
+                include: {
+                  subject: true
+                }
+              },
+              session: true
+            },
+            where: {
+              session: {
+                isActive: true
+              }
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      relatedData = {
+        studentsResults: studentsData.map(student => ({
+          student: {
+            ...student,
+            Class: student.Class,
+            Section: student.Section
+          },
+          marksSenior: student.marksSenior,
+          session: student.Session
+        }))
+      };
+    }
+  }
+  break;
+
+      case "result11":
         if (type === "print" && id) {
           const studentData = await prisma.student.findUnique({
             where: { id: id as string },
@@ -405,7 +582,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
               Class: true,
               Section: true,
               Session: true,
-              marksSenior: {
+              markHigher: { // Note: This should be marksHigher to match the interface
                 include: {
                   sectionSubject: {
                     include: {
@@ -434,7 +611,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
             relatedData = {
               studentResult: {
                 student: studentData,
-                marksSenior: studentData.marksSenior,
+                marksHigher: studentData.markHigher, // Note this should match PdfGenerator11Props
                 session: studentData.Session
               }
             };
@@ -469,7 +646,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   select: {
                     id: true,
                     name: true,
-                    code: true,
+                    code: true,  // Add this field
                   },
                 },
               },

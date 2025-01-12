@@ -20,6 +20,25 @@ const JuniorMarkListPage = async ({
 }) => {
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+  const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
+  
+  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/) 
+    ? assignedClassStr 
+    : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
+
+  // Check access permission
+  const hasAccess = role === "admin" || (
+    role === "teacher" && 
+    assignedClass && (
+      typeof assignedClass === "number" 
+        ? assignedClass <= 8
+        : ["Nursery", "KG", "UKG"].includes(assignedClass)
+    )
+  );
+
+  if (!hasAccess) {
+    throw new Error("You don't have permission to access this page");
+  }
 
   const { page, sessionId, classId, sectionId, subjectId, examType } =
     searchParams;
@@ -31,23 +50,25 @@ const JuniorMarkListPage = async ({
     orderBy: { sessionfrom: "desc" },
   });
 
+  // Filter classes based on role and assigned class
   const classes = await prisma.class.findMany({
     where: {
-      OR: [
-        { name: { equals: "Nursery" } },
-        { name: { equals: "KG" } },
-        { name: { equals: "UKG" } },
-        { name: { equals: "1" } },
-        { name: { equals: "2" } },
-        { name: { equals: "3" } },
-        { name: { equals: "4" } },
-        { name: { equals: "5" } },
-        { name: { equals: "6" } },
-        { name: { equals: "7" } },
-        { name: { equals: "8" } },
+      AND: [
+        {
+          classNumber: {
+            lte: 8
+          }
+        },
+        role === "teacher" && assignedClass
+          ? typeof assignedClass === "number"
+            ? { classNumber: assignedClass }
+            : { name: assignedClass }
+          : {}
       ]
     },
-    orderBy: { name: "asc" },
+    orderBy: { 
+      classNumber: "asc"
+    },
     include: {
       sections: true,
       classSubjects: {
@@ -234,7 +255,7 @@ const JuniorMarkListPage = async ({
               <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                 <Image src="/sort.png" alt="Sort" width={14} height={14} />
               </button>
-              {role === "admin" && (
+              {(role === "admin" || role === "teacher") && (
                 <>
                   <FormContainer table="juniorMark" type="create" />
                   <RecalculateButton />

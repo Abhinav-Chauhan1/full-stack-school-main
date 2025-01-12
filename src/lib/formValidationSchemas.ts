@@ -148,6 +148,9 @@ export const seniorMarkSchema = z.object({
   subEnrichment: z.number().min(0).max(5).nullable(),
   bestScore: z.number().nullable(),
   finalExam: z.number().min(0).max(80).nullable(),
+  practical: z.number().min(0).max(30).nullable(),  // New field
+  theory: z.number().min(0).max(70).nullable(),     // New field
+  total: z.number().nullable(),                     // New field
   grandTotal: z.number().nullable(),
   grade: z.string().nullable(),
   overallTotal: z.number().nullable(),
@@ -164,8 +167,12 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
     return {
       bestTwoPTAvg: null,
       bestScore: null,
+      total: null,         // New field
       grandTotal: null,
-      grade: null
+      grade: null,
+      overallTotal: null,
+      overallMarks: null,
+      overallGrade: null
     };
   }
 
@@ -195,6 +202,16 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
   const finalExam = markData.finalExam !== null ? 
     Math.min(80, Number(markData.finalExam)) : null;
 
+  // Calculate theory and practical
+  const theory = markData.theory !== null ? 
+    Math.min(70, Number(markData.theory)) : null;
+  const practical = markData.practical !== null ? 
+    Math.min(30, Number(markData.practical)) : null;
+
+  // Calculate total (theory + practical)
+  const total = (theory !== null && practical !== null) ?
+    theory + practical : null;
+
   // Calculate best score (out of 20: PT avg + MA + Portfolio + SE)
   const bestScore = (bestTwoPTAvg !== null && multipleAssessment !== null && 
     portfolio !== null && subEnrichment !== null) ?
@@ -219,15 +236,24 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
     else grade = 'E';
   }
 
+  // Calculate overall values
+  const overallTotal = grandTotal;
+  const overallMarks = grandTotal;
+  const overallGrade = grade;
+
   return {
     bestTwoPTAvg,
     bestScore,
+    total,              // Add new field
     grandTotal,
-    grade
+    grade,
+    overallTotal,
+    overallMarks,
+    overallGrade
   };
 };
 
-export const higherMarkSchema = z.object({
+export const HigherMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
@@ -241,54 +267,17 @@ export const higherMarkSchema = z.object({
   total: z.number().nullable(),
   percentage: z.number().nullable(),
   grade: z.string().nullable(),
-  overallGrade: z.string().nullable()
+  overallGrade: z.string().nullable(),
+  remarks: z.string().nullable()
 });
 
-export type HigherMarkSchema = z.infer<typeof higherMarkSchema>;
+export type HigherMarkSchema = z.infer<typeof HigherMarkSchema>;
 
-// Update the calculation helper function
-export const calculateHigherMarksAndGrade = (markData: Partial<HigherMarkSchema>) => {
-  if (!markData) {
-    return {
-      totalWithout: null,
-      grandTotal: null,
-      total: null,
-      percentage: null,
-      grade: null,
-      overallGrade: null  // Add this
-    };
-  }
+// Add this line after the HigherMarkSchema definition
+export const higherMarkSchema = HigherMarkSchema;
 
-  // Validate and normalize input values
-  const ut1 = typeof markData.unitTest1 === 'number' ? Math.min(10, Math.max(0, markData.unitTest1)) : 0;
-  const halfYearly = typeof markData.halfYearly === 'number' ? Math.min(30, Math.max(0, markData.halfYearly)) : 0;
-  const ut2 = typeof markData.unitTest2 === 'number' ? Math.min(10, Math.max(0, markData.unitTest2)) : 0;
-  const theory = typeof markData.theory === 'number' ? Math.min(35, Math.max(0, markData.theory)) : 0;
-  const practical = typeof markData.practical === 'number' ? Math.min(15, Math.max(0, markData.practical)) : 0;
-
-  const totalWithout = ut1 + halfYearly + ut2 + theory;
-  const grandTotal = totalWithout + practical;
-  const percentage = Math.round(grandTotal);
-
-  let grade = null;
-  if (percentage >= 91) grade = 'A1';
-  else if (percentage >= 81) grade = 'A2';
-  else if (percentage >= 71) grade = 'B1';
-  else if (percentage >= 61) grade = 'B2';
-  else if (percentage >= 51) grade = 'C1';
-  else if (percentage >= 41) grade = 'C2';
-  else if (percentage >= 33) grade = 'D';
-  else grade = 'E';
-
-  return {
-    totalWithout,
-    grandTotal,
-    total: grandTotal,
-    percentage,
-    grade,
-    overallGrade: grade  // Add this
-  };
-};
+// Remove the existing calculateHigherMarksAndGrade function and export it from here
+export { calculateHigherMarksAndGrade } from './markCalculations';
 
 export const subjectSchema = z.object({
   id: z.number().optional(),
@@ -333,6 +322,7 @@ export const teacherSchema = z.object({
   password: z.string().min(6).optional(),
   img: z.string().optional(),
   createdAt: z.string().optional().transform(str => str ? new Date(str) : new Date()),
+  assignedClassId: z.string().transform(str => str ? parseInt(str, 10) : null).nullable(),
 });
 
 export type TeacherSchema = z.infer<typeof teacherSchema>;
@@ -410,12 +400,3 @@ export const studentSchema = z.object({
 
 export type StudentSchema = z.infer<typeof studentSchema>;
 
-export const examSchema = z.object({
-  id: z.coerce.number().optional(),
-  title: z.string().min(1, { message: "Title name is required!" }),
-  startTime: z.coerce.date({ message: "Start time is required!" }),
-  endTime: z.coerce.date({ message: "End time is required!" }),
-  lessonId: z.coerce.number({ message: "Lesson is required!" }),
-});
-
-export type ExamSchema = z.infer<typeof examSchema>;

@@ -106,6 +106,15 @@ const Results9Page = async ({
           <h1 className="hidden md:block text-lg font-semibold">
             Class 9 Results
           </h1>
+          <div className="flex items-center gap-4">
+            {classId && sectionId && (
+              <FormContainer
+                table="result9"
+                type="print"
+                data={{ classId, sectionId }}
+              />
+            )}
+          </div>
         </div>
 
         {/* Filters */}

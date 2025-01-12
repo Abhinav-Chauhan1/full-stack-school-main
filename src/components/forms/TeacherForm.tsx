@@ -13,17 +13,25 @@ import { toast } from "react-toastify";
 import { CldUploadWidget } from "next-cloudinary";
 import { format } from 'date-fns';
 
+type TeacherFormProps = {
+  type: "create" | "update";
+  data?: any;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  relatedData?: {
+    classes?: {
+      id: number;
+      name: string;
+      classNumber: number;
+    }[];
+  };
+};
+
 const TeacherForm = ({
   type,
   data,
   setOpen,
   relatedData,
-}: {
-  type: "create" | "update";
-  data?: any;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  relatedData?: any;
-}) => {
+}: TeacherFormProps) => {
   const {
     register,
     handleSubmit,
@@ -254,6 +262,22 @@ const TeacherForm = ({
           {errors.EmployeeType && (
             <p className="text-xs text-red-400">{errors.EmployeeType.message?.toString()}</p>
           )}
+        </div>
+
+        <div className="flex flex-col gap-2 w-full md:w-1/4">
+          <label className="text-xs text-gray-500">Assigned Class</label>
+          <select
+            defaultValue={data?.assignedClassId || ""}
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            {...register("assignedClassId")}
+          >
+            <option value="">No Class Assigned</option>
+            {relatedData?.classes?.map((cls) => (
+              <option key={cls.id} value={cls.id}>
+                {cls.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <input 

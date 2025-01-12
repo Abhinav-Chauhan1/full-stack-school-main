@@ -3,14 +3,14 @@
 import {
   deleteClass,
   deleteStudent,
-  deleteSubject,
   deleteTeacher,
   deleteSession,
   deleteSection,
   deleteSubCategory,
-  deleteJuniorMark,
-  deleteSeniorMark,
 } from "@/lib/actions";
+import { deleteSubject } from "@/app/(dashboard)/list/subjects/actions";
+import { deleteJuniorMark } from "@/app/(dashboard)/list/juniorMark/actions";
+import { deleteSeniorMark } from "@/app/(dashboard)/list/seniorMark/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -44,22 +44,22 @@ const SectionForm = dynamic(() => import("./forms/SectionForm"), {
 const StudentForm = dynamic(() => import("./forms/StudentForm"), {
   loading: () => <h1>Loading...</h1>,
 });
-const SubjectForm = dynamic(() => import("./forms/SubjectForm"), {
+const SubjectForm = dynamic(() => import("../app/(dashboard)/list/subjects/SubjectForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const ClassForm = dynamic(() => import("./forms/ClassForm"), {
   loading: () => <h1>Loading...</h1>,
 });
-const JuniorMarkForm = dynamic(() => import("./forms/JuniorMarkForm"), {
+const JuniorMarkForm = dynamic(() => import("../app/(dashboard)/list/juniorMark/JuniorMarkForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const SubCategoryForm = dynamic(() => import("./forms/SubCategoryForm"), {
   loading: () => <h1>Loading...</h1>,
 });
-const SeniorMarkForm = dynamic(() => import("./forms/SeniorMarkForm"), {
+const SeniorMarkForm = dynamic(() => import("../app/(dashboard)/list/seniorMark/SeniorMarkForm"), {
   loading: () => <h1>Loading...</h1>,
 });
-const HigherMarkForm = dynamic(() => import("./forms/HigherMarkForm"), {
+const HigherMarkForm = dynamic(() => import("../app/(dashboard)/list/higherMark/HigherMarkForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 // TODO: OTHER FORMS
@@ -160,6 +160,18 @@ const PdfGenerator9 = dynamic(() => import("./PdfGenerator9"), {
   ssr: false
 });
 
+const PdfGenerator11 = dynamic(() => import("./PdfGenerator11"), {
+  ssr: false
+});
+
+const BulkPdfGenerator = dynamic(() => import("./BulkPdfGenerator"), {
+  ssr: false
+});
+
+const BulkPdfGenerator9 = dynamic(() => import("./BulkPdfGenerator9"), {
+  ssr: false
+});
+
 const FormModal = ({
   table,
   type,
@@ -235,15 +247,41 @@ const FormModal = ({
     switch (table) {
       case "result":
         return (
-          <PdfGenerator
-            studentResult={relatedData?.studentResult}
-            onClose={() => setOpen(false)}
-          />
+          <>
+            {relatedData.studentResult ? (
+              <PdfGenerator
+                studentResult={relatedData.studentResult}
+                onClose={() => setOpen(false)}
+              />
+            ) : relatedData.studentsResults ? (
+              <BulkPdfGenerator
+                studentsResults={relatedData.studentsResults}
+                onClose={() => setOpen(false)}
+              />
+            ) : null}
+          </>
         );
 
       case "result9":
         return (
-          <PdfGenerator9
+          <>
+            {relatedData.studentResult ? (
+              <PdfGenerator9
+                studentResult={relatedData.studentResult}
+                onClose={() => setOpen(false)}
+              />
+            ) : relatedData.studentsResults ? (
+              <BulkPdfGenerator9
+                studentsResults={relatedData.studentsResults}
+                onClose={() => setOpen(false)}
+              />
+            ) : null}
+          </>
+        );
+
+      case "result11":
+        return (
+          <PdfGenerator11
             studentResult={relatedData?.studentResult}
             onClose={() => setOpen(false)}
           />

@@ -5,61 +5,27 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
-import Image from "next/image";
 
-const ResultsPage = async ({
+const Results11Page = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
-  const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
-  
-  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/) 
-    ? assignedClassStr 
-    : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
 
-  // Check access permission
-  const hasAccess = role === "admin" || (
-    role === "teacher" && 
-    assignedClass && (
-      typeof assignedClass === "number" 
-        ? assignedClass <= 8
-        : ["Nursery", "KG", "UKG"].includes(assignedClass)
-    )
-  );
-
-  if (!hasAccess) {
-    throw new Error("You don't have permission to access this page");
-  }
-
-  const { page, sessionId, classId, sectionId, examType } = searchParams;
+  const { page, sessionId, classId, sectionId } = searchParams;
   const p = page ? parseInt(page) : 1;
 
-  // Fetch all sessions and classes for filters
+  // Fetch all sessions
   const sessions = await prisma.session.findMany({
     orderBy: { sessionfrom: "desc" },
   });
 
-  // Filter classes based on role and assigned class
+  // Only fetch class 11
   const classes = await prisma.class.findMany({
     where: {
-      AND: [
-        {
-          classNumber: {
-            lte: 8
-          }
-        },
-        role === "teacher" && assignedClass
-          ? typeof assignedClass === "number"
-            ? { classNumber: assignedClass }
-            : { name: assignedClass }
-          : {}
-      ]
-    },
-    orderBy: { 
-      classNumber: "asc"
+      classNumber: 11
     },
     include: {
       sections: true,
@@ -67,7 +33,11 @@ const ResultsPage = async ({
   });
 
   // Build query for students
-  const query: any = {};
+  const query: any = {
+    Class: {
+      classNumber: 11
+    }
+  };
 
   if (classId) {
     query.classId = parseInt(classId);
@@ -77,7 +47,7 @@ const ResultsPage = async ({
     query.sectionId = parseInt(sectionId);
   }
 
-  // Update the students query to include all necessary relations
+  // Fetch students with their marks
   const [students, count] = await prisma.$transaction([
     prisma.student.findMany({
       where: query,
@@ -85,19 +55,12 @@ const ResultsPage = async ({
         Class: true,
         Section: true,
         Session: true,
-        marksJunior: {
+        markHigher: {
           include: {
             session: true,
-            halfYearly: true,
-            yearly: true,
-            classSubject: {
+            sectionSubject: {
               include: {
-                subject: {
-                  select: {
-                    name: true,
-                    code: true
-                  }
-                }
+                subject: true
               }
             }
           },
@@ -106,9 +69,8 @@ const ResultsPage = async ({
           } : undefined
         }
       },
-      orderBy: { name: "asc" },
+      skip: (p - 1) * ITEM_PER_PAGE,
       take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
     }),
     prisma.student.count({ where: query }),
   ]);
@@ -138,24 +100,15 @@ const ResultsPage = async ({
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
-      {/* TOP */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="hidden md:block text-lg font-semibold">
-            Student Results
+            Class 11 Results
           </h1>
-          <div className="flex items-center gap-4">
-            {classId && sectionId && (
-              <FormContainer
-                table="result"
-                type="print"
-                data={{ classId, sectionId }}
-              />
-            )}
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             name="sessionId"
             label="Session"
@@ -169,9 +122,7 @@ const ResultsPage = async ({
             label="Class"
             options={classes.map((cls) => ({
               value: cls.id.toString(),
-              label: cls.classNumber === 0 
-                ? cls.name 
-                : `Class ${cls.classNumber}` 
+              label: cls.name,
             }))}
           />
           <Select
@@ -193,7 +144,7 @@ const ResultsPage = async ({
       </div>
 
       {/* Students List */}
-      <div className="mt-6"></div>
+      <div className="mt-6">
         <Table
           columns={columns}
           data={students}
@@ -209,7 +160,7 @@ const ResultsPage = async ({
               <td>
                 <div className="flex items-center gap-2">
                   <FormContainer
-                    table="result"
+                    table="result11"
                     type="print"
                     id={student.id}
                   />
@@ -224,4 +175,4 @@ const ResultsPage = async ({
   );
 };
 
-export default ResultsPage;
+export default Results11Page;

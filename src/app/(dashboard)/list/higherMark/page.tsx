@@ -15,6 +15,12 @@ const HigherMarkListPage = async ({
 }) => {
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+  const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass;
+  
+  // Extract class number from "Class X" format
+  const assignedClassNum = assignedClassStr 
+    ? parseInt(assignedClassStr.replace("Class ", ""))
+    : undefined;
 
   const { page, sessionId, classId, sectionId, subjectId } = searchParams;
   const p = page ? parseInt(page) : 1;
@@ -26,9 +32,12 @@ const HigherMarkListPage = async ({
 
   const classes = await prisma.class.findMany({
     where: {
-      classNumber: {
-        in: [11, 12]  // Only fetch classes 11 and 12
-      }
+      AND: [
+        { classNumber: { gte: 11 } }, // Classes 11 and above
+        role === "teacher" && assignedClassNum
+          ? { classNumber: assignedClassNum }
+          : {}
+      ]
     },
     orderBy: { name: "asc" },
     include: {
@@ -139,7 +148,7 @@ const HigherMarkListPage = async ({
               <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                 <Image src="/sort.png" alt="Sort" width={14} height={14} />
               </button>
-              {role === "admin" && (
+              {(role === "admin" || role === "teacher") && (
                 <>
                   <FormContainer table="higherMark" type="create" />
                   <RecalculateButton type="higher" />

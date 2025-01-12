@@ -33,6 +33,8 @@ model Teacher {
   qualification String?
   EmployeeType  EmployeeType
   img           String?
+  assignedClass   Class?    @relation(fields: [assignedClassId], references: [id])
+  assignedClassId Int?      @unique
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -94,6 +96,7 @@ model Class {
   capacity      Int
   students      Student[]
   classSubjects ClassSubject[]
+  classTeacher   Teacher?  @relation
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -222,6 +225,9 @@ model SeniorMark {
   subEnrichment      Float?
   bestScore          Float?
   finalExam          Float?
+  practical          Float?         // New field
+  theory             Float?         // New field
+  total              Float?         // New field
   grandTotal         Float?
   grade              String?
   overallTotal       Float?
@@ -256,6 +262,7 @@ model HigherMark {
   total              Float?
   percentage         Float?
   grade              String?
+  remarks            String?
 
   @@unique([studentId, sectionSubjectId, sessionId])
 }

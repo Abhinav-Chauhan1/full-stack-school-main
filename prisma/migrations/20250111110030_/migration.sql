@@ -51,6 +51,7 @@ CREATE TABLE "Teacher" (
     "qualification" TEXT,
     "EmployeeType" "EmployeeType" NOT NULL,
     "img" TEXT,
+    "assignedClassId" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -73,7 +74,7 @@ CREATE TABLE "Student" (
     "tongue" "MotherTongue" NOT NULL,
     "category" "Category" NOT NULL,
     "subcategoryId" INTEGER,
-    "mothername" TEXT NOT NULL,
+    "mothername" TEXT,
     "mphone" TEXT,
     "moccupation" TEXT,
     "fathername" TEXT,
@@ -84,14 +85,14 @@ CREATE TABLE "Student" (
     "img" TEXT,
     "bloodgroup" "BloodGroup" NOT NULL,
     "previousClass" TEXT,
-    "yearofpass" INTEGER NOT NULL,
+    "yearofpass" INTEGER,
     "board" TEXT,
     "school" TEXT,
     "grade" TEXT,
     "document" TEXT,
-    "tc" BOOLEAN NOT NULL DEFAULT true,
-    "tcdate" TIMESTAMP(3) NOT NULL,
-    "tcNo" INTEGER NOT NULL,
+    "tc" BOOLEAN DEFAULT true,
+    "tcdate" TIMESTAMP(3),
+    "tcNo" INTEGER,
     "classId" INTEGER,
     "sectionId" INTEGER,
     "sessionId" INTEGER,
@@ -221,7 +222,7 @@ CREATE TABLE "SeniorMark" (
     "grade" TEXT,
     "overallTotal" DOUBLE PRECISION,
     "overallMarks" DOUBLE PRECISION,
-    "overallGrade" DOUBLE PRECISION,
+    "overallGrade" TEXT,
     "remarks" TEXT,
     "studentId" TEXT NOT NULL,
     "sectionSubjectId" INTEGER NOT NULL,
@@ -249,6 +250,7 @@ CREATE TABLE "HigherMark" (
     "total" DOUBLE PRECISION,
     "percentage" DOUBLE PRECISION,
     "grade" TEXT,
+    "remarks" TEXT,
 
     CONSTRAINT "HigherMark_pkey" PRIMARY KEY ("id")
 );
@@ -288,13 +290,10 @@ CREATE UNIQUE INDEX "Teacher_email_key" ON "Teacher"("email");
 CREATE UNIQUE INDEX "Teacher_phone_key" ON "Teacher"("phone");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Teacher_assignedClassId_key" ON "Teacher"("assignedClassId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Student_admissionno_key" ON "Student"("admissionno");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Student_mphone_key" ON "Student"("mphone");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Student_fphone_key" ON "Student"("fphone");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Class_name_key" ON "Class"("name");
@@ -328,6 +327,9 @@ CREATE UNIQUE INDEX "HigherMark_studentId_sectionSubjectId_sessionId_key" ON "Hi
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Session_sessioncode_key" ON "Session"("sessioncode");
+
+-- AddForeignKey
+ALTER TABLE "Teacher" ADD CONSTRAINT "Teacher_assignedClassId_fkey" FOREIGN KEY ("assignedClassId") REFERENCES "Class"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_subcategoryId_fkey" FOREIGN KEY ("subcategoryId") REFERENCES "SubCategory"("id") ON DELETE SET NULL ON UPDATE CASCADE;

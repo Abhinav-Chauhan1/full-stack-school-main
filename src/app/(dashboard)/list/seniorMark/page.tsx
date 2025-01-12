@@ -15,6 +15,12 @@ const SeniorMarkListPage = async ({
 }) => {
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+  const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass;
+  
+  // Extract class number from "Class X" format
+  const assignedClassNum = assignedClassStr 
+    ? parseInt(assignedClassStr.replace("Class ", ""))
+    : undefined;
 
   const { page, sessionId, classId, sectionId, subjectId } = searchParams;
   const p = page ? parseInt(page) : 1;
@@ -24,9 +30,15 @@ const SeniorMarkListPage = async ({
     orderBy: { sessionfrom: "desc" },
   });
 
+  // Filter classes based on role and assigned class
   const classes = await prisma.class.findMany({
     where: {
-      classNumber: 9  // Only fetch class 9
+      AND: [
+        { classNumber: 9 },
+        role === "teacher" && assignedClassNum
+          ? { classNumber: assignedClassNum }
+          : {}
+      ]
     },
     orderBy: { name: "asc" },
     include: {
@@ -107,7 +119,16 @@ const SeniorMarkListPage = async ({
   ]);
 
   // Define columns for the table
-  const columns = [
+  const isVocationalIT = data.some(mark => mark.sectionSubject.subject.code === "IT001");
+
+  const columns = isVocationalIT ? [
+    { header: "Student Name", accessor: "student.name" },
+    { header: "Admission No", accessor: "student.admissionno" },
+    { header: "Theory (70)", accessor: "theory" },
+    { header: "Practical (30)", accessor: "practical" },
+    { header: "Total (100)", accessor: "total" },
+    { header: "Remarks", accessor: "remarks" }
+  ] : [
     { header: "Student Name", accessor: "student.name" },
     { header: "Admission No", accessor: "student.admissionno", className: "hidden md:table-cell" },
     { header: "PT1", accessor: "pt1", className: "hidden md:table-cell" },
@@ -121,6 +142,16 @@ const SeniorMarkListPage = async ({
     { header: "Final Exam", accessor: "finalExam" },
     { header: "Grand Total", accessor: "grandTotal" },
     { header: "Grade", accessor: "grade" },
+    { header: "Overall Total", accessor: "overallTotal" },
+    { header: "Overall Marks", accessor: "overallMarks" },
+    { header: "Overall Grade", accessor: "overallGrade" },
+    ...(data.some(mark => 
+      mark.sectionSubject.subject.code === "IT001"
+    ) ? [
+      { header: "Theory", accessor: "theory" },
+      { header: "Practical", accessor: "practical" },
+      { header: "Total", accessor: "total" }
+    ] : [])
   ];
 
   return (
@@ -139,7 +170,7 @@ const SeniorMarkListPage = async ({
               <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                 <Image src="/sort.png" alt="Sort" width={14} height={14} />
               </button>
-              {role === "admin" && (
+              {(role === "admin" || role === "teacher") && (
                 <>
                   <FormContainer table="seniorMark" type="create" />
                   <RecalculateButton type="senior" />
@@ -204,17 +235,31 @@ const SeniorMarkListPage = async ({
               >
                 <td className="p-4">{item.student.name}</td>
                 <td className="hidden md:table-cell">{item.student.admissionno}</td>
-                <td className="hidden md:table-cell">{item.pt1}</td>
-                <td className="hidden md:table-cell">{item.pt2}</td>
-                <td className="hidden md:table-cell">{item.pt3}</td>
-                <td>{item.bestTwoPTAvg}</td>
-                <td className="hidden md:table-cell">{item.multipleAssessment}</td>
-                <td className="hidden md:table-cell">{item.portfolio}</td>
-                <td className="hidden md:table-cell">{item.subEnrichment}</td>
-                <td>{item.bestScore}</td>
-                <td>{item.finalExam}</td>
-                <td>{item.grandTotal}</td>
-                <td>{item.grade}</td>
+                {item.sectionSubject.subject.code === "IT001" ? (
+                  <>
+                    <td>{item.theory}</td>
+                    <td>{item.practical}</td>
+                    <td>{item.total}</td>
+                    <td>{item.remarks}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="hidden md:table-cell">{item.pt1}</td>
+                    <td className="hidden md:table-cell">{item.pt2}</td>
+                    <td className="hidden md:table-cell">{item.pt3}</td>
+                    <td>{item.bestTwoPTAvg}</td>
+                    <td className="hidden md:table-cell">{item.multipleAssessment}</td>
+                    <td className="hidden md:table-cell">{item.portfolio}</td>
+                    <td className="hidden md:table-cell">{item.subEnrichment}</td>
+                    <td>{item.bestScore}</td>
+                    <td>{item.finalExam}</td>
+                    <td>{item.grandTotal}</td>
+                    <td>{item.grade}</td>
+                    <td>{item.overallTotal}</td>
+                    <td>{item.overallMarks}</td>
+                    <td>{item.overallGrade}</td>
+                  </>
+                )}
               </tr>
             )}
           />

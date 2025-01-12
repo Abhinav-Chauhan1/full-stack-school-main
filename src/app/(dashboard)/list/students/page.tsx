@@ -21,8 +21,18 @@ const StudentListPage = async ({
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  const { sessionClaims } = auth();
+  const { userId, sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  // Get teacher's assigned class if role is teacher
+  let assignedClassId: number | null = null;
+  if (role === "teacher" && userId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: userId },
+      select: { assignedClassId: true }
+    });
+    assignedClassId = teacher?.assignedClassId || null;
+  }
 
   const columns = [
     {
@@ -114,6 +124,11 @@ const StudentListPage = async ({
 
   // Build the query based on search parameters
   const query: Prisma.StudentWhereInput = {};
+  
+  // Add teacher class restriction
+  if (role === "teacher" && assignedClassId) {
+    query.classId = assignedClassId;
+  }
 
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
@@ -128,7 +143,10 @@ const StudentListPage = async ({
             ].filter(Boolean);
             break;
           case "classId":
-            query.classId = parseInt(value);
+            // Only allow admin to filter by class
+            if (role === "admin") {
+              query.classId = parseInt(value);
+            }
             break;
           case "sectionId":
             query.sectionId = parseInt(value);
@@ -194,10 +212,13 @@ const StudentListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <ClassFilterSelect 
-              classes={classes} 
-              selectedClassId={queryParams.classId} 
-            />
+            {/* Only show class filter for admin */}
+            {role === "admin" && (
+              <ClassFilterSelect 
+                classes={classes} 
+                selectedClassId={queryParams.classId} 
+              />
+            )}
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image 
                 src="/sort.png" 

@@ -45,6 +45,7 @@ const ClassListPage = async ({
     capacity: number;
     classSubjects?: {
       subject: {
+        id: true;
         name: string;
         code: string;
       }

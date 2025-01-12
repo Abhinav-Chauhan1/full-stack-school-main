@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useMemo, useEffect, Dispatch, SetStateAction } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useState, useMemo, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 import {
-  SeniorMarkSchema,
-  seniorMarkSchema,
-  calculateSeniorMarksAndGrade,
+  HigherMarkSchema,
+  higherMarkSchema,
 } from "@/lib/formValidationSchemas";
 import {
-  createSeniorMarks,
-  updateSeniorMarks,
-  checkExistingSeniorMarks,
-} from "@/lib/actions";
+  createHigherMarks,
+  updateHigherMarks,
+  checkExistingHigherMarks,
+} from "@/app/(dashboard)/list/higherMark/actions";
 
-type SeniorMarkFormProps = {
+type HigherMarkFormProps = {
   type?: "create" | "update";
   relatedData: {
     sessions: Array<{
@@ -29,7 +28,7 @@ type SeniorMarkFormProps = {
     classes: Array<{
       id: number;
       name: string;
-      classNumber: number;  
+      classNumber: number;
       sections: Array<{
         id: number;
         name: string;
@@ -48,14 +47,15 @@ type SeniorMarkFormProps = {
       }>;
     }>;
   };
-  setOpen: Dispatch<SetStateAction<boolean>>;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
+const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
   type: initialType = "create",
   relatedData,
   setOpen,
 }) => {
+  // State management
   const [selectedSession, setSelectedSession] = useState<number | null>(null);
   const [selectedClass, setSelectedClass] = useState<number | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
@@ -66,12 +66,13 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
 
   const router = useRouter();
 
-  // Filtered data based on selections
+  // Filter classes for 11th and 12th only
   const filteredClasses = useMemo(
-    () => relatedData.classes.filter(cls => cls.classNumber === 9),
+    () => relatedData.classes.filter(cls => cls.classNumber >= 11),
     [relatedData.classes]
   );
 
+  // Add filtered data selectors
   const selectedClassData = useMemo(
     () => filteredClasses.find((cls) => cls.id === selectedClass) || null,
     [filteredClasses, selectedClass]
@@ -92,7 +93,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     [selectedSectionData]
   );
 
-  // Update the useEffect for checking existing marks
+  // Add useEffect for checking existing marks
   useEffect(() => {
     const checkExistingMarks = async () => {
       if (!selectedSession || !selectedClass || !selectedSection || !selectedSubject) {
@@ -101,7 +102,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
 
       setIsLoading(true);
       try {
-        const result = await checkExistingSeniorMarks({
+        const result = await checkExistingHigherMarks({
           sectionSubjectId: selectedSubject,
           sessionId: selectedSession,
         });
@@ -125,110 +126,89 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     checkExistingMarks();
   }, [selectedSession, selectedClass, selectedSection, selectedSubject]);
 
-  // Form setup
   const {
-    control,
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<{ marks: SeniorMarkSchema[] }>({
+  } = useForm<{ marks: HigherMarkSchema[] }>({
     resolver: zodResolver(
       z.object({
-        marks: z.array(seniorMarkSchema),
+        marks: z.array(higherMarkSchema),
       })
     ),
-    defaultValues: {
-      marks: selectedSectionStudents.map((student) => ({
+  });
+
+  // Update form data when students/selections change
+  useEffect(() => {
+    const getDefaultValues = () => {
+      const values = selectedSectionStudents.map((student) => ({
         studentId: student.id,
         sectionSubjectId: selectedSubject || 0,
         sessionId: selectedSession || 0,
-        pt1: null,
-        pt2: null,
-        pt3: null,
-        bestTwoPTAvg: null,
-        multipleAssessment: null,
-        portfolio: null,
-        subEnrichment: null,
-        bestScore: null,
-        finalExam: null,
+        unitTest1: null,
+        halfYearly: null,
+        unitTest2: null,
+        theory: null,
+        practical: null,
+        totalWithout: null,
         grandTotal: null,
+        total: null,
+        percentage: null,
         grade: null,
-        remarks: null
-      }))
-    }
-  });
+        overallGrade: null,
+        remarks: "" // Add this field
+      }));
+      return { marks: values };
+    };
 
-  // Add useEffect for managing form data when existing marks are found
+    reset(getDefaultValues());
+  }, [selectedSectionStudents, selectedSubject, selectedSession, reset]);
+
+  // Add effect to handle existing marks data
   useEffect(() => {
-    if (existingMarksData && existingMarksData.length > 0) {
+    if (existingMarksData?.length) {
       const updatedMarks = selectedSectionStudents.map((student) => {
-        const existingMark = existingMarksData.find(
-          (mark) => mark.studentId === student.id
-        );
-
+        const existing = existingMarksData.find(m => m.studentId === student.id);
         return {
           studentId: student.id,
-          sectionSubjectId: selectedSubject || 0,
-          sessionId: selectedSession || 0,
-          pt1: existingMark?.pt1 || null,
-          pt2: existingMark?.pt2 || null,
-          pt3: existingMark?.pt3 || null,
-          bestTwoPTAvg: existingMark?.bestTwoPTAvg || null,
-          multipleAssessment: existingMark?.multipleAssessment || null,
-          portfolio: existingMark?.portfolio || null,
-          subEnrichment: existingMark?.subEnrichment || null,
-          bestScore: existingMark?.bestScore || null,
-          finalExam: existingMark?.finalExam || null,
-          grandTotal: existingMark?.grandTotal || null,
-          grade: existingMark?.grade || null,
-          remarks: existingMark?.remarks || null
+          sectionSubjectId: selectedSubject!,
+          sessionId: selectedSession!,
+          unitTest1: existing?.unitTest1 ?? null,
+          halfYearly: existing?.halfYearly ?? null,
+          unitTest2: existing?.unitTest2 ?? null,
+          theory: existing?.theory ?? null,
+          practical: existing?.practical ?? null,
+          totalWithout: existing?.totalWithout ?? null,
+          grandTotal: existing?.grandTotal ?? null,
+          total: existing?.total ?? null,
+          percentage: existing?.percentage ?? null,
+          grade: existing?.grade ?? null,
+          overallGrade: existing?.overallGrade ?? null,
+          remarks: existing?.remarks ?? "" // Add this field
         };
       });
-
       reset({ marks: updatedMarks });
-    } else {
-      // Reset form with empty values for new entries
-      reset({
-        marks: selectedSectionStudents.map((student) => ({
-          studentId: student.id,
-          sectionSubjectId: selectedSubject || 0,
-          sessionId: selectedSession || 0,
-          pt1: null,
-          pt2: null,
-          pt3: null,
-          bestTwoPTAvg: null,
-          multipleAssessment: null,
-          portfolio: null,
-          subEnrichment: null,
-          bestScore: null,
-          finalExam: null,
-          grandTotal: null,
-          grade: null,
-          remarks: null
-        }))
-      });
     }
   }, [existingMarksData, selectedSectionStudents, selectedSubject, selectedSession, reset]);
 
-  // Modified onSubmit function
-  const onSubmit = async (formData: { marks: SeniorMarkSchema[] }) => {
+  // Form submission handler
+  const onSubmit = async (formData: { marks: HigherMarkSchema[] }) => {
     if (!selectedSession || !selectedClass || !selectedSection || !selectedSubject) {
       toast.error("Please select all required fields");
       return;
     }
 
     try {
-      // Filter out empty entries and process marks
       const processedMarks = formData.marks
         .filter(mark => 
-          mark.pt1 !== null || 
-          mark.pt2 !== null || 
-          mark.pt3 !== null || 
-          mark.multipleAssessment !== null ||
-          mark.portfolio !== null ||
-          mark.subEnrichment !== null ||
-          mark.finalExam !== null
+          mark.unitTest1 !== null || 
+          mark.halfYearly !== null || 
+          mark.unitTest2 !== null ||
+          mark.theory !== null ||
+          mark.practical !== null
         )
         .map(mark => ({
           ...mark,
@@ -242,18 +222,18 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
       }
 
       const result = formType === "create"
-        ? await createSeniorMarks({ marks: processedMarks })
-        : await updateSeniorMarks({ marks: processedMarks });
+        ? await createHigherMarks({ marks: processedMarks })
+        : await updateHigherMarks({ marks: processedMarks });
 
       if (result.success) {
-        toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
+        toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully`);
         setOpen(false);
         router.refresh();
       } else {
         toast.error(result.message || "Failed to save marks");
       }
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Error submitting marks:", error);
       toast.error("An unexpected error occurred");
     }
   };
@@ -261,11 +241,11 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
       <h2 className="text-xl font-semibold mb-4">
-        {formType === "create" ? "Create Senior Marks Entry" : "Update Senior Marks Entry"}
+        {formType === "create" ? "Create Higher Marks Entry" : "Update Higher Marks Entry"}
       </h2>
 
       {/* Selection Fields */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Session Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -370,14 +350,12 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
             <thead>
               <tr className="bg-gray-100">
                 <th className="p-2 border">Student</th>
-                <th className="p-2 border">PT1</th>
-                <th className="p-2 border">PT2</th>
-                <th className="p-2 border">PT3</th>
-                <th className="p-2 border">Multiple Assessment</th>
-                <th className="p-2 border">Portfolio</th>
-                <th className="p-2 border">Sub Enrichment</th>
-                <th className="p-2 border">Final Exam</th>
-                <th className="p-2 border">Remarks</th>
+                <th className="p-2 border">Unit Test 1 (10)</th>
+                <th className="p-2 border">Half Yearly (30)</th>
+                <th className="p-2 border">Unit Test 2 (10)</th>
+                <th className="p-2 border">Theory (35)</th>
+                <th className="p-2 border">Practical (15)</th>
+                <th className="p-2 border">Remarks</th> {/* Add this column */}
               </tr>
             </thead>
             <tbody>
@@ -395,56 +373,45 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                     <input
                       type="number"
                       step="0.1"
+                      max="10"
                       className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.pt1`, { valueAsNumber: true })}
+                      {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}
                     />
                   </td>
                   <td className="p-2 border">
                     <input
                       type="number"
                       step="0.1"
+                      max="30"
                       className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.pt2`, { valueAsNumber: true })}
+                      {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}
                     />
                   </td>
                   <td className="p-2 border">
                     <input
                       type="number"
                       step="0.1"
+                      max="10"
                       className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.pt3`, { valueAsNumber: true })}
+                      {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}
                     />
                   </td>
                   <td className="p-2 border">
                     <input
                       type="number"
                       step="0.1"
+                      max="35"
                       className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.multipleAssessment`, { valueAsNumber: true })}
+                      {...register(`marks.${index}.theory`, { valueAsNumber: true })}
                     />
                   </td>
                   <td className="p-2 border">
                     <input
                       type="number"
                       step="0.1"
+                      max="15"
                       className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.portfolio`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.subEnrichment`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.finalExam`, { valueAsNumber: true })}
+                      {...register(`marks.${index}.practical`, { valueAsNumber: true })}
                     />
                   </td>
                   <td className="p-2 border">
@@ -452,6 +419,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                       type="text"
                       className="w-full p-1 border rounded text-sm"
                       {...register(`marks.${index}.remarks`)}
+                      placeholder="Add remarks"
                     />
                   </td>
                 </tr>
@@ -483,4 +451,4 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
   );
 };
 
-export default SeniorMarkForm;
+export default HigherMarkForm;
