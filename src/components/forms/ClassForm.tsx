@@ -11,6 +11,11 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import Select from 'react-select';
 
+interface SubjectOption {
+  value: number;  // Changed from string | number to just number
+  label: string;
+}
+
 const ClassForm = ({
   type,
   data,
@@ -69,7 +74,7 @@ const ClassForm = ({
     }
   }, [state, router, type, setOpen]);
 
-  const subjectOptions = relatedData?.subjects?.map((subject: { id: any; name: any; code: any; }) => ({
+  const subjectOptions: SubjectOption[] = relatedData?.subjects?.map((subject: { id: number; name: string; code: string; }) => ({
     value: subject.id,
     label: `${subject.name} (${subject.code})`,
   })) || [];
@@ -120,12 +125,12 @@ const ClassForm = ({
               control={control}
               defaultValue={data?.subjects || []}
               render={({ field: { onChange, value } }) => (
-                <Select
+                <Select<SubjectOption, true>
                   isMulti
                   options={subjectOptions}
                   className="basic-multi-select"
                   classNamePrefix="select"
-                  value={subjectOptions.filter(option => 
+                  value={subjectOptions.filter((option) => 
                     value?.includes(option.value)
                   )}
                   onChange={(selectedOptions) => 
