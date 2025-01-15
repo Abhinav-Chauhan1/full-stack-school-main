@@ -293,7 +293,7 @@ export const classSchema = z.object({
   name: z.string().min(1, { message: "Class name is required!" }),
   capacity: z.coerce.number().min(1, { message: "Capacity is required!" }),
   classNumber: z.coerce.number().min(0, { message: "Class number is required!" }),
-  subjects: z.array(z.number()).min(1, "At least one subject is required"),
+  subjects: z.array(z.number()).optional(), // Changed from required to optional
 });
 
 export type ClassSchema = z.infer<typeof classSchema>;

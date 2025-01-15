@@ -437,13 +437,6 @@ export const createClass = async (
         name: data.name,
         classNumber: Number(data.classNumber),
         capacity: Number(data.capacity),
-        classSubjects: {
-          create: data.subjects.map((subjectId: number) => ({
-            subject: {
-              connect: { id: subjectId }
-            }
-          }))
-        }
       },
     });
 

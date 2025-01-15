@@ -117,7 +117,8 @@ const ClassForm = ({
           />
         )}
 
-        {Number(data?.classNumber) !< 9 && (
+        {/* Only show subjects selection during update */}
+        {type === "update" && Number(data?.classNumber) !< 9 && (
           <div className="w-full mb-4">
             <label className="block text-sm font-medium text-gray-700">Subjects</label>
             <Controller
