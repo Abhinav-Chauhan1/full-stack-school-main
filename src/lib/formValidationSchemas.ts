@@ -139,24 +139,24 @@ export const seniorMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
-  pt1: z.number().min(0).max(5).nullable(),
-  pt2: z.number().min(0).max(5).nullable(),
-  pt3: z.number().min(0).max(5).nullable(),
-  bestTwoPTAvg: z.number().nullable(),
-  multipleAssessment: z.number().min(0).max(5).nullable(),
-  portfolio: z.number().min(0).max(5).nullable(),
-  subEnrichment: z.number().min(0).max(5).nullable(),
-  bestScore: z.number().nullable(),
-  finalExam: z.number().min(0).max(80).nullable(),
-  practical: z.number().min(0).max(30).nullable(),  // New field
-  theory: z.number().min(0).max(70).nullable(),     // New field
-  total: z.number().nullable(),                     // New field
-  grandTotal: z.number().nullable(),
-  grade: z.string().nullable(),
-  overallTotal: z.number().nullable(),
-  overallMarks: z.number().nullable(),
-  overallGrade: z.string().nullable(),
-  remarks: z.string().nullable()
+  pt1: z.number().min(0).max(5).nullable().optional(),
+  pt2: z.number().min(0).max(5).nullable().optional(),
+  pt3: z.number().min(0).max(5).nullable().optional(),
+  bestTwoPTAvg: z.number().nullable().optional(),
+  multipleAssessment: z.number().min(0).max(5).nullable().optional(),
+  portfolio: z.number().min(0).max(5).nullable().optional(),
+  subEnrichment: z.number().min(0).max(5).nullable().optional(),
+  bestScore: z.number().nullable().optional(),
+  finalExam: z.number().min(0).max(80).nullable().optional(),
+  practical: z.number().min(0).max(30).nullable().optional(),
+  theory: z.number().min(0).max(70).nullable().optional(),
+  total: z.number().nullable().optional(),
+  grandTotal: z.number().nullable().optional(),
+  grade: z.string().nullable().optional(),
+  overallTotal: z.number().nullable().optional(),
+  overallMarks: z.number().nullable().optional(),
+  overallGrade: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional()
 });
 
 export type SeniorMarkSchema = z.infer<typeof seniorMarkSchema>;

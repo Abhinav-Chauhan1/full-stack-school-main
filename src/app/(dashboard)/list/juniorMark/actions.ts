@@ -71,13 +71,32 @@ export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
 
       if (!marksData) return null;
 
-      return prisma.juniorMark.create({
-        data: {
+      // Use upsert instead of create
+      return prisma.juniorMark.upsert({
+        where: {
+          studentId_classSubjectId_sessionId: {
+            studentId: mark.studentId,
+            classSubjectId: mark.classSubjectId,
+            sessionId: mark.sessionId
+          }
+        },
+        create: {
           student: { connect: { id: mark.studentId }},
           classSubject: { connect: { id: mark.classSubjectId }},
           session: { connect: { id: mark.sessionId }},
           [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
             create: marksData
+          },
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
+        },
+        update: {
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            upsert: {
+              create: marksData,
+              update: marksData
+            }
           },
           grandTotalMarks: mark.grandTotalMarks || 0,
           grandTotalGrade: mark.grandTotalGrade || '',

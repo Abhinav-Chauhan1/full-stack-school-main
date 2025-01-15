@@ -1,3 +1,65 @@
+import { useEffect, useState } from 'react';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { StudentResult } from '@/types/result';
+
+interface PdfGeneratorProps {
+  studentResult: {
+    student: {
+      name: string;
+      birthday: Date;
+      Class: { name: string; classNumber: number };
+      Section: { name: string };
+      admissionno: number;
+      mothername: string;
+      moccupation: string;
+      fathername: string;
+      foccupation: string;
+      address: string;
+      city: string;
+      village: string;
+      bloodgroup: string;
+      img?: string; // Add img field for student image
+    };
+    marksJunior?: Array<{  // Make this optional
+      classSubject: {
+        subject: { 
+          name: string;
+          code: string;
+        };
+      };
+      halfYearly: {
+        ut1: number | null;
+        ut2: number | null;
+        noteBook: number | null;
+        subEnrichment: number | null;
+        examMarks: number | null;
+        totalMarks: number | null;
+        grade: string | null;
+        remarks: string | null;
+      } | null;
+      yearly: {
+        ut3: number | null;
+        ut4: number | null;
+        yearlynoteBook: number | null;
+        yearlysubEnrichment: number | null;
+        yearlyexamMarks: number | null;
+        yearlytotalMarks: number | null;
+        yearlygrade: string | null;
+        yearlyremarks: string | null;
+      } | null;
+      grandTotalMarks: number | null;
+      grandTotalGrade: string | null;
+      overallPercentage: number | null;
+    }>;
+    session: {
+      sessioncode: string;
+      sessionfrom: Date;
+      sessionto: Date;
+    };
+  };
+  onClose: () => void;
+}
+
 export const loadImage = async (url: string) => {
   try {
     const response = await fetch(url);
@@ -25,61 +87,82 @@ export const getOverallGrade = (percentage: number) => {
   return 'E';
 };
 
-export const generatePdfDefinition = (studentResult: any, logoData: string | null, studentImageData: string | null, getOverallGrade: (percentage: number) => string) => {
-  // Calculate overall results
-  const marks = studentResult.marksJunior || [];
-  let totalMarks = 0;
-  marks.forEach((mark: any) => {
+const calculateOverallResults = (marks: any[]) => {
+  const totals = marks.reduce((acc, mark) => {
     const halfYearlyMarks = mark.halfYearly?.totalMarks || 0;
     const yearlyMarks = mark.yearly?.yearlytotalMarks || 0;
-    totalMarks += (halfYearlyMarks + yearlyMarks);
-  });
+    acc.totalMarks += (halfYearlyMarks + yearlyMarks);
+    acc.maxPossibleMarks += 200;
+    return acc;
+  }, { totalMarks: 0, maxPossibleMarks: 0 });
 
-  const maxPossibleMarks = marks.length * 200;
-  const overallPercentage = ((totalMarks / maxPossibleMarks) * 100).toFixed(2);
+  const overallPercentage = totals.maxPossibleMarks > 0 
+    ? Number((totals.totalMarks / totals.maxPossibleMarks * 100).toFixed(2))
+    : 0;
 
-  // Generate table body for marks
-  const tableBody = [
+  return { ...totals, overallPercentage };
+};
+
+const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMarks, overallPercentage }: any) => {
+  const totalRow = [
+    {},
+    {text: `OVER ALL TOTAL (TERM -1 & TERM 2) OF MAIN SUBJECTS`, colSpan: 9, alignment: 'center', style: 'columnHeader' },
+    {}, {}, {}, {}, {}, {}, {}, {},
+    {},
+    {text: `${totalMarks} / ${maxPossibleMarks}`, alignment: 'center', style: 'columnHeader' },
+    {}
+  ];
+
+  const percentageRow = [
+    {text: `Over All Percentage:`, colSpan: 2, alignment: 'center', style: 'columnHeader' },{},
+    {text: `${overallPercentage}%`, colSpan: 9, alignment: 'left', style: 'columnHeader' },
+    {}, {}, {}, {}, {}, {}, {}, {},
+    {text: `Overall Grade:`, alignment: 'center', style: 'columnHeader' },
+    {text: `${getOverallGrade(Number(overallPercentage))}`, alignment: 'center', style: 'columnHeader' }
+  ];
+
+  // Update the tableBody to use these new rows
+  return [
     [
-      { text: 'SCHOLASTIC\nAREAS', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
+      { text: 'SCHOLASTIC\nAREAS', rowSpan: 1, alignment: 'center', style: 'tableHeader' },
       { text: 'TERM - 1 (100 MARKS)', colSpan: 5, alignment: 'center', style: 'tableHeader' },
       {}, {}, {}, {},
       { text: 'TERM - 2 (100 MARKS)', colSpan: 5, alignment: 'center', style: 'tableHeader' },
       {}, {}, {}, {},
-      { text: 'GRAND\nTOTAL', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
-      { text: 'GRADE', rowSpan: 2, alignment: 'center', style: 'tableHeader' }
-    ],
-    [
-      {},
-      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
-      { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
-      { text: 'H.Y.E', alignment: 'center', style: 'columnHeader' },
-      { text: 'M.O', alignment: 'center', style: 'columnHeader' },
-      { text: 'GR.', alignment: 'center', style: 'columnHeader' },
-      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
-      { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
-      { text: 'Y.E', alignment: 'center', style: 'columnHeader' },
-      { text: 'M.O', alignment: 'center', style: 'columnHeader' },
-      { text: 'GR.', alignment: 'center', style: 'columnHeader' },
       {},
       {}
     ],
     [
-      { text: '', alignment: 'center' },
-      { text: '(10)', alignment: 'center', style: 'columnHeader' },
-      { text: '(10)', alignment: 'center', style: 'columnHeader' },
-      { text: '(80)', alignment: 'center', style: 'columnHeader' },
-      { text: '(100)', alignment: 'center', style: 'columnHeader' },
-      { text: '', alignment: 'center', style: 'columnHeader' },
-      { text: '(10)', alignment: 'center', style: 'columnHeader' },
-      { text: '(10)', alignment: 'center', style: 'columnHeader' },
-      { text: '(80)', alignment: 'center', style: 'columnHeader' },
-      { text: '(100)', alignment: 'center', style: 'columnHeader' },
-      { text: '', alignment: 'center', style: 'columnHeader' },
-      { text: '(200)', alignment: 'center', style: 'columnHeader' },
-      { text: '', alignment: 'center' }
+      { text: 'Subjects',alignment:'center',rowSpan: 2, style: 'tableHeader' },
+      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
+      { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
+      { text: 'H.Y.E', alignment: 'center', style: 'columnHeader' },
+      { text: 'M.O', alignment: 'center', style: 'columnHeader' },
+      { text: 'GR.', alignment: 'center',rowSpan: 2, style: 'columnHeader' },
+      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
+      { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
+      { text: 'Y.E', alignment: 'center', style: 'columnHeader' },
+      { text: 'M.O', alignment: 'center', style: 'columnHeader' },
+      { text: 'GR.', alignment: 'center',rowSpan: 2, style: 'columnHeader' },
+      { text: 'GRAND\nTOTAL', alignment: 'center', style: 'tableHeader' },
+      { text: 'GRADE', rowSpan: 2, alignment: 'center', style: 'tableHeader' }
     ],
-    ...marks.map((mark: any) => [
+    [
+      {},
+      { text: '(10)', alignment: 'center', style: 'columnHeader' },
+      { text: '(10)', alignment: 'center', style: 'columnHeader' },
+      { text: '(80)', alignment: 'center', style: 'columnHeader' },
+      { text: '(100)', alignment: 'center', style: 'columnHeader' },
+      {},
+      { text: '(10)', alignment: 'center', style: 'columnHeader' },
+      { text: '(10)', alignment: 'center', style: 'columnHeader' },
+      { text: '(80)', alignment: 'center', style: 'columnHeader' },
+      { text: '(100)', alignment: 'center', style: 'columnHeader' },
+      {},
+      { text: '(200)', alignment: 'center', style: 'columnHeader' }, 
+      {}
+    ],
+    ...safeMarksJunior.map(mark => [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
       { text: mark?.halfYearly?.ut1 ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.noteBook ?? '-', alignment: 'center' },
@@ -93,234 +176,113 @@ export const generatePdfDefinition = (studentResult: any, logoData: string | nul
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
       { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
       { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
-    ])
+    ]),
+    totalRow,
+    percentageRow
   ];
+};
 
-  const docDefinition = {
+const coScholasticTable = {
+  headerRows: 2,
+  widths: ['40%', '10%', '40%', '10%'],
+  body: [
+    [
+      { text: 'TERM I', style: 'tableHeader', alignment: 'center' , colSpan: 2, },
+      {}, { text: 'TERM II', style: 'tableHeader', alignment: 'center' , colSpan: 2, 
+      }, {}
+    ],
+    [
+      { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left' },
+      { text: 'Grade', style: 'tableHeader', alignment: 'center' },
+      { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left' },
+      { text: 'Grade', style: 'tableHeader', alignment: 'center' }
+    ],
+    [
+      'Value Education',
+      { text: 'A', alignment: 'center' },
+      'Value Education',
+      { text: 'A', alignment: 'center' }
+    ],
+    [
+      'Physical Education /Sports',
+      { text: 'A', alignment: 'center' },
+      'Physical Education /Sports',
+      { text: 'A', alignment: 'center' }
+    ],
+    [
+      'Art & Craft',
+      { text: 'A', alignment: 'center' },
+      'Art & Craft',
+      { text: 'A', alignment: 'center' }
+    ],
+    [
+      'Discipline  [on a 5 Point(A - E) Grading Scale]',
+      { text: 'A', alignment: 'center' },
+      'Discipline  [on a 5 Point(A - E) Grading Scale]',
+      { text: 'A', alignment: 'center' }
+    ]
+  ]
+};
+
+export const generatePdfDefinition = (
+  studentResult: StudentResult,
+  logoData: string | null,
+  studentImageData: string | null
+): TDocumentDefinitions => {
+  if (!studentResult) {
+    throw new Error('Student result is required');
+  }
+
+  const safeMarksJunior = studentResult?.marksJunior ?? [];
+  const results = calculateOverallResults(safeMarksJunior);
+  const tableBody = generateTableBody(safeMarksJunior, results);
+
+  return {
     pageSize: 'A4',
     pageMargins: [40, 20, 40, 20],
     content: [
+      // School header with improved layout
       {
-        stack: [
+      stack: [
+        {
+        columns: [
           {
-            columns: [
-              logoData ? {
-                width: 70,
-                image: logoData,
-                alignment: 'center'
-              } : {},
-              {
-                stack: [
-                  { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 8 },
-                  { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
-                  { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
-                  { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
-                ],
-                alignment: 'center',
-                width: '*'
-              }
-            ]
-          }
-        ],
-        margin: [0, 0, 0, 10]
-      },
-      {
-        text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
-        style: 'reportCardHeader',
-        alignment: 'center',
-        margin: [0, 10, 0, 5]
-      },
-      // Student details table
-      {
-        table: {
-          widths: ['*'],
-          body: [[
+          width: 70,
+          image: logoData || '', // Use the loaded base64 image
+          alignment: 'center'
+            },
             {
               stack: [
-                {
-                  columns: [
-                    {
-                      width: '50%',
-                      stack: [
-                        { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                        { text: `Class: ${studentResult?.student?.Class?.name} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
-                        { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
-                        { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
-                      ]
-                    },
-                    {
-                      width: '30%',
-                      stack: [
-                        { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
-                        { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
-                      ]
-                    },
-                    studentImageData ? {
-                      image: studentImageData,
-                      width: 100,
-                      height: 100,
-                      alignment: 'center',
-                      margin: [0, 5],
-                    } : {}
-                  ]
-                }
-              ]
+                { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 8 },
+                { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
+                { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
+                { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
+              ],
+              alignment: 'center',
+              width: '*'
             }
-          ]]
-        },
-        layout: 'noBorders'
-      },
-      // Marks table
-      {
-        table: {
-          headerRows: 3, // Important: Set this to 3 since we have 3 header rows
-          widths: ['*', 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 35, 35],
-          body: tableBody
-        },
-        layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
-          hLineColor: () => 'black',
-          vLineColor: () => 'black'
+          ]
         }
-      },
-      // Add other content (co-scholastic table, remarks, etc.) similar to PdfGenerator.tsx
-    ],
-    styles: {
-      schoolName: { fontSize: 24, bold: true, alignment: 'center' },
-      affiliation: { fontSize: 14, bold: true, alignment: 'center' },
-      address: { fontSize: 12, alignment: 'center' },
-      reportCardHeader: { fontSize: 14, bold: true },
-      fieldLabel: { fontSize: 10, margin: [0, 0, 0, 5] },
-      tableHeader: { fontSize: 10, bold: true, alignment: 'center' },
-      tableCell: { fontSize: 9, alignment: 'center' }
-    }
-  };
-
-  return docDefinition;
-};
-
-export const generatePdfDefinition9 = (studentResult: any, logoData: string | null, studentImageData: string | null, getOverallGrade: (percentage: number) => string) => {
-  const marks = studentResult?.marksSenior || [];
-
-  // Calculate overall results
-  let totalObtained = 0;
-  let totalPossible = 0;
-  
-  marks.forEach((mark: any) => {
-    if (mark.bestScore && mark.finalExam) {
-      totalObtained += (mark.bestScore + mark.finalExam);
-      totalPossible += 100;
-    }
-  });
-
-  const overallPercentage = totalPossible > 0 ? ((totalObtained / totalPossible) * 100).toFixed(2) : "0";
-
-  // Generate table body with correct data mapping
-  const tableBody = [
-    [
-      { text: 'SUBJECTS', rowSpan: 3, alignment: 'center', style: 'tableHeader' },
-      { text: 'Periodic Test', colSpan: 4, alignment: 'center', style: 'tableHeader' },
-      {}, {}, {},
-      { text: 'Multiple\nAssessment', alignment: 'center', style: 'tableHeader', rowSpan: 2 },
-      { text: 'Portfolio &\nSub. Enrichment', alignment: 'center', colSpan: 2, style: 'tableHeader' },
-      {},
-      { text: 'Best of\nPT+M.A.+\nPortfolio+S.E.\n[E=A+B+C+D]', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
-      { text: 'Annual\nExam\n[F]', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
-      { text: 'TOTAL\n[E+F]', alignment: 'center', style: 'tableHeader', rowSpan: 2 },
-      { text: 'Grade', alignment: 'center', style: 'tableHeader', rowSpan: 2 }
-    ],
-    [
-      {},
-      { text: 'PT 1', alignment: 'center', style: 'columnHeader' },
-      { text: 'PT 2', alignment: 'center', style: 'columnHeader' },
-      { text: 'PT 3', alignment: 'center', style: 'columnHeader' },
-      { text: 'Best of\nTwo', alignment: 'center', style: 'columnHeader' },
-      {},
-      { text: 'Portfolio', alignment: 'center', style: 'columnHeader' },
-      { text: 'Sub.\nEnrich', alignment: 'center', style: 'columnHeader' },
-      {}, {}, {}, {}
-    ],
-    [
-      {},
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '5', alignment: 'center', style: 'columnHeader' },
-      { text: '20', alignment: 'center', style: 'columnHeader' },
-      { text: '80', alignment: 'center', style: 'columnHeader' },
-      { text: '100', alignment: 'center', style: 'columnHeader' },
-      { text: '', alignment: 'center', style: 'columnHeader' }
-    ],
-    ...marks.map((mark: any) => [
-      { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
-      { text: mark?.pt1 ?? '-', alignment: 'center' },
-      { text: mark?.pt2 ?? '-', alignment: 'center' },
-      { text: mark?.pt3 ?? '-', alignment: 'center' },
-      { text: mark?.bestTwoPTAvg ?? '-', alignment: 'center' },
-      { text: mark?.multipleAssessment ?? '-', alignment: 'center' },
-      { text: mark?.portfolio ?? '-', alignment: 'center' },
-      { text: mark?.subEnrichment ?? '-', alignment: 'center' },
-      { text: mark?.bestScore ?? '-', alignment: 'center' },
-      { text: mark?.finalExam ?? '-', alignment: 'center' },
-      { text: mark?.grandTotal ?? '-', alignment: 'center' },
-      { text: mark?.grade ?? '-', alignment: 'center' }
-    ]),
-    [
-      { text: 'TOTAL', colSpan: 10, alignment: 'right', style: 'tableHeader' },
-      {}, {}, {}, {}, {}, {}, {}, {}, {},
-      { text: totalObtained.toString(), alignment: 'center', style: 'tableHeader' },
-      { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'tableHeader' }
-    ],
-    [
-      { text: `Overall Percentage: ${overallPercentage}%`, colSpan: 12, alignment: 'left', style: 'tableHeader' },
-      {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-    ]
-  ];
-
-  const docDefinition = {
-    pageSize: 'A4',
-    pageMargins: [20, 20, 20, 20],
-    content: [
-      // Header
-      {
-        stack: [
+      ],
+      margin: [0, 0, 0, 10]
+    },
+    {
+      text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
+      style: 'reportCardHeader',
+      alignment: 'center',
+      margin: [0, 10, 0, 5]
+    },
+    {
+      text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
+      style: 'subHeader',
+      alignment: 'center',
+      margin: [0, 0, 0, 15]
+    },
+    {
+      table: {
+        widths: ['*'],
+        body: [[
           {
-            columns: [
-              logoData ? {
-                width: 70,
-                image: logoData,
-                alignment: 'center'
-              } : {},
-              {
-                stack: [
-                  { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 8 },
-                  { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
-                  { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
-                  { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
-                ],
-                alignment: 'center',
-                width: '*'
-              }
-            ]
-          }
-        ],
-        margin: [0, 0, 0, 10]
-      },
-      {
-        text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
-        style: 'reportCardHeader',
-        alignment: 'center',
-        margin: [0, 10, 0, 5]
-      },
-      // Student details
-      {
-        table: {
-          widths: ['*'],
-          body: [[{
             stack: [
               {
                 columns: [
@@ -328,84 +290,191 @@ export const generatePdfDefinition9 = (studentResult: any, logoData: string | nu
                     width: '50%',
                     stack: [
                       { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Class: ${studentResult?.student?.Class?.name} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
+                      { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
                       { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
                       { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
+                      {text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
                     ]
                   },
                   {
                     width: '30%',
                     stack: [
-                      { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
                       { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
+                      { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
+                      { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
                     ]
                   },
-                  studentImageData ? {
-                    image: studentImageData,
+                  studentImageData ?{
+                    image: studentImageData || '', // Use the loaded student image
                     width: 100,
                     height: 100,
                     alignment: 'center',
                     margin: [0, 5],
-                  } : {}
+                  }: {},
                 ]
               }
-            ]
-          }]]
-        },
-        layout: 'noBorders'
-      },
-      // Marks table
-      {
-        table: {
-          headerRows: 3,
-          widths: ['*', 25, 25, 25, 25, 30, 25, 25, 30, 30, 30, 25],
-          body: tableBody
-        },
-        layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
-          hLineColor: () => 'black',
-          vLineColor: () => 'black'
-        }
-      },
-      // Grading scale
-      {
-        text: '\nGrading Scale: A1(91-100%), A2(81-90%), B1(71-80%), B2(61-70%), C1(51-60%), C2(41-50%), D(33-40%), E(Below 33%)',
-        style: 'note',
-        margin: [0, 10]
-      },
-      // Signatures
-      {
-        table: {
-          widths: ['*', '*', '*'],
-          body: [
-            [
-              { text: 'Class Teacher', alignment: 'center' },
-              { text: 'Examination I/C', alignment: 'center' },
-              { text: 'Principal', alignment: 'center' }
             ],
-            [
-              { text: '________________', alignment: 'center' },
-              { text: '________________', alignment: 'center' },
-              { text: '________________', alignment: 'center' }
-            ]
-          ]
-        },
-        layout: 'noBorders',
-        margin: [0, 30, 0, 0]
+            margin: [0, 0, 0, 10]
+          }
+        ]]
+      },
+      layout: 'noBorders'
+    },
+    // Marks table with new layout
+    {
+      table: {
+        headerRows: 2,
+        widths: ['*', 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 35, 35],
+        body: tableBody,
+        dontBreakRows: true
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => 'black',
+        vLineColor: () => 'black'
       }
-    ],
-    styles: {
-      schoolName: { fontSize: 24, bold: true },
-      affiliation: { fontSize: 14, bold: true },
-      address: { fontSize: 12 },
-      reportCardHeader: { fontSize: 14, bold: true },
-      fieldLabel: { fontSize: 10, margin: [0, 2] },
-      tableHeader: { fontSize: 10, bold: true },
-      columnHeader: { fontSize: 8, bold: true },
-      note: { fontSize: 8, italics: true }
+    },
+    {
+      table: coScholasticTable,
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => 'black',
+        vLineColor: () => 'black'
+      },
+      margin: [0, 2] // Remove margin
+    },
+    {
+      table: {
+        widths: ['*'],
+        body: [[
+          {
+            text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),\nC1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
+            alignment: 'center',
+            style: 'columnHeader'
+          }
+        ]]
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => 'black',
+        vLineColor: () => 'black'
+      },
+      margin: [0, 0] // Remove margin
+    },
+    {
+      table: {
+        widths: ['*', '*'],
+        body: [
+          [
+            {
+              text: `Result: ${safeMarksJunior.every(mark => 
+                (mark.halfYearly?.grade !== 'F' && mark.yearly?.yearlygrade !== 'F')) ? 'PASSED' : 'FAILED'}`,
+              style: 'tableHeader',
+              alignment: 'center'
+            },
+            {
+              text: `Teacher Remarks: ${safeMarksJunior[0]?.yearly?.yearlyremarks ?? 'VERY GOOD WORK AND VERY WELL.'}`,
+              style: 'tableHeader',
+              alignment: 'center'
+            }
+          ]
+        ]
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => 'black',
+        vLineColor: () => 'black'
+      },
+      margin: [0, 0] // Remove margin
+    },
+    {
+      table: {
+        widths: ['*', '*', '*'],
+        body: [
+          [
+            { text: 'CLASS TEACHER', alignment: 'center' },
+            { text: 'EXAMINATION I/C', alignment: 'center' },
+            { text: 'PRINCIPAL', alignment: 'center' }
+          ],
+          [
+            { text: '_______________', alignment: 'center' },
+            { text: '_______________', alignment: 'center' },
+            { text: '_______________', alignment: 'center' }
+          ]
+        ]
+      },
+      layout: 'noBorders',
+      margin: [0, 20]
     }
-  };
+  ],
+  styles: {
+    schoolName: {
+      fontSize: 24,
+      bold: true,
+      alignment: 'center'
+    },
+    affiliation: {
+      fontSize: 14,
+      bold: true,
+      alignment: 'center'
+    },
+    address: {
+      fontSize: 12,
+      alignment: 'center'
+    },
+    reportCardHeader: {
+      fontSize: 14,
+      bold: true
+    },
+    subHeader: {
+      fontSize: 10,
+      alignment: 'center'
+    },
+    columnHeader: {
+      fontSize: 9
+    },
+    fieldLabel: {
+      fontSize: 10,
+      margin: [0, 0, 0, 5]
+    },
+    tableHeader: {
+      fontSize: 10,
+      bold: true,
+      alignment: 'center'
+    },
+    tableCell: {
+      fontSize: 9,
+      alignment: 'center'
+    }
+  }
+};
+};
 
-  return docDefinition;
+export const generateAndDownloadPdf = async (
+  studentResult: StudentResult,
+  logoData: string | null,
+  studentImageData: string | null,
+  onClose: () => void
+) => {
+  try {
+    // Dynamically import pdfMake
+    const pdfMake = (await import('pdfmake/build/pdfmake')).default;
+    const pdfFonts = (await import('pdfmake/build/vfs_fonts')).vfs;
+    pdfMake.vfs = pdfFonts;
+
+    const docDefinition = generatePdfDefinition(studentResult, logoData, studentImageData);
+    
+    // Create and download the PDF
+    const pdfDoc = pdfMake.createPdf(docDefinition);
+    pdfDoc.download(`Result_${studentResult.student.admissionno}.pdf`);
+    
+    onClose();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
+  }
 };

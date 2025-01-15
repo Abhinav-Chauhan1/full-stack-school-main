@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { loadImage, generatePdfDefinition, getOverallGrade } from '@/lib/pdfUtils';
+import { loadImage, generatePdfDefinition } from '@/lib/pdfUtils';
 
 interface BulkPdfGeneratorProps {
   studentsResults: Array<{
@@ -19,11 +19,9 @@ export default function BulkPdfGenerator({ studentsResults, onClose }: BulkPdfGe
 
   useEffect(() => {
     const init = async () => {
-      // Load school logo
       const logo = await loadImage('/logo.png');
       setLogoData(logo);
 
-      // Load all student images
       const imagePromises = studentsResults.map(async ({ student }) => {
         if (student.img) {
           const imgData = await loadImage(student.img);
@@ -48,18 +46,13 @@ export default function BulkPdfGenerator({ studentsResults, onClose }: BulkPdfGe
       pdfMake.vfs = pdfFonts.vfs;
 
       for (const studentResult of studentsResults) {
-        const studentImageData = studentImages.get(studentResult.student.id);
-        const pdfDefinition = generatePdfDefinition(
+        const studentImage = studentImages.get(studentResult.student.id);
+        const docDefinition = generatePdfDefinition(
           studentResult, 
-          logoData, 
-          studentImageData ?? null,
-          getOverallGrade
+          logoData ?? null, 
+          studentImage ?? null
         );
-        
-        // Generate PDF for each student
-        pdfMake.createPdf(pdfDefinition).download(
-          `Result_${studentResult.student.admissionno}.pdf`
-        );
+        pdfMake.createPdf(docDefinition).download(`Result_${studentResult.student.admissionno}.pdf`);
       }
 
       onClose();

@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { loadImage, generatePdfDefinition9, getOverallGrade } from '@/lib/pdfUtils9';
+import { loadImage, generateAndDownloadPdf11 } from '@/lib/pdfUtils11';
 
-interface BulkPdfGenerator9Props {
+interface BulkPdfGenerator11Props {
   studentsResults: Array<{
     student: any;
-    marksSenior: any[];
+    marksHigher: any[];
     session: any;
   }>;
   onClose: () => void;
 }
 
-export default function BulkPdfGenerator9({ studentsResults, onClose }: BulkPdfGenerator9Props) {
+export default function BulkPdfGenerator11({ studentsResults, onClose }: BulkPdfGenerator11Props) {
   const [loading, setLoading] = useState(true);
   const [logoData, setLogoData] = useState<string | null>(null);
   const [studentImages, setStudentImages] = useState<Map<string, string>>(new Map());
@@ -39,26 +39,12 @@ export default function BulkPdfGenerator9({ studentsResults, onClose }: BulkPdfG
     init();
   }, [studentsResults]);
 
-  const generateAndDownloadPDFs = async () => {
+  const handleBulkDownload = async () => {
     try {
-      const pdfMake = (await import('pdfmake/build/pdfmake')).default;
-      const pdfFonts = (await import('pdfmake/build/vfs_fonts')).default;
-      pdfMake.vfs = pdfFonts.vfs;
-
       for (const studentResult of studentsResults) {
-        const studentImageData = studentImages.get(studentResult.student.id);
-        const pdfDefinition = generatePdfDefinition9(
-          studentResult, 
-          logoData, 
-          studentImageData ?? null,
-          getOverallGrade
-        );
-        
-        pdfMake.createPdf(pdfDefinition).download(
-          `Result_${studentResult.student.admissionno}_Class9.pdf`
-        );
+        const studentImage = studentImages.get(studentResult.student.id) || null;
+        await generateAndDownloadPdf11(studentResult, logoData, studentImage, () => {});
       }
-
       onClose();
     } catch (error) {
       console.error('Error generating PDFs:', error);
@@ -71,14 +57,14 @@ export default function BulkPdfGenerator9({ studentsResults, onClose }: BulkPdfG
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">Print Class 9 Results</h2>
+      <h2 className="text-xl font-semibold">Print Class 11 Results</h2>
       <div className="flex flex-col gap-2">
         <p><strong>Class:</strong> {studentsResults[0]?.student.Class.name}</p>
         <p><strong>Section:</strong> {studentsResults[0]?.student.Section.name}</p>
         <p><strong>Total Students:</strong> {studentsResults.length}</p>
       </div>
       <button
-        onClick={generateAndDownloadPDFs}
+        onClick={handleBulkDownload}
         className="bg-lamaGreen text-white py-2 px-4 rounded-md border-none w-max self-center"
       >
         Download All Results

@@ -230,27 +230,33 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     }
 
     try {
-      // Filter out empty entries and process marks
-      const processedMarks = formData.marks
-        .filter(mark => 
-          mark.pt1 !== null || 
-          mark.pt2 !== null || 
-          mark.pt3 !== null || 
-          mark.multipleAssessment !== null ||
-          mark.portfolio !== null ||
-          mark.subEnrichment !== null ||
-          mark.finalExam !== null
-        )
-        .map(mark => ({
-          ...mark,
+      const processedMarks = formData.marks.map(mark => {
+        const baseData = {
+          studentId: mark.studentId,
           sectionSubjectId: selectedSubject,
-          sessionId: selectedSession
-        }));
+          sessionId: selectedSession,
+          remarks: mark.remarks || null
+        };
 
-      if (processedMarks.length === 0) {
-        toast.error("Please enter marks for at least one student");
-        return;
-      }
+        if (isVocationalIT) {
+          return {
+            ...baseData,
+            theory: mark.theory || null,
+            practical: mark.practical || null
+          };
+        } else {
+          return {
+            ...baseData,
+            pt1: mark.pt1 || null,
+            pt2: mark.pt2 || null,
+            pt3: mark.pt3 || null,
+            multipleAssessment: mark.multipleAssessment || null,
+            portfolio: mark.portfolio || null,
+            subEnrichment: mark.subEnrichment || null,
+            finalExam: mark.finalExam || null
+          };
+        }
+      });
 
       const result = formType === "create"
         ? await createSeniorMarks({ marks: processedMarks })
@@ -268,6 +274,31 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
       toast.error("An unexpected error occurred");
     }
   };
+
+  // Update the form's defaultValues when selections change
+  useEffect(() => {
+    const defaultValues = {
+      marks: selectedSectionStudents.map((student) => ({
+        studentId: student.id,
+        sectionSubjectId: selectedSubject || 0,
+        sessionId: selectedSession || 0,
+        ...(isVocationalIT ? {
+          theory: null,
+          practical: null
+        } : {
+          pt1: null,
+          pt2: null,
+          pt3: null,
+          multipleAssessment: null,
+          portfolio: null,
+          subEnrichment: null,
+          finalExam: null
+        }),
+        remarks: null
+      }))
+    };
+    reset(defaultValues);
+  }, [selectedSession, selectedSubject, selectedSectionStudents, isVocationalIT]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
