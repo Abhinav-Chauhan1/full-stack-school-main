@@ -61,21 +61,25 @@ const StudentForm = ({
   useEffect(() => {
     if (relatedData?.classes) {
       const selectedClass = relatedData.classes.find(
-        (c: any) => c.id.toString() === selectedClassId
+        (c: any) => c.id.toString() === watchedClassId?.toString()
       );
       if (selectedClass) {
         setFilteredSections(selectedClass.sections || []);
+        setSelectedClassId(watchedClassId?.toString() || "");
       } else {
         setFilteredSections([]);
       }
     }
-  }, [selectedClassId, relatedData?.classes]);
+  }, [watchedClassId, relatedData?.classes]);
 
-  // Initialize sections when component mounts with data
+  // Initialize sections and set default values when component mounts with data
   useEffect(() => {
-    if (data && data.classId && relatedData?.classes) {
+    if (data && relatedData?.classes) {
       const classId = data.classId.toString();
       setSelectedClassId(classId);
+      setValue("classId", data.classId.toString()); // Convert to string
+      setValue("sectionId", data.sectionId.toString()); // Convert to string
+      
       const selectedClass = relatedData.classes.find(
         (c: any) => c.id.toString() === classId
       );
@@ -83,12 +87,13 @@ const StudentForm = ({
         setFilteredSections(selectedClass.sections || []);
       }
     }
-  }, [data, relatedData?.classes]);
+  }, [data, relatedData?.classes, setValue]);
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newClassId = e.target.value;
     setSelectedClassId(newClassId);
-    setValue("sectionId", ""); // Reset section when class changes
+    setValue("classId", newClassId); // Keep as string
+    setValue("sectionId", ""); // Keep as string
   };
 
   useEffect(() => {
@@ -302,7 +307,7 @@ const StudentForm = ({
           >
             <option value="">Select a class</option>
             {classes?.map((classItem: any) => (
-              <option value={classItem.id} key={classItem.id}>
+              <option value={classItem.id.toString()} key={classItem.id}> {/* Convert to string */}
                 {classItem.name} ({classItem._count.students}/{classItem.capacity})
               </option>
             ))}
@@ -317,12 +322,12 @@ const StudentForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sectionId")}
-            defaultValue={data?.sectionId || ""}
-            disabled={!selectedClassId} // Disable if no class is selected
+            value={watch("sectionId")?.toString() || ""}  // Convert number to string for select element
+            disabled={!selectedClassId}
           >
             <option value="">Select a section</option>
             {filteredSections?.map((section: any) => (
-              <option value={section.id} key={section.id}>
+              <option key={section.id} value={section.id.toString()}> {/* Convert to string */}
                 {section.name}
               </option>
             ))}
