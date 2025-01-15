@@ -77,8 +77,8 @@ const StudentForm = ({
     if (data && relatedData?.classes) {
       const classId = data.classId.toString();
       setSelectedClassId(classId);
-      setValue("classId", data.classId.toString()); // Convert to string
-      setValue("sectionId", data.sectionId.toString()); // Convert to string
+      setValue("classId", classId); // Keep as string
+      setValue("sectionId", data.sectionId.toString()); // Keep as string
       
       const selectedClass = relatedData.classes.find(
         (c: any) => c.id.toString() === classId
@@ -92,8 +92,8 @@ const StudentForm = ({
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newClassId = e.target.value;
     setSelectedClassId(newClassId);
-    setValue("classId", newClassId); // Keep as string
-    setValue("sectionId", ""); // Keep as string
+    setValue("classId", parseInt(newClassId)); // Keep as string
+    setValue("sectionId", parseInt("")); // Empty string for reset
   };
 
   useEffect(() => {
@@ -307,7 +307,7 @@ const StudentForm = ({
           >
             <option value="">Select a class</option>
             {classes?.map((classItem: any) => (
-              <option value={classItem.id.toString()} key={classItem.id}> {/* Convert to string */}
+              <option value={classItem.id} key={classItem.id}>
                 {classItem.name} ({classItem._count.students}/{classItem.capacity})
               </option>
             ))}
@@ -322,12 +322,12 @@ const StudentForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sectionId")}
-            value={watch("sectionId")?.toString() || ""}  // Convert number to string for select element
+            value={watch("sectionId")?.toString() || ""}
             disabled={!selectedClassId}
           >
             <option value="">Select a section</option>
             {filteredSections?.map((section: any) => (
-              <option key={section.id} value={section.id.toString()}> {/* Convert to string */}
+              <option key={section.id} value={section.id.toString()}>
                 {section.name}
               </option>
             ))}
