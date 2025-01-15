@@ -14,6 +14,11 @@ export default async function StudentImportExportPage() {
     }
   })
 
+  const sessions = await prisma.session.findMany({
+    orderBy: { sessionfrom: 'desc' }
+  })
+
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Student Data Import/Export</h1>
@@ -24,12 +29,12 @@ export default async function StudentImportExportPage() {
         </TabsList>
         <TabsContent value="export">
           <Card className="p-6">
-            <ExportForm classes={classes} />
+            <ExportForm classes={classes} sessions={sessions} />
           </Card>
         </TabsContent>
         <TabsContent value="import">
           <Card className="p-6">
-            <ImportForm classes={classes} />
+            <ImportForm classes={classes} sessions={sessions} />
           </Card>
         </TabsContent>
       </Tabs>

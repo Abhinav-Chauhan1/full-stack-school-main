@@ -202,34 +202,40 @@ const HigherMarkListPage = async ({
       {/* Marks List */}
       <div className="mt-6">
         <h2 className="text-md font-semibold mb-3">Students</h2>
-        {data.length > 0 ? (
-          <Table 
-            columns={columns} 
-            data={data} 
-            renderRow={(item) => (
-              <tr 
-                key={`${item.student.id}-${item.sectionSubject.id}`}
-                className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-              >
-                <td className="p-4">{item.student.name}</td>
-                <td className="hidden md:table-cell">{item.student.admissionno}</td>
-                <td className="hidden md:table-cell">{item.unitTest1}</td>
-                <td className="hidden md:table-cell">{item.halfYearly}</td>
-                <td className="hidden md:table-cell">{item.unitTest2}</td>
-                <td>{item.theory}</td>
-                <td>{item.practical}</td>
-                <td>{item.totalWithout}</td>
-                <td>{item.grandTotal}</td>
-                <td>{item.total}</td>
-                <td>{item.percentage}</td>
-                <td>{item.grade}</td>
-              </tr>
-            )}
-          />
+        {sessionId && classId && sectionId && subjectId ? (
+          data.length > 0 ? (
+            <Table 
+              columns={columns} 
+              data={data} 
+              renderRow={(item) => (
+                <tr 
+                  key={`${item.student.id}-${item.sectionSubject.id}`}
+                  className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+                >
+                  <td className="p-4">{item.student.name}</td>
+                  <td className="hidden md:table-cell">{item.student.admissionno}</td>
+                  <td className="hidden md:table-cell">{item.unitTest1}</td>
+                  <td className="hidden md:table-cell">{item.halfYearly}</td>
+                  <td className="hidden md:table-cell">{item.unitTest2}</td>
+                  <td>{item.theory}</td>
+                  <td>{item.practical}</td>
+                  <td>{item.totalWithout}</td>
+                  <td>{item.grandTotal}</td>
+                  <td>{item.total}</td>
+                  <td>{item.percentage}</td>
+                  <td>{item.grade}</td>
+                </tr>
+              )}
+            />
+          ) : (
+            <p>No marks found for the selected criteria.</p>
+          )
         ) : (
-          <p>No marks found for the selected criteria.</p>
+          <p>Please select all filters to view marks.</p>
         )}
-        <Pagination page={p} count={count} />
+        {sessionId && classId && sectionId && subjectId && (
+          <Pagination page={p} count={count} />
+        )}
       </div>
     </div>
   );

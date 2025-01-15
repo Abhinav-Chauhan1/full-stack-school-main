@@ -38,10 +38,44 @@ export const checkExistingSeniorMarks = async (
 export const createSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
   try {
     const createPromises = data.marks.map(async (mark) => {
+      // Check if it's IT001 subject
       const subject = await prisma.sectionSubject.findUnique({
         where: { id: mark.sectionSubjectId },
         include: { subject: true }
       });
+
+      if (subject?.subject.code === "IT001") {
+        const total = mark.theory && mark.practical ? 
+          Number(mark.theory) + Number(mark.practical) : null;
+
+        let grade = null;
+        if (total !== null) {
+          if (total >= 91) grade = 'A1';
+          else if (total >= 81) grade = 'A2';
+          else if (total >= 71) grade = 'B1';
+          else if (total >= 61) grade = 'B2';
+          else if (total >= 51) grade = 'C1';
+          else if (total >= 41) grade = 'C2';
+          else if (total >= 33) grade = 'D';
+          else grade = 'E';
+        }
+
+        return prisma.seniorMark.create({
+          data: {
+            studentId: mark.studentId,
+            sectionSubjectId: mark.sectionSubjectId,
+            sessionId: mark.sessionId,
+            theory: mark.theory,
+            practical: mark.practical,
+            total,
+            grade,
+            overallTotal: total,
+            overallMarks: total,
+            overallGrade: grade,
+            remarks: mark.remarks
+          }
+        });
+      }
 
       const isVocationalIT = subject?.subject.code === "IT001";
       

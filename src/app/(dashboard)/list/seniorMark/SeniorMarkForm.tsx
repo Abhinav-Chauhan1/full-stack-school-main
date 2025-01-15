@@ -172,6 +172,20 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
           (mark) => mark.studentId === student.id
         );
 
+        if (isVocationalIT) {
+          // For IT001 subject
+          return {
+            studentId: student.id,
+            sectionSubjectId: selectedSubject || 0,
+            sessionId: selectedSession || 0,
+            theory: existingMark?.theory || null,
+            practical: existingMark?.practical || null,
+            total: existingMark?.total || null,
+            remarks: existingMark?.remarks || null
+          };
+        }
+
+        // For regular subjects
         return {
           studentId: student.id,
           sectionSubjectId: selectedSubject || 0,
@@ -202,25 +216,31 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
           studentId: student.id,
           sectionSubjectId: selectedSubject || 0,
           sessionId: selectedSession || 0,
-          pt1: null,
-          pt2: null,
-          pt3: null,
-          bestTwoPTAvg: null,
-          multipleAssessment: null,
-          portfolio: null,
-          subEnrichment: null,
-          bestScore: null,
-          finalExam: null,
-          grandTotal: null,
-          grade: null,
-          remarks: null,
-          overallTotal: null,
-          overallMarks: null,
-          overallGrade: null
+          ...(isVocationalIT ? {
+            theory: null,
+            practical: null,
+            total: null
+          } : {
+            pt1: null,
+            pt2: null,
+            pt3: null,
+            bestTwoPTAvg: null,
+            multipleAssessment: null,
+            portfolio: null,
+            subEnrichment: null,
+            bestScore: null,
+            finalExam: null,
+            grandTotal: null,
+            grade: null,
+            overallTotal: null,
+            overallMarks: null,
+            overallGrade: null
+          }),
+          remarks: null
         }))
       });
     }
-  }, [existingMarksData, selectedSectionStudents, selectedSubject, selectedSession, reset]);
+  }, [existingMarksData, selectedSectionStudents, selectedSubject, selectedSession, reset, isVocationalIT]);
 
   // Modified onSubmit function
   const onSubmit = async (formData: { marks: SeniorMarkSchema[] }) => {
@@ -230,37 +250,10 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     }
 
     try {
-      const processedMarks = formData.marks.map(mark => {
-        const baseData = {
-          studentId: mark.studentId,
-          sectionSubjectId: selectedSubject,
-          sessionId: selectedSession,
-          remarks: mark.remarks || null
-        };
-
-        if (isVocationalIT) {
-          return {
-            ...baseData,
-            theory: mark.theory || null,
-            practical: mark.practical || null
-          };
-        } else {
-          return {
-            ...baseData,
-            pt1: mark.pt1 || null,
-            pt2: mark.pt2 || null,
-            pt3: mark.pt3 || null,
-            multipleAssessment: mark.multipleAssessment || null,
-            portfolio: mark.portfolio || null,
-            subEnrichment: mark.subEnrichment || null,
-            finalExam: mark.finalExam || null
-          };
-        }
-      });
-
-      const result = formType === "create"
-        ? await createSeniorMarks({ marks: processedMarks })
-        : await updateSeniorMarks({ marks: processedMarks });
+      const result = await (formType === "create" 
+        ? createSeniorMarks({ marks: formData.marks })
+        : updateSeniorMarks({ marks: formData.marks })
+      );
 
       if (result.success) {
         toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
@@ -458,9 +451,19 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                         <input
                           type="number"
                           step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.theory`, { valueAsNumber: true })}
+                          className={`w-full p-1 border rounded text-sm ${
+                            errors.marks?.[index]?.theory ? "border-red-500" : ""
+                          }`}
+                          {...register(`marks.${index}.theory`, { 
+                            valueAsNumber: true,
+                            setValueAs: v => v === "" ? null : parseFloat(v)
+                          })}
                         />
+                        {errors.marks?.[index]?.theory && (
+                          <span className="text-red-500 text-xs">
+                            {errors.marks[index]?.theory?.message}
+                          </span>
+                        )}
                       </td>
                       <td className="p-2 border">
                         <input

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { importStudentsWithMarks } from './actions'
-import { Class, Section } from '@prisma/client'
+import { Class, Section, Session } from '@prisma/client'
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -16,14 +16,15 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from 'next/navigation'
 
 interface ImportFormProps {
-  classes: (Class & { sections: Section[] })[]
+  classes: (Class & { sections: Section[] })[];
+  sessions: Session[];
 }
 
-export default function ImportForm({ classes }: ImportFormProps) {
+export default function ImportForm({ classes = [], sessions = [] }: ImportFormProps) {
   const router = useRouter()
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSection, setSelectedSection] = useState('')
-  const [includeMarks, setIncludeMarks] = useState(false)
+  const [selectedSession, setSelectedSession] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -37,8 +38,8 @@ export default function ImportForm({ classes }: ImportFormProps) {
   }
 
   const handleImport = async () => {
-    if (!file || !selectedClass || !selectedSection) {
-      alert('Please select class, section and file')
+    if (!file || !selectedClass || !selectedSection || !selectedSession) {
+      alert('Please select class, section, session and file')
       return
     }
 
@@ -53,7 +54,7 @@ export default function ImportForm({ classes }: ImportFormProps) {
         students: jsonData,
         classId: parseInt(selectedClass),
         sectionId: parseInt(selectedSection),
-        includeMarks
+        sessionId: parseInt(selectedSession)
       })
 
       if (!result.success) throw new Error('Failed to import students')
@@ -62,6 +63,7 @@ export default function ImportForm({ classes }: ImportFormProps) {
       setFile(null)
       setSelectedClass('')
       setSelectedSection('')
+      setSelectedSession('')
       router.refresh()
       router.push('/list/students')
     } catch (error) {
@@ -75,6 +77,28 @@ export default function ImportForm({ classes }: ImportFormProps) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
+        <Select
+          value={selectedSession}
+          onValueChange={setSelectedSession}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select Session" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.isArray(sessions) && sessions.length > 0 ? (
+              sessions.map((session) => (
+                <SelectItem key={session.id} value={session.id.toString()}>
+                  {session.sessioncode}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                No sessions available
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+
         <Select
           value={selectedClass}
           onValueChange={(value) => {
@@ -111,15 +135,6 @@ export default function ImportForm({ classes }: ImportFormProps) {
           </SelectContent>
         </Select>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="includeMarks"
-            checked={includeMarks}
-            onCheckedChange={(checked) => setIncludeMarks(checked as boolean)}
-          />
-          <label htmlFor="includeMarks">Include Student Marks</label>
-        </div>
-
         <div className="space-y-2">
           <label className="text-sm font-medium">Upload Excel File</label>
           <input 
@@ -132,7 +147,7 @@ export default function ImportForm({ classes }: ImportFormProps) {
 
         <Button
           onClick={handleImport}
-          disabled={loading || !selectedClass || !selectedSection || !file}
+          disabled={loading || !selectedClass || !selectedSection || !selectedSession || !file}
         >
           {loading ? 'Importing...' : 'Import Students'}
         </Button>
@@ -145,21 +160,34 @@ export default function ImportForm({ classes }: ImportFormProps) {
               <li>admissionno (unique)</li>
               <li>name</li>
               <li>Sex (Male/Female/Other)</li>
-              {/* Add other required fields */}
+              <li>admissiondate (YYYY-MM-DD)</li>
+              <li>address</li>
+              <li>city</li>
+              <li>village</li>
+              <li>birthday (YYYY-MM-DD)</li>
+              <li>Religion (Hindu/Muslim/Christian/Sikh/Usmani/Raeen/MominAnsar)</li>
+              <li>tongue (Hindi/English/Punjabi/Urdu/Bhojpuri/Gujarati)</li>
+              <li>category (General/SC/ST/OBC/Other)</li>
+              <li>bloodgroup (A_plus/A_minus/B_plus/B_minus/O_plus/O_minus/AB_plus/AB_minus)</li>
             </ul>
             
-            {includeMarks && (
-              <>
-                <p className="mt-2">Marks columns (if including marks):</p>
-                <ul className="list-disc list-inside pl-4 space-y-1">
-                  <li>unitTest1</li>
-                  <li>halfYearly</li>
-                  <li>unitTest2</li>
-                  <li>theory</li>
-                  <li>practical</li>
-                </ul>
-              </>
-            )}
+            <p className="mt-2">Optional columns:</p>
+            <ul className="list-disc list-inside pl-4 space-y-1">
+              <li>nationality (defaults to "Indian")</li>
+              <li>mothername</li>
+              <li>mphone</li>
+              <li>moccupation</li>
+              <li>fathername</li>
+              <li>fphone</li>
+              <li>foccupation</li>
+              <li>aadharcard</li>
+              <li>house</li>
+              <li>previousClass</li>
+              <li>yearofpass</li>
+              <li>board</li>
+              <li>school</li>
+              <li>grade</li>
+            </ul>
           </div>
           <a 
             href="/sample-student-import.xlsx" 

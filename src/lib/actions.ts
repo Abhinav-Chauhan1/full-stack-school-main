@@ -853,7 +853,61 @@ export const deleteStudent = async (
 
 export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => {
   try {
-    if (type === 'senior') {
+    if (type === 'junior') {
+      // Get all junior marks with their associated data
+      const marks = await prisma.juniorMark.findMany({
+        include: {
+          halfYearly: true,
+          yearly: true,
+        }
+      });
+
+      // Process each mark record
+      for (const mark of marks) {
+        // Calculate and update half yearly marks
+        if (mark.halfYearly) {
+          const halfYearlyResults = calculateMarksAndGrade({
+            examType: "HALF_YEARLY",
+            halfYearly: mark.halfYearly
+          });
+
+          await prisma.halfYearlyMarks.update({
+            where: { id: mark.halfYearly.id },
+            data: {
+              totalMarks: halfYearlyResults.totalMarks,
+              grade: halfYearlyResults.grade
+            }
+          });
+        }
+
+        // Calculate and update yearly marks
+        if (mark.yearly) {
+          const yearlyResults = calculateMarksAndGrade({
+            examType: "YEARLY",
+            yearly: mark.yearly,
+            halfYearly: mark.halfYearly // Pass existing half yearly marks for grand total calculation
+          });
+
+          await prisma.yearlyMarks.update({
+            where: { id: mark.yearly.id },
+            data: {
+              yearlytotalMarks: yearlyResults.totalMarks,
+              yearlygrade: yearlyResults.grade
+            }
+          });
+
+          // Update grand total on the main mark record
+          await prisma.juniorMark.update({
+            where: { id: mark.id },
+            data: {
+              grandTotalMarks: yearlyResults.grandTotalMarks,
+              grandTotalGrade: yearlyResults.grandTotalGrade,
+              overallPercentage: yearlyResults.overallPercentage
+            }
+          });
+        }
+      }
+    } else if (type === 'senior') {
       const marks = await prisma.seniorMark.findMany();
       
       for (const mark of marks) {
@@ -927,54 +981,6 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
       });
 
       await Promise.all(updatePromises);
-    } else {
-      // Existing junior marks recalculation logic
-      const marks = await prisma.juniorMark.findMany({
-        include: {
-          halfYearly: true,
-          yearly: true,
-        }
-      });
-
-      for (const mark of marks) {
-        // Half Yearly calculations
-        if (mark.halfYearly) {
-          const totalMarks = calculateTotalMarks(
-            mark.halfYearly.ut1,
-            mark.halfYearly.ut2,
-            mark.halfYearly.noteBook,
-            mark.halfYearly.subEnrichment,
-            mark.halfYearly.examMarks
-          );
-
-          await prisma.halfYearlyMarks.update({
-            where: { id: mark.halfYearly.id },
-            data: {
-              totalMarks,
-              grade: calculateGrade(totalMarks)
-            }
-          });
-        }
-
-        // Yearly calculations
-        if (mark.yearly) {
-          const yearlytotalMarks = calculateTotalMarks(
-            mark.yearly.ut3,
-            mark.yearly.ut4,
-            mark.yearly.yearlynoteBook,
-            mark.yearly.yearlysubEnrichment,
-            mark.yearly.yearlyexamMarks
-          );
-
-          await prisma.yearlyMarks.update({
-            where: { id: mark.yearly.id },
-            data: {
-              yearlytotalMarks,
-              yearlygrade: calculateGrade(yearlytotalMarks)
-            }
-          });
-        }
-      }
     }
 
     return { success: true, message: "Marks recalculated successfully" };

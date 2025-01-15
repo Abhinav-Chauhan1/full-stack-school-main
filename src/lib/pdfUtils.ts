@@ -371,7 +371,7 @@ export const generatePdfDefinition = (
           [
             {
               text: `Result: ${safeMarksJunior.every(mark => 
-                (mark.halfYearly?.grade !== 'F' && mark.yearly?.yearlygrade !== 'F')) ? 'PASSED' : 'FAILED'}`,
+                (mark.grandTotalGrade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
               style: 'tableHeader',
               alignment: 'center'
             },

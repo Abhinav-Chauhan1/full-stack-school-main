@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import * as XLSX from 'xlsx'
 import { exportStudentsWithMarks } from './actions'
-import { Class, Section } from '@prisma/client'
+import { Class, Section, Session } from '@prisma/client'
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -15,13 +15,14 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface ExportFormProps {
-  classes: (Class & { sections: Section[] })[]
+  classes: (Class & { sections: Section[] })[];
+  sessions: Session[];
 }
 
-export default function ExportForm({ classes }: ExportFormProps) {
+export default function ExportForm({ classes = [], sessions = [] }: ExportFormProps) {
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSection, setSelectedSection] = useState('')
-  const [includeMarks, setIncludeMarks] = useState(false)
+  const [selectedSession, setSelectedSession] = useState('')
   const [loading, setLoading] = useState(false)
 
   const sections = selectedClass 
@@ -29,8 +30,8 @@ export default function ExportForm({ classes }: ExportFormProps) {
     : []
 
   const handleExport = async () => {
-    if (!selectedClass || !selectedSection) {
-      alert('Please select class and section')
+    if (!selectedClass || !selectedSection || !selectedSession) {
+      alert('Please select class, section and session')
       return
     }
 
@@ -39,7 +40,7 @@ export default function ExportForm({ classes }: ExportFormProps) {
       const result = await exportStudentsWithMarks(
         parseInt(selectedClass),
         parseInt(selectedSection),
-        includeMarks
+        parseInt(selectedSession)
       )
 
       if (!result.success || !result.data) throw new Error(result.error || 'No data available')
@@ -59,6 +60,28 @@ export default function ExportForm({ classes }: ExportFormProps) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
+        <Select
+          value={selectedSession}
+          onValueChange={setSelectedSession}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select Session" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.isArray(sessions) && sessions.length > 0 ? (
+              sessions.map((session) => (
+                <SelectItem key={session.id} value={session.id.toString()}>
+                  {session.sessioncode}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="" disabled>
+                No sessions available
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+
         <Select
           value={selectedClass}
           onValueChange={setSelectedClass}
@@ -92,18 +115,9 @@ export default function ExportForm({ classes }: ExportFormProps) {
           </SelectContent>
         </Select>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="includeMarks"
-            checked={includeMarks}
-            onCheckedChange={(checked) => setIncludeMarks(checked as boolean)}
-          />
-          <label htmlFor="includeMarks">Include Student Marks</label>
-        </div>
-
         <Button
           onClick={handleExport}
-          disabled={loading || !selectedClass || !selectedSection}
+          disabled={loading || !selectedClass || !selectedSection || !selectedSession}
         >
           {loading ? 'Exporting...' : 'Export Students'}
         </Button>

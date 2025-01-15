@@ -8,20 +8,19 @@ import { type Prisma } from '@prisma/client';
 export async function importStudentsWithMarks({ 
   students, 
   classId, 
-  sectionId, 
-  includeMarks 
+  sectionId,
+  sessionId
 }: { 
   students: any[], 
   classId: number, 
-  sectionId: number, 
-  includeMarks: boolean 
+  sectionId: number,
+  sessionId: number
 }) {
   try {
     return await prisma.$transaction(async (tx) => {
       const createdStudents = await Promise.all(students.map(async (student) => {
         const convertedStudent = convertStudentData(student);
         
-        // Create student with both data and relations
         const studentCreateInput: Prisma.StudentCreateInput = {
           ...convertedStudent,
           Class: {
@@ -29,25 +28,15 @@ export async function importStudentsWithMarks({
           },
           Section: {
             connect: { id: sectionId }
+          },
+          Session: {
+            connect: { id: sessionId }
           }
         };
 
-        const createdStudent = await tx.student.create({
+        return await tx.student.create({
           data: studentCreateInput
         });
-
-        if (includeMarks && student.marks) {
-          await tx.higherMark.createMany({
-            data: student.marks.map((mark: any) => ({
-              ...mark,
-              studentId: createdStudent.id,
-              sectionSubjectId: mark.subjectId,
-              sessionId: mark.sessionId,
-            })),
-          });
-        }
-
-        return createdStudent;
       }));
 
       revalidatePath('/list/students');
@@ -62,29 +51,56 @@ export async function importStudentsWithMarks({
   }
 }
 
-export async function exportStudentsWithMarks(classId: number, sectionId: number, includeMarks: boolean) {
+export async function exportStudentsWithMarks(
+  classId: number, 
+  sectionId: number, 
+  sessionId: number
+) {
   try {
     const students = await prisma.student.findMany({
       where: {
         classId,
         sectionId,
+        sessionId,
       },
-      include: includeMarks ? {
-        markHigher: {
-          include: {
-            sectionSubject: {
-              include: {
-                subject: true
-              }
-            }
-          }
-        },
-        marksSenior: true,
-        marksJunior: true,
-      } : undefined,
+      select: {
+        admissiondate: true,
+        admissionno: true,
+        name: true,
+        address: true,
+        city: true,
+        village: true,
+        Sex: true,
+        birthday: true,
+        nationality: true,
+        Religion: true,
+        tongue: true,
+        category: true,
+        mothername: true,
+        mphone: true,
+        moccupation: true,
+        fathername: true,
+        fphone: true,
+        foccupation: true,
+        aadharcard: true,
+        house: true,
+        bloodgroup: true,
+        previousClass: true,
+        yearofpass: true,
+        board: true,
+        school: true,
+        grade: true
+      },
     });
 
-    return { success: true, data: students };
+    // Transform dates to YYYY-MM-DD format for Excel
+    const formattedStudents = students.map(student => ({
+      ...student,
+      admissiondate: student.admissiondate.toISOString().split('T')[0],
+      birthday: student.birthday.toISOString().split('T')[0],
+    }));
+
+    return { success: true, data: formattedStudents };
   } catch (error) {
     console.error('Export error:', error);
     return { 

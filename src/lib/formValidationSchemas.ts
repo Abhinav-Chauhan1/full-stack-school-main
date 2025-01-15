@@ -44,6 +44,23 @@ export const juniorMarkSchema = z.object({
 export type JuniorMarkSchema = z.infer<typeof juniorMarkSchema>;
 
 // Helper function to calculate marks and grade
+// Add this helper function for grand total grade calculation
+const calculateGrandTotalGrade = (grandTotalMarks: number | null): string | null => {
+  if (grandTotalMarks === null) return null;
+  
+  // Calculate percentage based on total possible marks (200)
+  const percentage = (grandTotalMarks / 200) * 100;
+  
+  if (percentage >= 91) return 'A1';
+  if (percentage >= 81) return 'A2';
+  if (percentage >= 71) return 'B1';
+  if (percentage >= 61) return 'B2';
+  if (percentage >= 51) return 'C1';
+  if (percentage >= 41) return 'C2';
+  if (percentage >= 33) return 'D';
+  return 'E';
+};
+
 export const calculateMarksAndGrade = (markData: any) => {
   const examType = markData.examType;
   const marks = markData[examType === "HALF_YEARLY" ? "halfYearly" : "yearly"];
@@ -120,10 +137,15 @@ export const calculateMarksAndGrade = (markData: any) => {
   if (examType === "YEARLY" && existingHalfYearly?.totalMarks) {
     // For yearly exam, calculate grand total as half yearly + yearly marks
     grandTotalMarks = totalMarks + existingHalfYearly.totalMarks;
+    // Calculate grand total grade based on combined marks
+    grandTotalGrade = calculateGrandTotalGrade(grandTotalMarks);
     // Calculate overall percentage based on total possible marks (200)
+    overallPercentage = grandTotalMarks ? (grandTotalMarks / 200) * 100 : null;
   } else if (examType === "HALF_YEARLY") {
     // For half yearly, only store the current total marks
     grandTotalMarks = totalMarks;
+    grandTotalGrade = grade; // Use same grade as current marks for half yearly
+    overallPercentage = totalMarks ? (totalMarks / 100) * 100 : null;
   }
 
   return {
@@ -139,6 +161,7 @@ export const seniorMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
+  // Make all fields optional and nullable since they depend on subject type
   pt1: z.number().min(0).max(5).nullable().optional(),
   pt2: z.number().min(0).max(5).nullable().optional(),
   pt3: z.number().min(0).max(5).nullable().optional(),
@@ -148,9 +171,11 @@ export const seniorMarkSchema = z.object({
   subEnrichment: z.number().min(0).max(5).nullable().optional(),
   bestScore: z.number().nullable().optional(),
   finalExam: z.number().min(0).max(80).nullable().optional(),
-  practical: z.number().min(0).max(30).nullable().optional(),
+  // Add IT001 specific fields
   theory: z.number().min(0).max(70).nullable().optional(),
+  practical: z.number().min(0).max(30).nullable().optional(),
   total: z.number().nullable().optional(),
+  // Common fields
   grandTotal: z.number().nullable().optional(),
   grade: z.string().nullable().optional(),
   overallTotal: z.number().nullable().optional(),
@@ -240,6 +265,34 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
   const overallTotal = grandTotal;
   const overallMarks = grandTotal;
   const overallGrade = grade;
+
+  // For IT001 subject, calculate total differently
+  if (markData.theory !== null && markData.practical !== null) {
+    const theoryMarks = Math.min(70, Number(markData.theory));
+    const practicalMarks = Math.min(30, Number(markData.practical));
+    const total = theoryMarks + practicalMarks;
+    
+    // Calculate grade based on total
+    let grade = null;
+    if (total >= 91) grade = 'A1';
+    else if (total >= 81) grade = 'A2';
+    else if (total >= 71) grade = 'B1';
+    else if (total >= 61) grade = 'B2';
+    else if (total >= 51) grade = 'C1';
+    else if (total >= 41) grade = 'C2';
+    else if (total >= 33) grade = 'D';
+    else grade = 'E';
+
+    return {
+      theory: theoryMarks,
+      practical: practicalMarks,
+      total,
+      grade,
+      overallTotal: total,
+      overallMarks: total,
+      overallGrade: grade
+    };
+  }
 
   return {
     bestTwoPTAvg,

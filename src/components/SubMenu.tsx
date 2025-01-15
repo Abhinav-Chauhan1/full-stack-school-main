@@ -17,7 +17,7 @@ const SubMenu = ({ items, position, visible }: SubMenuProps) => {
 
   return (
     <div 
-      className="absolute bg-white shadow-lg rounded-md py-2 z-50"
+      className="absolute bg-white shadow-lg rounded-md py-2 z-[1000]"
       style={{ 
         top: `${position.top}px`,
         left: `${position.left}px`

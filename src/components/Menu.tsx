@@ -57,6 +57,12 @@ const menuItems = [
       },
       {
         icon: "/message.png",
+        label: "Promote Students",
+        href: "/list/promoteStudent",
+        visible: ["admin"],
+      },
+      {
+        icon: "/exam.png",
         label: "Up to 8th",
         href: "",
         visible: ["admin", "teacher"],
@@ -68,7 +74,7 @@ const menuItems = [
         ]
       },
       {
-        icon: "/message.png",
+        icon: "/exam.png",
         label: "9 Class",
         href: "",
         visible: ["admin", "teacher"],
@@ -80,7 +86,7 @@ const menuItems = [
         ]
       },
       {
-        icon: "/message.png",
+        icon: "/exam.png",
         label: "11 Class",
         href: "",
         visible: ["admin", "teacher"],
@@ -92,7 +98,7 @@ const menuItems = [
         ]
       },
       {
-        icon: "/message.png",
+        icon: "/assignment.png",
         label: "Import  & Export",
         href: "",
         visible: ["admin"],
@@ -184,7 +190,7 @@ const Menu = async () => {
                     <span className="hidden lg:block">{item.label}</span>
                   </Link>
                   {item.subItems && (
-                    <div className="hidden group-hover:block absolute left-full top-0 ">
+                    <div className="hidden group-hover:block absolute left-full top-0 z-[1000]">
                       <div className="bg-white shadow-lg rounded-md px-6 py-4">
                         {item.subItems.map((subItem, idx) => (
                           <Link

@@ -141,17 +141,7 @@ const SeniorMarkListPage = async ({
     { header: "Best Score", accessor: "bestScore" },
     { header: "Final Exam", accessor: "finalExam" },
     { header: "Grand Total", accessor: "grandTotal" },
-    { header: "Grade", accessor: "grade" },
-    { header: "Overall Total", accessor: "overallTotal" },
-    { header: "Overall Marks", accessor: "overallMarks" },
-    { header: "Overall Grade", accessor: "overallGrade" },
-    ...(data.some(mark => 
-      mark.sectionSubject.subject.code === "IT001"
-    ) ? [
-      { header: "Theory", accessor: "theory" },
-      { header: "Practical", accessor: "practical" },
-      { header: "Total", accessor: "total" }
-    ] : [])
+    { header: "Grade", accessor: "grade" }
   ];
 
   return (
@@ -224,49 +214,52 @@ const SeniorMarkListPage = async ({
       {/* Marks List */}
       <div className="mt-6">
         <h2 className="text-md font-semibold mb-3">Students</h2>
-        {data.length > 0 ? (
-          <Table 
-            columns={columns} 
-            data={data} 
-            renderRow={(item) => (
-              <tr 
-                key={`${item.student.id}-${item.sectionSubject.id}`}
-                className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-              >
-                <td className="p-4">{item.student.name}</td>
-                <td className="hidden md:table-cell">{item.student.admissionno}</td>
-                {item.sectionSubject.subject.code === "IT001" ? (
-                  <>
-                    <td>{item.theory}</td>
-                    <td>{item.practical}</td>
-                    <td>{item.total}</td>
-                    <td>{item.remarks}</td>
-                  </>
-                ) : (
-                  <>
-                    <td className="hidden md:table-cell">{item.pt1}</td>
-                    <td className="hidden md:table-cell">{item.pt2}</td>
-                    <td className="hidden md:table-cell">{item.pt3}</td>
-                    <td>{item.bestTwoPTAvg}</td>
-                    <td className="hidden md:table-cell">{item.multipleAssessment}</td>
-                    <td className="hidden md:table-cell">{item.portfolio}</td>
-                    <td className="hidden md:table-cell">{item.subEnrichment}</td>
-                    <td>{item.bestScore}</td>
-                    <td>{item.finalExam}</td>
-                    <td>{item.grandTotal}</td>
-                    <td>{item.grade}</td>
-                    <td>{item.overallTotal}</td>
-                    <td>{item.overallMarks}</td>
-                    <td>{item.overallGrade}</td>
-                  </>
-                )}
-              </tr>
-            )}
-          />
+        {sessionId && classId && sectionId && subjectId ? (
+          data.length > 0 ? (
+            <Table 
+              columns={columns} 
+              data={data} 
+              renderRow={(item) => (
+                <tr 
+                  key={`${item.student.id}-${item.sectionSubject.id}`}
+                  className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+                >
+                  <td className="p-4">{item.student.name}</td>
+                  <td className="hidden md:table-cell">{item.student.admissionno}</td>
+                  {item.sectionSubject.subject.code === "IT001" ? (
+                    <>
+                      <td>{item.theory}</td>
+                      <td>{item.practical}</td>
+                      <td>{item.total}</td>
+                      <td>{item.remarks}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="hidden md:table-cell">{item.pt1}</td>
+                      <td className="hidden md:table-cell">{item.pt2}</td>
+                      <td className="hidden md:table-cell">{item.pt3}</td>
+                      <td>{item.bestTwoPTAvg}</td>
+                      <td className="hidden md:table-cell">{item.multipleAssessment}</td>
+                      <td className="hidden md:table-cell">{item.portfolio}</td>
+                      <td className="hidden md:table-cell">{item.subEnrichment}</td>
+                      <td>{item.bestScore}</td>
+                      <td>{item.finalExam}</td>
+                      <td>{item.grandTotal}</td>
+                      <td>{item.grade}</td>
+                    </>
+                  )}
+                </tr>
+              )}
+            />
+          ) : (
+            <p>No marks found for the selected criteria.</p>
+          )
         ) : (
-          <p>No marks found for the selected criteria.</p>
+          <p>Please select all filters to view marks.</p>
         )}
-        <Pagination page={p} count={count} />
+        {sessionId && classId && sectionId && subjectId && (
+          <Pagination page={p} count={count} />
+        )}
       </div>
     </div>
   );
