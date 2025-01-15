@@ -173,7 +173,7 @@ export default function ImportForm({ classes = [], sessions = [] }: ImportFormPr
             
             <p className="mt-2">Optional columns:</p>
             <ul className="list-disc list-inside pl-4 space-y-1">
-              <li>nationality (defaults to "Indian")</li>
+              <li>nationality</li>
               <li>mothername</li>
               <li>mphone</li>
               <li>moccupation</li>

@@ -184,58 +184,60 @@ const JuniorMarkListPage = async ({
     return [...baseColumns, ...examSpecificColumns];
   };
 
-  // Only fetch marks if all required filters are selected
-  const isFiltersSelected = sessionId && classId && sectionId && subjectId && examType;
+  // Build query for marks
+  const query: any = {};
 
-  // Initialize data and count
-  let data = [];
-  let count = 0;
-
-  if (isFiltersSelected) {
-    // Build query for marks
-    const query: any = {
-      sessionId: parseInt(sessionId),
-      classSubject: {
-        classId: parseInt(classId),
-        subjectId: parseInt(subjectId),
-      },
-      student: {
-        AND: [
-          { classId: parseInt(classId) },
-          { sectionId: parseInt(sectionId) }
-        ],
-      },
-    };
-
-    // Determine which marks model to include based on exam type
-    const includeOptions = {
-      student: true,
-      classSubject: {
-        include: {
-          subject: true,
-          class: true,
-        },
-      },
-      session: true,
-      halfYearly: true,
-      yearly: true,
-    };
-
-    // Fetch marks data
-    [data, count] = await prisma.$transaction([
-      prisma.juniorMark.findMany({
-        where: query,
-        include: includeOptions,
-        orderBy: [
-          { student: { name: "asc" } },
-          { classSubject: { subject: { name: "asc" } } },
-        ],
-        take: ITEM_PER_PAGE,
-        skip: ITEM_PER_PAGE * (p - 1),
-      }),
-      prisma.juniorMark.count({ where: query }),
-    ]);
+  if (sessionId) {
+    query.sessionId = parseInt(sessionId);
   }
+
+  // Determine which marks model to include based on exam type
+  const includeOptions = {
+    student: true,
+    classSubject: {
+      include: {
+        subject: true,
+        class: true,
+      },
+    },
+    session: true,
+    halfYearly: true, // Always include both to avoid null issues
+    yearly: true,     // Always include both to avoid null issues
+  };
+
+  if (classId) {
+    query.classSubject = {
+      classId: parseInt(classId),
+    };
+  }
+
+  if (subjectId) {
+    query.classSubject = {
+      ...query.classSubject,
+      subjectId: parseInt(subjectId),
+    };
+  }
+
+  if (classId && sectionId) {
+    query.student = {
+      AND: [{ classId: parseInt(classId) }, { sectionId: parseInt(sectionId) }],
+    };
+  }
+
+  // Fetch marks data
+  const [data, count] = await prisma.$transaction([
+    prisma.juniorMark.findMany({
+      where: query,
+      include: includeOptions,
+      orderBy: [
+        { student: { name: "asc" } },
+        { classSubject: { subject: { name: "asc" } } },
+      ],
+      take: ITEM_PER_PAGE,
+      skip: ITEM_PER_PAGE * (p - 1),
+    }),
+    prisma.juniorMark.count({ where: query }),
+  ]);
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -319,19 +321,21 @@ const JuniorMarkListPage = async ({
       {/* Marks List */}
       <div className="mt-6">
         <h2 className="text-md font-semibold mb-3">Students</h2>
-        {!isFiltersSelected ? (
-          <p>Please select all filters to view marks.</p>
-        ) : data.length > 0 ? (
-          <>
+        {sessionId && classId && sectionId && subjectId && examType ? (
+          data.length > 0 ? (
             <Table
               columns={getColumns(examType)}
               renderRow={(item) => renderRow(item, examType, role)}
               data={data}
             />
-            <Pagination page={p} count={count} />
-          </>
+          ) : (
+            <p>No marks found for the selected criteria.</p>
+          )
         ) : (
-          <p>No marks found for the selected criteria.</p>
+          <p>Please select all filters to view marks.</p>
+        )}
+        {sessionId && classId && sectionId && subjectId && examType && (
+          <Pagination page={p} count={count} />
         )}
       </div>
     </div>

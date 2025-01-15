@@ -291,7 +291,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
       }))
     };
     reset(defaultValues);
-  }, [selectedSession, selectedSubject, selectedSectionStudents, isVocationalIT]);
+  }, [selectedSession, selectedSubject, selectedSectionStudents, isVocationalIT, reset]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
