@@ -30,6 +30,9 @@ interface StudentResult {
     grandTotal: number | null;
     grade: string | null;
     remarks: string | null;
+    theory?: number | null;
+    practical?: number | null;
+    total?: number | null;
     sectionSubject: {
       subject: {
         name: string;
@@ -83,6 +86,9 @@ interface StudentMark {
   finalExam: number | null;
   grandTotal: number | null;
   grade: string | null;
+  theory?: number | null;
+  practical?: number | null;
+  total?: number | null;
   remarks: string | null;
   sectionSubject: {
     subject: {
@@ -120,8 +126,14 @@ export const generatePdfDefinition9 = (
   getOverallGrade: (percentage: number) => string
 ): TDocumentDefinitions => {
   const safeMarksSenior = studentResult?.marksSenior ?? [];
-  const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(safeMarksSenior);
+  
+  // Separate IT001 marks from other subjects
+  const regularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
+  const itMarks = safeMarksSenior.find(mark => mark.sectionSubject.subject.code === 'IT001');
 
+  const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(regularMarks);
+
+  // Regular subjects table body
   const tableBody = [
     [
         { text: 'SUBJECTS', rowSpan: 3, alignment: 'center', style: 'tableHeader' },
@@ -168,9 +180,9 @@ export const generatePdfDefinition9 = (
         { text: 'Out of 20', alignment: 'center', style: 'outHeader' },
         { text: 'Out of 80', alignment: 'center', style: 'outHeader' },
         { text: 'Out of 100', alignment: 'center', style: 'outHeader' },
-        { text: 'G', alignment: 'center', style: 'outHeader' }
+        { text: 'Grade', alignment: 'center', style: 'outHeader' }
       ],
-      ...safeMarksSenior.map(mark => [
+      ...regularMarks.map(mark => [
         { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
         { text: mark?.pt1 ?? '-', alignment: 'center' },
         { text: mark?.pt2 ?? '-', alignment: 'center' },
@@ -185,12 +197,33 @@ export const generatePdfDefinition9 = (
         { text: mark?.grade ?? '-', alignment: 'center' }
       ]),
       [
+        { text: 'Vocational(I.T.)', colSpan: 3 ,rowSpan: 2, alignment: 'center'},
+        {},
+        {},
+        { text: 'Theory\n(Out of 70)', colSpan:3, alignment: 'center', style: 'tableHeader' },
+        {},
+        {},
+        { text: 'Practical\n(Out of 30)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
+        {},
+        {},
+        { text: 'Total\n(Out of 100)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
+        {},
+        {},
+      ],
+      [
+        {},{},{},
+        { text: itMarks?.theory ?? '-', colSpan:3, alignment: 'center' },{},{},
+        { text: itMarks?.practical ?? '-', colSpan:3, alignment: 'center' },{},{},
+        { text: itMarks?.total ?? '-', colSpan:3, alignment: 'center' },{},{},
+      ],
+      [
         { text: 'Over All Total Marks', colSpan: 11, alignment: 'right', style: 'tableHeader' },
         {}, {}, {}, {}, {}, {}, {}, {}, {},
         { text: totalObtained.toString(), alignment: 'center', style: 'tableHeader' },
         { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'tableHeader' }
       ]
     ];
+
 
   // Define co-scholastic table structure
   const coScholasticTable = {
@@ -332,6 +365,7 @@ export const generatePdfDefinition9 = (
           vLineColor: () => 'black'
         }
       },
+
 
       // Note about failing criteria
       {

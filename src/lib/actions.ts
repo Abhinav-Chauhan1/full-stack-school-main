@@ -547,8 +547,10 @@ export const createTeacher = async (
   formData: TeacherSchema
 ) => {
   try {
-    // Get class name if assignedClassId is provided
+    // Get class and section names if they are provided
     let className = null;
+    let sectionName = null;
+    
     if (formData.assignedClassId) {
       const classData = await prisma.class.findUnique({
         where: { id: Number(formData.assignedClassId) },
@@ -557,7 +559,15 @@ export const createTeacher = async (
       className = classData?.name;
     }
 
-    // Create user in Clerk with required fields
+    if (formData.assignedSectionId) {
+      const sectionData = await prisma.section.findUnique({
+        where: { id: Number(formData.assignedSectionId) },
+        select: { name: true }
+      });
+      sectionName = sectionData?.name;
+    }
+
+    // Create user in Clerk with enhanced metadata
     const user = await clerkClient().users.createUser({
       password: formData.password || Math.random().toString(36).slice(-8),
       firstName: formData.name,
@@ -565,11 +575,12 @@ export const createTeacher = async (
       username: formData.name,
       publicMetadata: { 
         role: "teacher",
-        assignedClass: className
+        assignedClass: className,
+        assignedSection: sectionName
       },
     });
 
-    // Create teacher in Prisma
+    // Create teacher in Prisma with both class and section
     await prisma.teacher.create({
       data: {
         id: user.id,
@@ -590,6 +601,7 @@ export const createTeacher = async (
         img: formData.img,
         password: formData.password || "",
         assignedClassId: formData.assignedClassId ? Number(formData.assignedClassId) : null,
+        assignedSectionId: formData.assignedSectionId ? Number(formData.assignedSectionId) : undefined,
         createdAt: new Date(),
       },
     });
@@ -610,8 +622,10 @@ export const updateTeacher = async (
       return { success: false, error: true };
     }
 
-    // Get class name if assignedClassId is provided
+    // Get class and section names if they are provided
     let className = null;
+    let sectionName = null;
+    
     if (formData.assignedClassId) {
       const classData = await prisma.class.findUnique({
         where: { id: Number(formData.assignedClassId) },
@@ -620,25 +634,32 @@ export const updateTeacher = async (
       className = classData?.name;
     }
 
-    // Only update Clerk user if necessary fields changed
+    if (formData.assignedSectionId) {
+      const sectionData = await prisma.section.findUnique({
+        where: { id: Number(formData.assignedSectionId) },
+        select: { name: true }
+      });
+      sectionName = sectionData?.name;
+    }
+
+    // Update Clerk user with enhanced metadata
     const clerkUpdateData: any = {
       firstName: formData.name,
       lastName: "",
       publicMetadata: { 
         role: "teacher",
-        assignedClass: className
+        assignedClass: className,
+        assignedSection: sectionName
       },
     };
 
-    // Only include password if it's provided
     if (formData.password) {
       clerkUpdateData.password = formData.password;
     }
 
-    // Update Clerk user
     await clerkClient().users.updateUser(formData.id, clerkUpdateData);
 
-    // Prepare Prisma update data
+    // Update Prisma data
     const prismaUpdateData: any = {
       name: formData.name,
       Sex: formData.Sex,
@@ -655,25 +676,16 @@ export const updateTeacher = async (
       qualification: formData.qualification,
       EmployeeType: formData.EmployeeType,
       assignedClassId: formData.assignedClassId ? Number(formData.assignedClassId) : null,
+      assignedSectionId: formData.assignedSectionId ? Number(formData.assignedSectionId) : null,
     };
 
-    // Only include optional fields if they're provided
-    if (formData.img) {
-      prismaUpdateData.img = formData.img;
-    }
-    
-    if (formData.password) {
-      prismaUpdateData.password = formData.password;
-    }
-
-    // Update teacher in Prisma
     await prisma.teacher.update({
       where: { id: formData.id },
       data: prismaUpdateData,
     });
       
     return { success: true, error: false };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error updating teacher:", err);
     return { success: false, error: true };
   }

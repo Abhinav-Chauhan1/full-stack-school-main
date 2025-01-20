@@ -22,6 +22,10 @@ type TeacherFormProps = {
       id: number;
       name: string;
       classNumber: number;
+      sections?: {
+        id: number;
+        name: string;
+      }[];
     }[];
   };
 };
@@ -59,7 +63,6 @@ const TeacherForm = ({
       if (type === "update") {
         formData.id = data?.id;// Ensure ID is included for updates
     };
-    console.log(formData);
     formAction(formData);
   });
 
@@ -72,6 +75,29 @@ const TeacherForm = ({
       router.refresh();
     }
   }, [state, router, type, setOpen]);
+
+  const [selectedClassId, setSelectedClassId] = useState<string>(data?.assignedClassId?.toString() || "");
+
+  // Get sections for selected class
+  const availableSections = selectedClassId 
+    ? relatedData?.classes?.find(c => c.id === parseInt(selectedClassId))?.sections || []
+    : [];
+
+  // Update the useEffect to handle initial section selection
+  useEffect(() => {
+    if (data?.assignedClassId) {
+      setSelectedClassId(data.assignedClassId.toString());
+    }
+  }, [data]);
+
+  // Update sections when class changes
+  useEffect(() => {
+    // Reset section if class is changed to empty
+    if (!selectedClassId) {
+      register("assignedSectionId", { value: 0 });
+    }
+  }, [selectedClassId]);
+
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -267,14 +293,34 @@ const TeacherForm = ({
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Assigned Class</label>
           <select
-            defaultValue={data?.assignedClassId || ""}
+            value={selectedClassId}
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("assignedClassId")}
+            onChange={(e) => {
+              setSelectedClassId(e.target.value);
+            }}
           >
             <option value="">No Class Assigned</option>
             {relatedData?.classes?.map((cls) => (
               <option key={cls.id} value={cls.id}>
                 {cls.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2 w-full md:w-1/4">
+          <label className="text-xs text-gray-500">Assigned Section</label>
+          <select
+            defaultValue={data?.assignedSectionId || ""}
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            {...register("assignedSectionId")}
+            disabled={!selectedClassId}
+          >
+            <option value="">No Section Assigned</option>
+            {availableSections.map((section) => (
+              <option key={section.id} value={section.id}>
+                {section.name}
               </option>
             ))}
           </select>

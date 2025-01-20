@@ -24,14 +24,19 @@ const StudentListPage = async ({
   const { userId, sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  // Get teacher's assigned class if role is teacher
+  // Get teacher's assigned class and section if role is teacher
   let assignedClassId: number | null = null;
+  let assignedSectionId: number | null = null;
   if (role === "teacher" && userId) {
     const teacher = await prisma.teacher.findUnique({
       where: { id: userId },
-      select: { assignedClassId: true }
+      select: { 
+        assignedClassId: true,
+        assignedSectionId: true
+      }
     });
     assignedClassId = teacher?.assignedClassId || null;
+    assignedSectionId = teacher?.assignedSectionId || null;
   }
 
   const columns = [
@@ -125,9 +130,14 @@ const StudentListPage = async ({
   // Build the query based on search parameters
   const query: Prisma.StudentWhereInput = {};
   
-  // Add teacher class restriction
-  if (role === "teacher" && assignedClassId) {
-    query.classId = assignedClassId;
+  // Add teacher class and section restrictions
+  if (role === "teacher") {
+    if (assignedClassId) {
+      query.classId = assignedClassId;
+    }
+    if (assignedSectionId) {
+      query.sectionId = assignedSectionId;
+    }
   }
 
   if (queryParams) {
@@ -205,6 +215,7 @@ const StudentListPage = async ({
     }),
   ]);
 
+  // Only show class/section filters for admin
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       <div className="flex items-center justify-between">
@@ -212,29 +223,28 @@ const StudentListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            {/* Only show class filter for admin */}
             {role === "admin" && (
-              <ClassFilterSelect 
-                classes={classes} 
-                selectedClassId={queryParams.classId} 
-              />
-            )}
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image 
-                src="/sort.png" 
-                alt="Sort" 
-                width={14} 
-                height={14}
-                style={{ width: 'auto', height: 'auto' }}
-              />
-            </button>
-            {role === "admin" && (
-              <FormContainer
-                table="student"
-                type="create"
-                data={null}
-                relatedData={{ classes, sections, sessions }}
-              />
+              <>
+                <ClassFilterSelect 
+                  classes={classes} 
+                  selectedClassId={queryParams.classId} 
+                />
+                <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+                  <Image 
+                    src="/sort.png" 
+                    alt="Sort" 
+                    width={14} 
+                    height={14}
+                    style={{ width: 'auto', height: 'auto' }}
+                  />
+                </button>
+                <FormContainer
+                  table="student"
+                  type="create"
+                  data={null}
+                  relatedData={{ classes, sections, sessions }}
+                />
+              </>
             )}
           </div>
         </div>

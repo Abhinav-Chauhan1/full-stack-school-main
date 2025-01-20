@@ -490,18 +490,18 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                 <th className="p-2 border">Student</th>
                 {examType === "HALF_YEARLY" ? (
                   <>
-                    <th className="p-2 border">UT1</th>
-                    <th className="p-2 border">UT2</th>
+                    <th className="p-2 border">UT1 (10)</th>
+                    <th className="p-2 border">UT2 (10)</th>
                   </>
                 ) : (
                   <>
-                    <th className="p-2 border">UT3</th>
-                    <th className="p-2 border">UT4</th>
+                    <th className="p-2 border">UT3 (10)</th>
+                    <th className="p-2 border">UT4 (10)</th>
                   </>
                 )}
-                <th className="p-2 border">Notebook</th>
-                <th className="p-2 border">Sub Enrichment</th>
-                <th className="p-2 border">Exam Marks</th>
+                <th className="p-2 border">Notebook (5)</th>
+                <th className="p-2 border">Sub Enrichment (5)</th>
+                <th className="p-2 border">Exam Marks (80)</th>
                 <th className="p-2 border">Remarks</th>
               </tr>
             </thead>

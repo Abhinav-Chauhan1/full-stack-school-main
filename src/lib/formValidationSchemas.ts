@@ -376,6 +376,7 @@ export const teacherSchema = z.object({
   img: z.string().optional(),
   createdAt: z.string().optional().transform(str => str ? new Date(str) : new Date()),
   assignedClassId: z.string().transform(str => str ? parseInt(str, 10) : null).nullable(),
+  assignedSectionId: z.string().transform(str => str ? parseInt(str, 10) : null).nullable(),
 });
 
 export type TeacherSchema = z.infer<typeof teacherSchema>;

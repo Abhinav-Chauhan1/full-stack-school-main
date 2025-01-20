@@ -347,84 +347,41 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
       {selectedSubject && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 border">Student</th>
-                <th className="p-2 border">Unit Test 1 (10)</th>
-                <th className="p-2 border">Half Yearly (30)</th>
-                <th className="p-2 border">Unit Test 2 (10)</th>
-                <th className="p-2 border">Theory (35)</th>
-                <th className="p-2 border">Practical (15)</th>
-                <th className="p-2 border">Remarks</th> {/* Add this column */}
+            <thead><tr className="bg-gray-100">
+              <th className="p-2 border">Student</th>
+              <th className="p-2 border">Unit Test 1 (10)</th>
+              <th className="p-2 border">Half Yearly (30)</th>
+              <th className="p-2 border">Unit Test 2 (10)</th>
+              <th className="p-2 border">Theory (35)</th>
+              <th className="p-2 border">Practical (15)</th>
+              <th className="p-2 border">Remarks</th>
+            </tr></thead>
+            <tbody>{selectedSectionStudents.map((student, index) => (
+              <tr key={student.id} className="even:bg-gray-50">
+                <td className="p-2 border">
+                  <input type="hidden" {...register(`marks.${index}.studentId`)} value={student.id}/>
+                  {student.name}
+                </td>
+                <td className="p-2 border">
+                  <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}/>
+                </td>
+                <td className="p-2 border">
+                  <input type="number" step="0.1" max="30" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}/>
+                </td>
+                <td className="p-2 border">
+                  <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}/>
+                </td>
+                <td className="p-2 border">
+                  <input type="number" step="0.1" max="35" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.theory`, { valueAsNumber: true })}/>
+                </td>
+                <td className="p-2 border">
+                  <input type="number" step="0.1" max="15" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.practical`, { valueAsNumber: true })}/>
+                </td>
+                <td className="p-2 border">
+                  <input type="text" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.remarks`)} placeholder="Add remarks"/>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {selectedSectionStudents.map((student, index) => (
-                <tr key={student.id} className="even:bg-gray-50">
-                  <td className="p-2 border">
-                    <input
-                      type="hidden"
-                      {...register(`marks.${index}.studentId`)}
-                      value={student.id}
-                    />
-                    {student.name}
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      max="10"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      max="30"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      max="10"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      max="35"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.theory`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="number"
-                      step="0.1"
-                      max="15"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.practical`, { valueAsNumber: true })}
-                    />
-                  </td>
-                  <td className="p-2 border">
-                    <input
-                      type="text"
-                      className="w-full p-1 border rounded text-sm"
-                      {...register(`marks.${index}.remarks`)}
-                      placeholder="Add remarks"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            ))}</tbody>
           </table>
         </div>
       )}

@@ -422,13 +422,13 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                   </>
                 ) : (
                   <>
-                    <th className="p-2 border">PT1</th>
-                    <th className="p-2 border">PT2</th>
-                    <th className="p-2 border">PT3</th>
-                    <th className="p-2 border">Multiple Assessment</th>
-                    <th className="p-2 border">Portfolio</th>
-                    <th className="p-2 border">Sub Enrichment</th>
-                    <th className="p-2 border">Final Exam</th>
+                    <th className="p-2 border">PT1 (5)</th>
+                    <th className="p-2 border">PT2 (5)</th>
+                    <th className="p-2 border">PT3 (5)</th>
+                    <th className="p-2 border">Multiple Assessment (5)</th>
+                    <th className="p-2 border">Portfolio (5)</th>
+                    <th className="p-2 border">Sub Enrichment (5)</th>
+                    <th className="p-2 border">Final Exam (80)</th>
                   </>
                 )}
                 <th className="p-2 border">Remarks</th>

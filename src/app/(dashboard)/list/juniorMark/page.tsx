@@ -18,22 +18,32 @@ const JuniorMarkListPage = async ({
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  const { sessionClaims } = auth();
+  const { userId, sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
+  const assignedSectionStr = (sessionClaims?.metadata as { assignedSection?: string })?.assignedSection || "";
   
-  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/) 
-    ? assignedClassStr 
-    : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
+  // Get the assigned class id and section id for the teacher
+  let assignedClassId: number | null = null;
+  let assignedSectionId: number | null = null;
+  
+  if (role === "teacher" && userId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: userId },
+      select: { 
+        assignedClassId: true,
+        assignedSectionId: true
+      }
+    });
+    assignedClassId = teacher?.assignedClassId || null;
+    assignedSectionId = teacher?.assignedSectionId || null;
+  }
 
   // Check access permission
   const hasAccess = role === "admin" || (
     role === "teacher" && 
-    assignedClass && (
-      typeof assignedClass === "number" 
-        ? assignedClass <= 8
-        : ["Nursery", "KG", "UKG"].includes(assignedClass)
-    )
+    assignedClassId && 
+    assignedSectionId
   );
 
   if (!hasAccess) {
@@ -59,10 +69,8 @@ const JuniorMarkListPage = async ({
             lte: 8
           }
         },
-        role === "teacher" && assignedClass
-          ? typeof assignedClass === "number"
-            ? { classNumber: assignedClass }
-            : { name: assignedClass }
+        role === "teacher" && assignedClassId
+          ? { id: assignedClassId }
           : {}
       ]
     },
@@ -70,7 +78,11 @@ const JuniorMarkListPage = async ({
       classNumber: "asc"
     },
     include: {
-      sections: true,
+      sections: {
+        where: role === "teacher" && assignedSectionId
+          ? { id: assignedSectionId }
+          : undefined,
+      },
       classSubjects: {
         include: {
           subject: true,
@@ -187,9 +199,25 @@ const JuniorMarkListPage = async ({
   // Build query for marks
   const query: any = {};
 
-  if (sessionId) {
-    query.sessionId = parseInt(sessionId);
+  // Add teacher restrictions
+  if (role === "teacher") {
+    if (assignedClassId) {
+      query.classSubject = {
+        classId: assignedClassId
+      };
+    }
+    if (assignedSectionId) {
+      query.student = {
+        sectionId: assignedSectionId
+      };
+    }
   }
+
+  // Add other query parameters
+  if (sessionId) query.sessionId = parseInt(sessionId);
+  if (classId) query.classSubject = { ...query.classSubject, classId: parseInt(classId) };
+  if (subjectId) query.classSubject = { ...query.classSubject, subjectId: parseInt(subjectId) };
+  if (sectionId) query.student = { ...query.student, sectionId: parseInt(sectionId) };
 
   // Determine which marks model to include based on exam type
   const includeOptions = {
@@ -204,25 +232,6 @@ const JuniorMarkListPage = async ({
     halfYearly: true, // Always include both to avoid null issues
     yearly: true,     // Always include both to avoid null issues
   };
-
-  if (classId) {
-    query.classSubject = {
-      classId: parseInt(classId),
-    };
-  }
-
-  if (subjectId) {
-    query.classSubject = {
-      ...query.classSubject,
-      subjectId: parseInt(subjectId),
-    };
-  }
-
-  if (classId && sectionId) {
-    query.student = {
-      AND: [{ classId: parseInt(classId) }, { sectionId: parseInt(sectionId) }],
-    };
-  }
 
   // Fetch marks data
   const [data, count] = await prisma.$transaction([
@@ -245,7 +254,7 @@ const JuniorMarkListPage = async ({
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="hidden md:block text-lg font-semibold">
-            Junior Marks List
+            Junior Marks List {role === "teacher" && `- ${assignedClassStr} ${assignedSectionStr}`}
           </h1>
           <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
             <div className="flex items-center gap-4 self-end">
@@ -275,29 +284,33 @@ const JuniorMarkListPage = async ({
               label: session.sessioncode,
             }))}
           />
-          <Select
-            name="classId"
-            label="Class"
-            options={classes.map((cls) => ({
-              value: cls.id.toString(),
-              label: cls.name,
-            }))}
-          />
-          <Select
-            name="sectionId"
-            label="Section"
-            options={
-              classId
-                ? classes
-                    .find((c) => c.id === parseInt(classId))
-                    ?.sections.map((section) => ({
-                      value: section.id.toString(),
-                      label: section.name,
-                    })) ?? []
-                : []
-            }
-            disabled={!classId}
-          />
+          {role === "admin" && (
+            <>
+              <Select
+                name="classId"
+                label="Class"
+                options={classes.map((cls) => ({
+                  value: cls.id.toString(),
+                  label: cls.name,
+                }))}
+              />
+              <Select
+                name="sectionId"
+                label="Section"
+                options={
+                  classId
+                    ? classes
+                        .find((c) => c.id === parseInt(classId))
+                        ?.sections.map((section) => ({
+                          value: section.id.toString(),
+                          label: section.name,
+                        })) ?? []
+                    : []
+                }
+                disabled={!classId}
+              />
+            </>
+          )}
           <Select
             name="subjectId"
             label="Subject"

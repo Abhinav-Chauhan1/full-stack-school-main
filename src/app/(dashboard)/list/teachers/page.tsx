@@ -3,18 +3,22 @@ import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
-import { Prisma,Teacher} from "@prisma/client";
+import { Prisma, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
 
-// Enhanced type to include subjects and assignedClass
-type TeacherWithSubjects = Teacher & {
+// Enhanced type to include subjects, assignedClass, and assignedSection
+type TeacherWithDetails = Teacher & {
   assignedClass?: {
     name: string;
   };
+  assignedSection?: {
+    name: string;
+  };
 };
+
 const TeacherListPage = async ({
   searchParams,
 }: {
@@ -44,6 +48,11 @@ const TeacherListPage = async ({
       accessor: "assignedClass.name",
       className: "hidden lg:table-cell",
     },
+    {
+      header: "Assigned Section",
+      accessor: "assignedSection.name",
+      className: "hidden lg:table-cell",
+    },
     ...(role === "admin"
       ? [
           {
@@ -54,7 +63,7 @@ const TeacherListPage = async ({
       : []),
   ];
 
-  const renderRow = (item: TeacherWithSubjects) => (
+  const renderRow = (item: TeacherWithDetails) => (
     <tr
       key={item.id}
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
@@ -76,6 +85,9 @@ const TeacherListPage = async ({
       <td className="hidden lg:table-cell">{item.designation}</td>
       <td className="hidden lg:table-cell">
         {item.assignedClass?.name || "Not Assigned"}
+      </td>
+      <td className="hidden lg:table-cell">
+        {item.assignedSection?.name || "Not Assigned"}
       </td>
       {role === "admin" && (
         <td>
@@ -115,14 +127,20 @@ const TeacherListPage = async ({
         assignedClass: {
           select: {
             name: true,
+            sections: true // Include sections for proper data loading
+          },
+        },
+        assignedSection: {
+          select: {
+            name: true,
           },
         },
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
       orderBy: {
-        createdAt: 'desc' // Recent teachers first
-      }
+        createdAt: "desc", // Recent teachers first
+      },
     }),
     prisma.teacher.count({ where: query }),
   ]);
