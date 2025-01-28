@@ -25,7 +25,7 @@ const Pagination = ({ page, count }: { page: number; count: number }) => {
       >
         Prev
       </button>
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex flex-wrap items-center justify-center gap-2 text-sm max-w-[60%]">
         {Array.from(
           { length: Math.ceil(count / ITEM_PER_PAGE) },
           (_, index) => {
@@ -33,7 +33,7 @@ const Pagination = ({ page, count }: { page: number; count: number }) => {
             return (
               <button
                 key={pageIndex}
-                className={`px-2 rounded-sm ${
+                className={`px-2 py-1 rounded-sm ${
                   page === pageIndex ? "bg-lamaSky" : ""
                 }`}
                 onClick={() => {

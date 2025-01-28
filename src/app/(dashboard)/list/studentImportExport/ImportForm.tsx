@@ -37,6 +37,35 @@ export default function ImportForm({ classes = [], sessions = [] }: ImportFormPr
     if (file) setFile(file)
   }
 
+  interface Student {
+    admissionno: string;
+    name: string;
+    Sex: string;
+    admissiondate: string;
+    address: string;
+    city: string;
+    village: string;
+    birthday: string;
+    Religion: string;
+    tongue: string;
+    category: string;
+    bloodgroup: string;
+    nationality?: string;
+    mothername?: string;
+    mphone?: string;
+    moccupation?: string;
+    fathername?: string;
+    fphone?: string;
+    foccupation?: string;
+    aadharcard?: string;
+    house?: string;
+    previousClass?: string;
+    yearofpass?: string;
+    board?: string;
+    school?: string;
+    grade?: string;
+  }
+
   const handleImport = async () => {
     if (!file || !selectedClass || !selectedSection || !selectedSession) {
       alert('Please select class, section, session and file')
@@ -48,7 +77,14 @@ export default function ImportForm({ classes = [], sessions = [] }: ImportFormPr
       const data = await file.arrayBuffer()
       const workbook = XLSX.read(data)
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+      const jsonData: Student[] = XLSX.utils.sheet_to_json(worksheet)
+
+      // Basic validation
+      for (const student of jsonData) {
+        if (!student.admissiondate || !student.birthday) {
+          throw new Error('Admission date and birth date are required for all students');
+        }
+      }
 
       const result = await importStudentsWithMarks({
         students: jsonData,

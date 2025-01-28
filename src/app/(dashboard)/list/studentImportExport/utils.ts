@@ -80,7 +80,7 @@ function cleanupStudentData(studentData: any) {
   return cleanData;
 }
 
-export function convertStudentData(student: any): Omit<Prisma.StudentCreateInput, 'Class' | 'Section'> {
+export function convertStudentData(student: any): Omit<Prisma.StudentCreateInput, 'Class' | 'Section' | 'Session'> {
   const withDates = convertExcelDates(student);
   const withPhones = convertPhoneNumbers(withDates);
   
@@ -92,37 +92,57 @@ export function convertStudentData(student: any): Omit<Prisma.StudentCreateInput
   // Clean up data by removing unknown fields
   const cleanedData = cleanupStudentData(withPhones);
 
+  // Convert date strings to Date objects
+  let admissiondate: Date;
+  let birthday: Date;
+
+  try {
+    // Handle Excel dates or date strings
+    if (cleanedData.admissiondate) {
+      admissiondate = new Date(cleanedData.admissiondate);
+      if (isNaN(admissiondate.getTime())) {
+        throw new Error(`Invalid admission date format for student ${cleanedData.name}`);
+      }
+    } else {
+      throw new Error(`Missing admission date for student ${cleanedData.name}`);
+    }
+
+    if (cleanedData.birthday) {
+      birthday = new Date(cleanedData.birthday);
+      if (isNaN(birthday.getTime())) {
+        throw new Error(`Invalid birth date format for student ${cleanedData.name}`);
+      }
+    } else {
+      throw new Error(`Missing birth date for student ${cleanedData.name}`);
+    }
+  } catch (error) {
+    throw new Error(`Date conversion error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  // Return the converted data with proper types
   return {
-    admissiondate: cleanedData.admissiondate,
-    admissionno: cleanedData.admissionno,
-    name: cleanedData.name,
-    address: cleanedData.address,
-    category: cleanedData.category,
-    Sex: cleanedData.Sex,
-    birthday: cleanedData.birthday,
-    city: cleanedData.city,
-    village: cleanedData.village,
-    nationality: cleanedData.nationality,
-    Religion: cleanedData.Religion,
-    tongue: cleanedData.tongue,
-    mothername: cleanedData.mothername,
-    mphone: cleanedData.mphone,
-    moccupation: cleanedData.moccupation,
-    fathername: cleanedData.fathername,
-    fphone: cleanedData.fphone,
-    foccupation: cleanedData.foccupation,
-    aadharcard: cleanedData.aadharcard,
-    house: cleanedData.house,
-    bloodgroup: cleanedData.bloodgroup,
-    previousClass: cleanedData.previousClass,
-    yearofpass: cleanedData.yearofpass,
-    board: cleanedData.board,
-    school: cleanedData.school,
-    grade: cleanedData.grade,
-    document: cleanedData.document,
-    tc: cleanedData.tc,
-    tcdate: cleanedData.tcdate,
-    tcNo: cleanedData.tcNo,
-    img: cleanedData.img
+    ...cleanedData,
+    admissiondate, // Now guaranteed to be a Date
+    birthday, // Now guaranteed to be a Date
+    // Ensure numeric fields are properly converted
+    admissionno: typeof cleanedData.admissionno === 'string' ? 
+      parseInt(cleanedData.admissionno) : 
+      cleanedData.admissionno,
+    yearofpass: cleanedData.yearofpass ? 
+      parseInt(cleanedData.yearofpass.toString()) : 
+      undefined,
+    // Handle optional phone numbers
+    mphone: cleanedData.mphone?.toString() || undefined,
+    fphone: cleanedData.fphone?.toString() || undefined,
+    // Ensure other required fields are present
+    name: cleanedData.name || '',
+    Sex: cleanedData.Sex || '',
+    address: cleanedData.address || '',
+    city: cleanedData.city || '',
+    village: cleanedData.village || '',
+    Religion: cleanedData.Religion || '',
+    tongue: cleanedData.tongue || '',
+    category: cleanedData.category || '',
+    bloodgroup: cleanedData.bloodgroup || '',
   };
 }
