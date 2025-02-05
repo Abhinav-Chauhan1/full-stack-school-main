@@ -264,3 +264,111 @@ export const deleteJuniorMark = async (
     };
   }
 };
+
+export const recalculateJuniorMarks = async (markData: any) => {
+  try {
+    const results = calculateMarksAndGrade(markData);
+    
+    // Update the mark record with calculated values
+    await prisma.juniorMark.update({
+      where: {
+        studentId_classSubjectId_sessionId: {
+          studentId: markData.studentId,
+          classSubjectId: markData.classSubjectId,
+          sessionId: markData.sessionId
+        }
+      },
+      data: {
+        [markData.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+          update: {
+            // Update half yearly marks
+            ...(markData.examType === "HALF_YEARLY" ? {
+              totalMarks: results.totalMarks,
+              grade: results.grade
+            } : {
+              // Update yearly marks
+              yearlytotalMarks: results.totalMarks,
+              yearlygrade: results.grade
+            })
+          }
+        },
+        // Update grand total if it's yearly exam
+        ...(markData.examType === "YEARLY" && {
+          grandTotalMarks: results.grandTotalMarks,
+          grandTotalGrade: results.grandTotalGrade,
+          overallPercentage: results.overallPercentage
+        })
+      }
+    });
+
+    return {
+      success: true,
+      error: false,
+      results
+    };
+  } catch (err) {
+    console.error("Recalculate Marks Error:", err);
+    return {
+      success: false,
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
+
+export const recalculateAllJuniorMarks = async (
+  classId?: number, 
+  sectionId?: number, 
+  sessionId?: number
+) => {
+  try {
+    // Build where clause based on provided filters
+    const where: any = {};
+    if (classId) where.classSubject = { classId };
+    if (sectionId) where.student = { sectionId };
+    if (sessionId) where.sessionId = sessionId;
+
+    // Get all marks matching the criteria
+    const marks = await prisma.juniorMark.findMany({
+      where,
+      include: {
+        halfYearly: true,
+        yearly: true
+      }
+    });
+
+    // Process each mark
+    const updatePromises = marks.map(async (mark) => {
+      // Calculate half yearly marks if they exist
+      if (mark.halfYearly) {
+        await recalculateJuniorMarks({
+          ...mark,
+          examType: "HALF_YEARLY"
+        });
+      }
+
+      // Calculate yearly marks if they exist
+      if (mark.yearly) {
+        await recalculateJuniorMarks({
+          ...mark,
+          examType: "YEARLY"
+        });
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    return {
+      success: true,
+      error: false,
+      message: `Successfully recalculated ${marks.length} mark records`
+    };
+  } catch (err) {
+    console.error("Recalculate All Marks Error:", err);
+    return {
+      success: false,
+      error: true,
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
+  }
+};
