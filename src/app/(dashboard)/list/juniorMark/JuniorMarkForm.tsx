@@ -134,6 +134,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         const result = await checkExistingJuniorMarks({
           classSubjectId: selectedSubject,
           sessionId: selectedSession,
+          sectionId: selectedSection, // Pass sectionId
           examType: examType,
         });
   

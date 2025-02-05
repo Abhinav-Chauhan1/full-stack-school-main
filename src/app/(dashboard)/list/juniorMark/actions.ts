@@ -10,11 +10,12 @@ export const checkExistingJuniorMarks = async (
   data: { 
     classSubjectId: number, 
     sessionId: number, 
-    examType: "HALF_YEARLY" | "YEARLY" 
+    examType: "HALF_YEARLY" | "YEARLY",
+    sectionId: number // Add sectionId to the data parameter
   }
 ) => {
   try {
-    if (!data.classSubjectId || !data.sessionId || !data.examType) {
+    if (!data.classSubjectId || !data.sessionId || !data.examType || !data.sectionId) { // Add sectionId check
       return { 
         success: false, 
         error: true,
@@ -38,6 +39,9 @@ export const checkExistingJuniorMarks = async (
       where: {
         classSubjectId: data.classSubjectId,
         sessionId: data.sessionId,
+        student: {
+          sectionId: data.sectionId // Add section filter
+        },
         [data.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
           isNot: null
         }
