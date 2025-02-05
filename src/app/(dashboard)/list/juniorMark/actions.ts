@@ -48,10 +48,15 @@ export const checkExistingJuniorMarks = async (
       }
     });
 
+    // Check if any of the existing marks have the relevant exam type data
+    const hasExamTypeData = existingMarks.some(mark => 
+      data.examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
+    );
+
     return { 
       success: true, 
       error: false, 
-      data: existingMarks 
+      data: hasExamTypeData ? existingMarks : [] 
     };
   } catch (err) {
     console.error("Check Existing Junior Marks Error:", err);
