@@ -129,19 +129,18 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         return;
       }
   
-      // Now using selectedSubject directly since it's already the classSubject.id
       setIsLoading(true);
       try {
         const result = await checkExistingJuniorMarks({
-          classSubjectId: selectedSubject, // Use directly as it's now the classSubject.id
+          classSubjectId: selectedSubject,
           sessionId: selectedSession,
           examType: examType,
         });
   
         if (result.success && result.data && result.data.length > 0) {
-            const hasExamTypeData: boolean = result.data.some((mark: { halfYearly: any; yearly: any; }) => 
+          const hasExamTypeData = result.data.some((mark) =>
             examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
-            );
+          );
   
           if (hasExamTypeData) {
             setExistingMarksData(result.data);

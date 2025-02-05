@@ -43,8 +43,8 @@ export const checkExistingJuniorMarks = async (
         }
       },
       include: {
-        halfYearly: data.examType === "HALF_YEARLY",
-        yearly: data.examType === "YEARLY"
+        halfYearly: true,
+        yearly: true
       }
     });
 
