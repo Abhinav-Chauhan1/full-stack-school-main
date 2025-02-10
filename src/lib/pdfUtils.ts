@@ -100,10 +100,10 @@ const calculateOverallResults = (marks: any[]) => {
     ? Number((totals.totalMarks / totals.maxPossibleMarks * 100).toFixed(2))
     : 0;
 
-  return { ...totals, overallPercentage };
+  return { ...totals, overallPercentage};
 };
 
-const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMarks, overallPercentage }: any) => {
+const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMarks, overallPercentage}: any) => {
   const totalRow = [
     {},
     {text: `OVER ALL TOTAL (TERM -1 & TERM 2) OF MAIN SUBJECTS`, colSpan: 9, alignment: 'center', style: 'columnHeader' },
@@ -165,12 +165,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     ...safeMarksJunior.map(mark => [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
       { text: mark?.halfYearly?.ut1 ?? '-', alignment: 'center' },
-      { text: mark?.halfYearly?.noteBook ?? '-', alignment: 'center' },
+      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
       { text: mark?.halfYearly?.examMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
       { text: mark?.yearly?.ut3 ?? '-', alignment: 'center' },
-      { text: mark?.yearly?.yearlynoteBook ?? '-', alignment: 'center' },
+      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
       { text: mark?.yearly?.yearlyexamMarks ?? '-', alignment: 'center' },
       { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
