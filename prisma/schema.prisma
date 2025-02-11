@@ -193,8 +193,8 @@ model HalfYearlyMarks {
   noteBook       Float?
   subEnrichment  Float?
   examMarks      Float?
-  examMarks40      Float?
-  examMarks30      Float?
+//  examMarks40      Float?
+//  examMarks30      Float?
   totalMarks     Float?
   grade          String?
   remarks        String?
@@ -211,8 +211,8 @@ model YearlyMarks {
   yearlynoteBook       Float?
   yearlysubEnrichment  Float?
   yearlyexamMarks      Float?
-  yearlyexamMarks40      Float?
-  yearlyexamMarks30      Float?
+//  yearlyexamMarks40      Float?
+//  yearlyexamMarks30      Float?
   yearlytotalMarks     Float?
   yearlygrade          String?
   yearlyremarks        String?
