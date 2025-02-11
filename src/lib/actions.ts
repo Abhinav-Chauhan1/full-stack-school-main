@@ -902,7 +902,8 @@ export const deleteStudent = async (
 
 export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => {
   try {
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 2; // Reduced batch size
+    const TIMEOUT = 30000; // 30 seconds timeout
     let processedCount = 0;
     let totalCount = 0;
 
@@ -916,182 +917,219 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
     }
 
     if (totalCount === 0) {
-      return { success: true, message: "No marks to recalculate", progress: 100 };
+      return { 
+        success: true, 
+        error: false,
+        message: "No marks to recalculate", 
+        progress: 100 
+      };
     }
 
-    let progress = 0;
     const batches = Math.ceil(totalCount / BATCH_SIZE);
 
     for (let i = 0; i < batches; i++) {
-      if (type === 'junior') {
-        // Get batch of marks
-        const marks = await prisma.juniorMark.findMany({
-          skip: i * BATCH_SIZE,
-          take: BATCH_SIZE,
-          include: {
-            halfYearly: true,
-            yearly: true,
-          }
-        });
-
-        // Process batch
-        const updatePromises = marks.map(async (mark) => {
-          try {
-            // Calculate and update half yearly marks
-            if (mark.halfYearly) {
-              const halfYearlyResults = calculateMarksAndGrade({
-                examType: "HALF_YEARLY",
-                halfYearly: mark.halfYearly
-              });
-
-              await prisma.halfYearlyMarks.update({
-                where: { id: mark.halfYearly.id },
-                data: {
-                  totalMarks: halfYearlyResults.totalMarks,
-                  grade: halfYearlyResults.grade
-                }
-              });
-            }
-
-            // Calculate and update yearly marks
-            if (mark.yearly) {
-              const yearlyResults = calculateMarksAndGrade({
-                examType: "YEARLY",
-                yearly: mark.yearly,
-                halfYearly: mark.halfYearly
-              });
-
-              await prisma.yearlyMarks.update({
-                where: { id: mark.yearly.id },
-                data: {
-                  yearlytotalMarks: yearlyResults.totalMarks,
-                  yearlygrade: yearlyResults.grade
-                }
-              });
-
-              // Update grand total
-              await prisma.juniorMark.update({
-                where: { id: mark.id },
-                data: {
-                  grandTotalMarks: yearlyResults.grandTotalMarks,
-                  grandTotalGrade: yearlyResults.grandTotalGrade,
-                  overallPercentage: yearlyResults.overallPercentage
-                }
-              });
-            }
-          } catch (error) {
-            console.error(`Error processing mark ID ${mark.id}:`, error);
-          }
-        });
-
-        await Promise.allSettled(updatePromises);
-        processedCount += marks.length;
-      } else if (type === 'senior') {
-        const marks = await prisma.seniorMark.findMany({
-          skip: i * BATCH_SIZE,
-          take: BATCH_SIZE,
-        });
-
-        const updatePromises = marks.map(async (mark) => {
-          try {
-            const ptScores = [mark.pt1, mark.pt2, mark.pt3]
-              .filter((score): score is number => score !== null)
-              .sort((a, b) => b - a);
-            
-            const bestTwoPTAvg = ptScores.length >= 2 ? 
-              (ptScores[0] + ptScores[1]) / 2 : null;
-
-            const bestScore = bestTwoPTAvg !== null ? 
-              bestTwoPTAvg + 
-              (mark.multipleAssessment || 0) + 
-              (mark.portfolio || 0) + 
-              (mark.subEnrichment || 0) : null;
-
-            const grandTotal = bestScore !== null && mark.finalExam !== null ?
-              bestScore + mark.finalExam : null;
-
-            let grade = null;
-            if (grandTotal !== null) {
-              if (grandTotal >= 91) grade = 'A1';
-              else if (grandTotal >= 81) grade = 'A2';
-              else if (grandTotal >= 71) grade = 'B1';
-              else if (grandTotal >= 61) grade = 'B2';
-              else if (grandTotal >= 51) grade = 'C1';
-              else if (grandTotal >= 41) grade = 'C2';
-              else if (grandTotal >= 33) grade = 'D';
-              else grade = 'E';
-            }
-
-            await prisma.seniorMark.update({
-              where: { id: mark.id },
-              data: {
-                bestTwoPTAvg,
-                bestScore,
-                grandTotal,
-                grade,
-                overallGrade: grade
+      const processPromise = new Promise(async (resolve, reject) => {
+        try {
+          if (type === 'junior') {
+            // Get batch of marks
+            const marks = await prisma.juniorMark.findMany({
+              skip: i * BATCH_SIZE,
+              take: BATCH_SIZE,
+              include: {
+                halfYearly: true,
+                yearly: true,
               }
             });
-          } catch (error) {
-            console.error(`Error processing mark ID ${mark.id}:`, error);
-          }
-        });
 
-        await Promise.allSettled(updatePromises);
-        processedCount += marks.length;
-      } else if (type === 'higher') {
-        const marks = await prisma.higherMark.findMany({
-          skip: i * BATCH_SIZE,
-          take: BATCH_SIZE,
-        });
+            // Process batch
+            const updatePromises = marks.map(async (mark) => {
+              try {
+                // Calculate and update half yearly marks
+                if (mark.halfYearly) {
+                  const halfYearlyResults = calculateMarksAndGrade({
+                    examType: "HALF_YEARLY",
+                    halfYearly: mark.halfYearly
+                  });
 
-        const updatePromises = marks.map(async (mark) => {
-          try {
-            const calculations = calculateHigherMarksAndGrade({
-              unitTest1: mark.unitTest1,
-              halfYearly: mark.halfYearly,
-              unitTest2: mark.unitTest2,
-              theory: mark.theory,
-              practical: mark.practical
-            });
+                  await prisma.halfYearlyMarks.update({
+                    where: { id: mark.halfYearly.id },
+                    data: {
+                      totalMarks: halfYearlyResults.totalMarks,
+                      grade: halfYearlyResults.grade
+                    }
+                  });
+                }
 
-            await prisma.higherMark.update({
-              where: { id: mark.id },
-              data: {
-                totalWithout: calculations.totalWithout,
-                grandTotal: calculations.grandTotal,
-                total: calculations.total,
-                percentage: calculations.percentage,
-                grade: calculations.grade,
-                overallGrade: calculations.overallGrade
+                // Calculate and update yearly marks
+                if (mark.yearly) {
+                  const yearlyResults = calculateMarksAndGrade({
+                    examType: "YEARLY",
+                    yearly: mark.yearly,
+                    halfYearly: mark.halfYearly
+                  });
+
+                  await prisma.yearlyMarks.update({
+                    where: { id: mark.yearly.id },
+                    data: {
+                      yearlytotalMarks: yearlyResults.totalMarks,
+                      yearlygrade: yearlyResults.grade
+                    }
+                  });
+
+                  // Update grand total
+                  await prisma.juniorMark.update({
+                    where: { id: mark.id },
+                    data: {
+                      grandTotalMarks: yearlyResults.grandTotalMarks,
+                      grandTotalGrade: yearlyResults.grandTotalGrade,
+                      overallPercentage: yearlyResults.overallPercentage
+                    }
+                  });
+                }
+              } catch (error) {
+                console.error(`Error processing mark ID ${mark.id}:`, error);
               }
             });
-          } catch (error) {
-            console.error(`Error processing mark ID ${mark.id}:`, error);
-          }
-        });
 
-        await Promise.allSettled(updatePromises);
-        processedCount += marks.length;
+            await Promise.allSettled(updatePromises);
+            processedCount += marks.length;
+          } else if (type === 'senior') {
+            const marks = await prisma.seniorMark.findMany({
+              skip: i * BATCH_SIZE,
+              take: BATCH_SIZE,
+            });
+
+            const updatePromises = marks.map(async (mark) => {
+              try {
+                const ptScores = [mark.pt1, mark.pt2, mark.pt3]
+                  .filter((score): score is number => score !== null)
+                  .sort((a, b) => b - a);
+                
+                const bestTwoPTAvg = ptScores.length >= 2 ? 
+                  (ptScores[0] + ptScores[1]) / 2 : null;
+
+                const bestScore = bestTwoPTAvg !== null ? 
+                  bestTwoPTAvg + 
+                  (mark.multipleAssessment || 0) + 
+                  (mark.portfolio || 0) + 
+                  (mark.subEnrichment || 0) : null;
+
+                const grandTotal = bestScore !== null && mark.finalExam !== null ?
+                  bestScore + mark.finalExam : null;
+
+                let grade = null;
+                if (grandTotal !== null) {
+                  if (grandTotal >= 91) grade = 'A1';
+                  else if (grandTotal >= 81) grade = 'A2';
+                  else if (grandTotal >= 71) grade = 'B1';
+                  else if (grandTotal >= 61) grade = 'B2';
+                  else if (grandTotal >= 51) grade = 'C1';
+                  else if (grandTotal >= 41) grade = 'C2';
+                  else if (grandTotal >= 33) grade = 'D';
+                  else grade = 'E';
+                }
+
+                await prisma.seniorMark.update({
+                  where: { id: mark.id },
+                  data: {
+                    bestTwoPTAvg,
+                    bestScore,
+                    grandTotal,
+                    grade,
+                    overallGrade: grade
+                  }
+                });
+              } catch (error) {
+                console.error(`Error processing mark ID ${mark.id}:`, error);
+              }
+            });
+
+            await Promise.allSettled(updatePromises);
+            processedCount += marks.length;
+          } else if (type === 'higher') {
+            const marks = await prisma.higherMark.findMany({
+              skip: i * BATCH_SIZE,
+              take: BATCH_SIZE,
+            });
+
+            const updatePromises = marks.map(async (mark) => {
+              try {
+                const calculations = calculateHigherMarksAndGrade({
+                  unitTest1: mark.unitTest1,
+                  halfYearly: mark.halfYearly,
+                  unitTest2: mark.unitTest2,
+                  theory: mark.theory,
+                  practical: mark.practical
+                });
+
+                await prisma.higherMark.update({
+                  where: { id: mark.id },
+                  data: {
+                    totalWithout: calculations.totalWithout,
+                    grandTotal: calculations.grandTotal,
+                    total: calculations.total,
+                    percentage: calculations.percentage,
+                    grade: calculations.grade,
+                    overallGrade: calculations.overallGrade
+                  }
+                });
+              } catch (error) {
+                console.error(`Error processing mark ID ${mark.id}:`, error);
+              }
+            });
+
+            await Promise.allSettled(updatePromises);
+            processedCount += marks.length;
+          }
+          resolve(true);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      // Add timeout to batch processing
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Batch processing timeout')), TIMEOUT);
+      });
+
+      try {
+        await Promise.race([processPromise, timeoutPromise]);
+      } catch (error) {
+        console.error(`Error processing batch ${i + 1}:`, error);
+        continue; // Continue with next batch even if current fails
       }
 
-      progress = Math.round((processedCount / totalCount) * 100);
+      const progress = Math.min(Math.round((processedCount / totalCount) * 100), 100);
+      
+      // Return progress after each batch
+      if (i < batches - 1) {
+        return {
+          success: true,
+          error: false,
+          message: "Processing marks...",
+          progress,
+          totalCount,
+          processedCount
+        };
+      }
     }
 
     return {
       success: true,
+      error: false,
       message: "Marks recalculation completed",
       progress: 100,
       totalCount,
-      processedCount
+      processedCount: totalCount
     };
 
   } catch (error) {
     console.error("Error recalculating marks:", error);
     return {
       success: false,
-      message: "Failed to recalculate marks",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: true,
+      message: error instanceof Error ? error.message : "Failed to recalculate marks",
+      progress: 0
     };
   }
 };
