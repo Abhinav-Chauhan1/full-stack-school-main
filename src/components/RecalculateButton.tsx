@@ -119,7 +119,7 @@ export default function RecalculateButton({ type = 'junior' }: RecalculateButton
         throw new Error(initialFetch.error);
       }
 
-      const totalPages = Math.ceil(initialFetch.total / BATCH_SIZE);
+      const totalPages = Math.ceil((initialFetch.total ?? 0) / BATCH_SIZE);
       
       while (page < totalPages) {
         const response = await getMarksForRecalculation(type, page, BATCH_SIZE);
