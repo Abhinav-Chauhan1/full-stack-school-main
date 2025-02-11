@@ -19,25 +19,23 @@ export default function RecalculateButton({ type = 'junior' }: RecalculateButton
     setProgress(0);
 
     try {
-      const response = await recalculateMarks(type);
-      const result = await response.json();
+      const result = await recalculateMarks(type);
 
       if (result.success) {
         setProgress(result.progress || 100);
+        toast.success(result.message);
         if (result.progress === 100) {
-          toast.success(result.message);
           router.refresh();
+          setIsLoading(false);
         }
       } else {
-        toast.error(result.message);
+        toast.error(result.message || "Failed to recalculate marks");
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Error recalculating marks:", error);
       toast.error("Failed to recalculate marks");
-    } finally {
-      if (progress === 100) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 

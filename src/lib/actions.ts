@@ -902,7 +902,7 @@ export const deleteStudent = async (
 
 export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => {
   try {
-    const BATCH_SIZE = 5; // Reduced batch size to prevent timeout
+    const BATCH_SIZE = 5;
     let processedCount = 0;
     let totalCount = 0;
 
@@ -915,6 +915,11 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
       totalCount = await prisma.higherMark.count();
     }
 
+    if (totalCount === 0) {
+      return { success: true, message: "No marks to recalculate", progress: 100 };
+    }
+
+    let progress = 0;
     const batches = Math.ceil(totalCount / BATCH_SIZE);
 
     for (let i = 0; i < batches; i++) {
@@ -1070,34 +1075,24 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
         processedCount += marks.length;
       }
 
-      // Return progress after each batch
-      const progress = Math.round((processedCount / totalCount) * 100);
-      
-      // Use Response.json() to ensure proper response format
-      return Response.json({
-        success: true,
-        message: "Marks recalculation completed",
-        progress,
-        totalCount,
-        processedCount
-      });
+      progress = Math.round((processedCount / totalCount) * 100);
     }
 
-    return Response.json({
+    return {
       success: true,
       message: "Marks recalculation completed",
       progress: 100,
       totalCount,
       processedCount
-    });
+    };
 
   } catch (error) {
     console.error("Error recalculating marks:", error);
-    return Response.json({
+    return {
       success: false,
       message: "Failed to recalculate marks",
       error: error instanceof Error ? error.message : "Unknown error"
-    });
+    };
   }
 };
 
