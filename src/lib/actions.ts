@@ -850,15 +850,32 @@ export const deleteStudent = async (
   const id = data.get("id") as string;
   
   try {
-    await prisma.student.delete({
-      where: {
-        id: id,
-      },
+    // Start a transaction to ensure all operations complete or none do
+    await prisma.$transaction(async (tx) => {
+      // Delete all JuniorMarks for this student
+      await tx.juniorMark.deleteMany({
+        where: { studentId: id }
+      });
+
+      // Delete all SeniorMarks for this student
+      await tx.seniorMark.deleteMany({
+        where: { studentId: id }
+      });
+
+      // Delete all HigherMarks for this student
+      await tx.higherMark.deleteMany({
+        where: { studentId: id }
+      });
+
+      // Finally delete the student
+      await tx.student.delete({
+        where: { id: id }
+      });
     });
 
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
+    console.error("Error deleting student:", err);
     return { success: false, error: true };
   }
 };
