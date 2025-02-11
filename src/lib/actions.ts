@@ -453,27 +453,47 @@ export const updateClass = async (
 ) => {
   try {
     await prisma.$transaction(async (tx) => {
-      // First get all ClassSubject IDs for this class
+      // Get existing subjects for the class
       const existingClassSubjects = await tx.classSubject.findMany({
         where: { classId: Number(data.id) },
-        select: { id: true }
-      });
-
-      // Delete all related JuniorMark records first
-      await tx.juniorMark.deleteMany({
-        where: {
-          classSubjectId: {
-            in: existingClassSubjects.map(cs => cs.id)
-          }
+        select: { 
+          id: true,
+          subjectId: true 
         }
       });
 
-      // Now delete existing ClassSubject records
-      await tx.classSubject.deleteMany({
-        where: { classId: Number(data.id) }
-      });
+      // Find subjects that were removed
+      const existingSubjectIds = existingClassSubjects.map(cs => cs.subjectId);
+      const newSubjectIds = data.subjects?.map(id => Number(id)) || [];
+      const removedSubjectIds = existingSubjectIds.filter(id => !newSubjectIds.includes(id));
 
-      // Update the class with new relationships
+      // Only delete JuniorMarks for removed subjects
+      const removedClassSubjectIds = existingClassSubjects
+        .filter(cs => removedSubjectIds.includes(cs.subjectId))
+        .map(cs => cs.id);
+
+      if (removedClassSubjectIds.length > 0) {
+        await tx.juniorMark.deleteMany({
+          where: {
+            classSubjectId: {
+              in: removedClassSubjectIds
+            }
+          }
+        });
+
+        // Delete the removed ClassSubject records
+        await tx.classSubject.deleteMany({
+          where: {
+            id: {
+              in: removedClassSubjectIds
+            }
+          }
+        });
+      }
+
+      // Create new ClassSubject records for added subjects
+      const subjectsToAdd = newSubjectIds.filter(id => !existingSubjectIds.includes(id));
+      
       await tx.class.update({
         where: { id: Number(data.id) },
         data: {
@@ -481,7 +501,7 @@ export const updateClass = async (
           classNumber: Number(data.classNumber),
           capacity: Number(data.capacity),
           classSubjects: {
-            create: data.subjects?.map((subjectId: number) => ({
+            create: subjectsToAdd.map(subjectId => ({
               subject: {
                 connect: { id: subjectId }
               }
