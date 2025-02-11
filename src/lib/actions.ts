@@ -902,14 +902,23 @@ export const deleteStudent = async (
 
 export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => {
   try {
-    const BATCH_SIZE = 10; // Process 10 records at a time
+    const BATCH_SIZE = 5; // Reduced batch size to prevent timeout
+    let processedCount = 0;
+    let totalCount = 0;
 
+    // Get total count based on type
     if (type === 'junior') {
-      // Get all junior marks count
-      const totalMarks = await prisma.juniorMark.count();
-      const batches = Math.ceil(totalMarks / BATCH_SIZE);
+      totalCount = await prisma.juniorMark.count();
+    } else if (type === 'senior') {
+      totalCount = await prisma.seniorMark.count();
+    } else if (type === 'higher') {
+      totalCount = await prisma.higherMark.count();
+    }
 
-      for (let i = 0; i < batches; i++) {
+    const batches = Math.ceil(totalCount / BATCH_SIZE);
+
+    for (let i = 0; i < batches; i++) {
+      if (type === 'junior') {
         // Get batch of marks
         const marks = await prisma.juniorMark.findMany({
           skip: i * BATCH_SIZE,
@@ -971,13 +980,8 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
         });
 
         await Promise.allSettled(updatePromises);
-      }
-
-    } else if (type === 'senior') {
-      const totalMarks = await prisma.seniorMark.count();
-      const batches = Math.ceil(totalMarks / BATCH_SIZE);
-
-      for (let i = 0; i < batches; i++) {
+        processedCount += marks.length;
+      } else if (type === 'senior') {
         const marks = await prisma.seniorMark.findMany({
           skip: i * BATCH_SIZE,
           take: BATCH_SIZE,
@@ -1029,13 +1033,8 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
         });
 
         await Promise.allSettled(updatePromises);
-      }
-
-    } else if (type === 'higher') {
-      const totalMarks = await prisma.higherMark.count();
-      const batches = Math.ceil(totalMarks / BATCH_SIZE);
-
-      for (let i = 0; i < batches; i++) {
+        processedCount += marks.length;
+      } else if (type === 'higher') {
         const marks = await prisma.higherMark.findMany({
           skip: i * BATCH_SIZE,
           take: BATCH_SIZE,
@@ -1068,15 +1067,39 @@ export const recalculateMarks = async (type: 'junior' | 'senior' | 'higher') => 
         });
 
         await Promise.allSettled(updatePromises);
+        processedCount += marks.length;
       }
+
+      // Return progress after each batch
+      const progress = Math.round((processedCount / totalCount) * 100);
+      
+      // Use Response.json() to ensure proper response format
+      return Response.json({
+        success: true,
+        message: "Marks recalculation completed",
+        progress,
+        totalCount,
+        processedCount
+      });
     }
 
-    return { success: true, message: "Marks recalculation completed" };
+    return Response.json({
+      success: true,
+      message: "Marks recalculation completed",
+      progress: 100,
+      totalCount,
+      processedCount
+    });
+
   } catch (error) {
     console.error("Error recalculating marks:", error);
-    return { success: false, message: "Failed to recalculate marks" };
+    return Response.json({
+      success: false,
+      message: "Failed to recalculate marks",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
   }
-}
+};
 
 function calculateTotalMarks(
   ut1?: number | null,
