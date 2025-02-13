@@ -17,21 +17,25 @@ export const juniorMarkSchema = z.object({
   sessionId: z.number().int().positive("Invalid Session"),
   examType: z.enum(["HALF_YEARLY", "YEARLY"]),
   halfYearly: z.object({
-    ut1: z.number().min(0).max(10).nullable(),
-    ut2: z.number().min(0).max(10).nullable(),
-    noteBook: z.number().min(0).max(5).nullable(),
-    subEnrichment: z.number().min(0).max(5).nullable(),
-    examMarks: z.number().min(0).max(80).nullable(),
+    ut1: z.number().min(0).max(10).nullable().optional(),
+    ut2: z.number().min(0).max(10).nullable().optional(),
+    noteBook: z.number().min(0).max(5).nullable().optional(),
+    subEnrichment: z.number().min(0).max(5).nullable().optional(),
+    examMarks: z.number().min(0).max(80).nullable().optional(),
+    examMarks40: z.number().min(0).max(40).nullable().optional(),
+    examMarks30: z.number().min(0).max(30).nullable().optional(),
     totalMarks: z.number().nullable(),
     grade: z.string().nullable(),
     remarks: z.string().nullable()
   }).nullable(),
   yearly: z.object({
-    ut3: z.number().min(0).max(10).nullable(),
-    ut4: z.number().min(0).max(10).nullable(),
-    yearlynoteBook: z.number().min(0).max(5).nullable(),
-    yearlysubEnrichment: z.number().min(0).max(5).nullable(),
-    yearlyexamMarks: z.number().min(0).max(80).nullable(),
+    ut3: z.number().min(0).max(10).nullable().optional(),
+    ut4: z.number().min(0).max(10).nullable().optional(),
+    yearlynoteBook: z.number().min(0).max(5).nullable().optional(),
+    yearlysubEnrichment: z.number().min(0).max(5).nullable().optional(),
+    yearlyexamMarks: z.number().min(0).max(80).nullable().optional(),
+    yearlyexamMarks40: z.number().min(0).max(40).nullable().optional(),
+    yearlyexamMarks30: z.number().min(0).max(30).nullable().optional(),
     yearlytotalMarks: z.number().nullable(),
     yearlygrade: z.string().nullable(),
     yearlyremarks: z.string().nullable()
@@ -82,41 +86,70 @@ export const calculateMarksAndGrade = (markData: any) => {
 
   // Calculate total marks based on exam type
   if (examType === "HALF_YEARLY") {
-    // Get best score from UT1 and UT2
-    const bestUT = Math.max(
-      Math.min(10, (Number(marks.ut1) || 0)),
-      Math.min(10, (Number(marks.ut2) || 0))
-    );
+    // Get UT score (taking best of UT1 and UT2)
+    const ut1 = Math.min(10, (Number(marks.ut1) || 0));
+    const ut2 = Math.min(10, (Number(marks.ut2) || 0));
+    const bestUT = Math.max(ut1, ut2);
     
-    // Calculate total: Best UT (10) + Notebook (5) + SubEnrichment (5) + ExamMarks (80) = Total (100)
-    totalMarks = 
-      bestUT + // Best UT score
-      Math.min(5, (Number(marks.noteBook) || 0)) +
-      Math.min(5, (Number(marks.subEnrichment) || 0)) +
-      Math.min(80, (Number(marks.examMarks) || 0));
+    // Calculate total based on exam mark type
+    if (marks.examMarks40 !== null) {
+      // Special case for examMarks40: bestUT/2 + notebook + subenrichment + exammarks40
+      totalMarks = 
+        (bestUT / 2) + // Half of best UT score
+        (Math.min(5, (Number(marks.noteBook) || 0)) +
+        Math.min(5, (Number(marks.subEnrichment) || 0))) /2  +
+        Math.min(40, (Number(marks.examMarks40) || 0));
+    } else if (marks.examMarks30 !== null) {
+      totalMarks = 
+        bestUT +
+        Math.min(5, (Number(marks.noteBook) || 0)) +
+        Math.min(5, (Number(marks.subEnrichment) || 0)) +
+        Math.min(30, (Number(marks.examMarks30) || 0));
+    } else {
+      totalMarks = 
+        bestUT +
+        Math.min(5, (Number(marks.noteBook) || 0)) +
+        Math.min(5, (Number(marks.subEnrichment) || 0)) +
+        Math.min(80, (Number(marks.examMarks) || 0));
+    }
 
-    // Update the marks object with calculated total
     marks.totalMarks = totalMarks;
   } else {
-    // Get best score from UT3 and UT4
-    const bestUT = Math.max(
-      Math.min(10, (Number(marks.ut3) || 0)),
-      Math.min(10, (Number(marks.ut4) || 0))
-    );
+    // Yearly exam calculations (similar structure)
+    const ut3 = Math.min(10, (Number(marks.ut3) || 0));
+    const ut4 = Math.min(10, (Number(marks.ut4) || 0));
+    const bestUT = Math.max(ut3, ut4);
     
-    // Calculate total: Best UT (10) + Notebook (5) + SubEnrichment (5) + ExamMarks (80) = Total (100)
-    totalMarks = 
-      bestUT + // Best UT score
-      Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
-      Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
-      Math.min(80, (Number(marks.yearlyexamMarks) || 0));
+    if (marks.yearlyexamMarks40 !== null) {
+      // Special case for yearlyexamMarks40
+      totalMarks = 
+        (bestUT / 2) + // Half of best UT score
+        Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
+        Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
+    } else if (marks.yearlyexamMarks30 !== null) {
+      totalMarks = 
+        bestUT +
+        Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
+        Math.min(30, (Number(marks.yearlyexamMarks30) || 0));
+    } else {
+      totalMarks = 
+        bestUT +
+        Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
+        Math.min(80, (Number(marks.yearlyexamMarks) || 0));
+    }
 
-    // Update the marks object with calculated total
     marks.yearlytotalMarks = totalMarks;
   }
 
   // Calculate grade based on percentage
-  const percentage = totalMarks; // Since total is already out of 100
+  // Get max marks based on exam type
+  const maxMarks = marks.examMarks40 !== null ? 50 : 
+                   marks.examMarks30 !== null ? 50 : 100;
+  
+  const percentage = (totalMarks / maxMarks) * 100;
   if (percentage >= 91) grade = 'A1';
   else if (percentage >= 81) grade = 'A2';
   else if (percentage >= 71) grade = 'B1';
@@ -140,12 +173,12 @@ export const calculateMarksAndGrade = (markData: any) => {
     // Calculate grand total grade based on combined marks
     grandTotalGrade = calculateGrandTotalGrade(grandTotalMarks);
     // Calculate overall percentage based on total possible marks (200)
-    overallPercentage = grandTotalMarks ? (grandTotalMarks / 200) * 100 : null;
+    overallPercentage = grandTotalMarks ? (grandTotalMarks / (maxMarks * 2)) * 100 : null;
   } else if (examType === "HALF_YEARLY") {
     // For half yearly, only store the current total marks
     grandTotalMarks = totalMarks;
     grandTotalGrade = grade; // Use same grade as current marks for half yearly
-    overallPercentage = totalMarks ? (totalMarks / 100) * 100 : null;
+    overallPercentage = percentage;
   }
 
   return {

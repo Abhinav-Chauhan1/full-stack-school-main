@@ -45,6 +45,7 @@ type JuniorMarkFormProps = {
         subject: {
           id: number;
           name: string;
+          code: string;
         };
       }>;
     }>;
@@ -191,6 +192,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           noteBook: null,
           subEnrichment: null,
           examMarks: null,
+          examMarks40: null,
+          examMarks30: null,
           totalMarks: null,
           grade: null,
           remarks: null
@@ -201,6 +204,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           yearlynoteBook: null,
           yearlysubEnrichment: null,
           yearlyexamMarks: null,
+          yearlyexamMarks40: null,
+          yearlyexamMarks30: null,
           yearlytotalMarks: null,
           yearlygrade: null,
           yearlyremarks: null
@@ -224,6 +229,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         noteBook: null,
         subEnrichment: null,
         examMarks: null,
+        examMarks40: null,
+        examMarks30: null,
         totalMarks: null,
         grade: null,
         remarks: null
@@ -234,6 +241,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         yearlynoteBook: null,
         yearlysubEnrichment: null,
         yearlyexamMarks: null,
+        yearlyexamMarks40: null,
+        yearlyexamMarks30: null,
         yearlytotalMarks: null,
         yearlygrade: null,
         yearlyremarks: null
@@ -272,6 +281,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             noteBook: existingMark?.halfYearly?.noteBook,
             subEnrichment: existingMark?.halfYearly?.subEnrichment,
             examMarks: existingMark?.halfYearly?.examMarks,
+            examMarks40: existingMark?.halfYearly?.examMarks40,
+            examMarks30: existingMark?.halfYearly?.examMarks30,
             totalMarks: existingMark?.halfYearly?.totalMarks,
             grade: existingMark?.halfYearly?.grade,
             remarks: existingMark?.halfYearly?.remarks
@@ -282,6 +293,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             yearlynoteBook: existingMark?.yearly?.yearlynoteBook,
             yearlysubEnrichment: existingMark?.yearly?.yearlysubEnrichment,
             yearlyexamMarks: existingMark?.yearly?.yearlyexamMarks,
+            yearlyexamMarks40: existingMark?.yearly?.yearlyexamMarks40,
+            yearlyexamMarks30: existingMark?.yearly?.yearlyexamMarks30,
             yearlytotalMarks: existingMark?.yearly?.yearlytotalMarks,
             yearlygrade: existingMark?.yearly?.yearlygrade,
             yearlyremarks: existingMark?.yearly?.yearlyremarks
@@ -324,16 +337,49 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           existingHalfYearlyMarks = existingMarks?.halfYearly || null;
         }
   
+        // Clean up mark data to ensure null values are properly handled
+        const cleanedMark = {
+          ...mark,
+          halfYearly: mark.halfYearly ? {
+            ...mark.halfYearly,
+            ut1: mark.halfYearly.ut1 || null,
+            ut2: mark.halfYearly.ut2 || null,
+            noteBook: mark.halfYearly.noteBook || null,
+            subEnrichment: mark.halfYearly.subEnrichment || null,
+            // Clear other exam marks fields when one is set
+            examMarks: mark.halfYearly.examMarks || null,
+            examMarks40: mark.halfYearly.examMarks40 || null,
+            examMarks30: mark.halfYearly.examMarks30 || null,
+            totalMarks: mark.halfYearly.totalMarks || null,
+            grade: mark.halfYearly.grade || null,
+            remarks: mark.halfYearly.remarks || null
+          } : null,
+          yearly: mark.yearly ? {
+            ...mark.yearly,
+            ut3: mark.yearly.ut3 || null,
+            ut4: mark.yearly.ut4 || null,
+            yearlynoteBook: mark.yearly.yearlynoteBook || null,
+            yearlysubEnrichment: mark.yearly.yearlysubEnrichment || null,
+            // Clear other exam marks fields when one is set
+            yearlyexamMarks: mark.yearly.yearlyexamMarks || null,
+            yearlyexamMarks40: mark.yearly.yearlyexamMarks40 || null,
+            yearlyexamMarks30: mark.yearly.yearlyexamMarks30 || null,
+            yearlytotalMarks: mark.yearly.yearlytotalMarks || null,
+            yearlygrade: mark.yearly.yearlygrade || null,
+            yearlyremarks: mark.yearly.yearlyremarks || null
+          } : null,
+        };
+  
         // Calculate current term's marks
         const calculatedResults = calculateMarksAndGrade({
-          examType: mark.examType,
-          [mark.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: 
-            mark.examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly,
-          halfYearly: existingHalfYearlyMarks // Pass existing half yearly marks for grand total calculation
+          examType: cleanedMark.examType,
+          [cleanedMark.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]:
+            cleanedMark.examType === "HALF_YEARLY" ? cleanedMark.halfYearly : cleanedMark.yearly,
+          halfYearly: existingHalfYearlyMarks
         });
   
         return {
-          ...mark,
+          ...cleanedMark,
           classSubjectId: selectedSubject,
           ...calculatedResults
         };
@@ -447,7 +493,47 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             <select
               value={selectedSubject || ""}
               onChange={(e) => {
-                setSelectedSubject(Number(e.target.value));
+                const newSubjectId = Number(e.target.value);
+                setSelectedSubject(newSubjectId);
+                // Reset form when subject changes
+                reset({
+                  marks: selectedSectionStudents.map((student) => ({
+                    studentId: student.id,
+                    classSubjectId: newSubjectId,
+                    sessionId: selectedSession || 0,
+                    examType: examType,
+                    halfYearly: examType === "HALF_YEARLY" ? {
+                      ut1: null,
+                      ut2: null,
+                      noteBook: null,
+                      subEnrichment: null,
+                      examMarks: null,
+                      examMarks40: null,
+                      examMarks30: null,
+                      totalMarks: null,
+                      grade: null,
+                      remarks: null
+                    } : null,
+                    yearly: examType === "YEARLY" ? {
+                      ut3: null,
+                      ut4: null,
+                      yearlynoteBook: null,
+                      yearlysubEnrichment: null,
+                      yearlyexamMarks: null,
+                      yearlyexamMarks40: null,
+                      yearlyexamMarks30: null,
+                      yearlytotalMarks: null,
+                      yearlygrade: null,
+                      yearlyremarks: null
+                    } : null,
+                    grandTotalMarks: null,
+                    grandTotalGrade: null,
+                    overallPercentage: null
+                  }))
+                });
+                // Also clear existing marks data
+                setExistingMarksData(null);
+                setFormType("create");
               }}
               className="w-full p-2 border rounded"
             >
@@ -501,123 +587,175 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                 )}
                 <th className="p-2 border">Notebook (5)</th>
                 <th className="p-2 border">Sub Enrichment (5)</th>
-                <th className="p-2 border">Exam Marks (80)</th>
+                {/* Dynamic exam marks column header based on subject */}
+                <th className="p-2 border">
+                  {(() => {
+                    const subject = selectedClassSubjects.find(cs => cs.id === selectedSubject)?.subject;
+                    if (subject?.code.match(/^(Comp01|GK01|DRAW02)$/)) {
+                      return "Exam Marks (40)";
+                    } else if (subject?.code === "Urdu01") {
+                      return "Exam Marks (30)";
+                    } else {
+                      return "Exam Marks (80)";
+                    }
+                  })()}
+                </th>
                 <th className="p-2 border">Remarks</th>
               </tr>
             </thead>
             <tbody>
-              {selectedSectionStudents.map((student, index) => (
-                <tr key={student.id} className="even:bg-gray-50">
-                  <td className="p-2 border">
-                    <input
-                      type="hidden"
-                      {...register(`marks.${index}.studentId`)}
-                      value={student.id}
-                    />
-                    {student.name}
-                  </td>
-                  {examType === "HALF_YEARLY" ? (
-                    <>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.ut1`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.ut2`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.noteBook`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.subEnrichment`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.examMarks`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="text"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.halfYearly.remarks`)}
-                        />
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.ut3`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.ut4`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.yearlynoteBook`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.yearlysubEnrichment`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.yearlyexamMarks`, { valueAsNumber: true })}
-                        />
-                      </td>
-                      <td className="p-2 border">
-                        <input
-                          type="text"
-                          className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.yearly.yearlyremarks`)}
-                        />
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
+              {selectedSectionStudents.map((student, index) => {
+                const subject = selectedClassSubjects.find(cs => cs.id === selectedSubject)?.subject;
+                const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
+                const isThirtyMarksSubject = subject?.code === "Urdu01";
+
+                return (
+                  <tr key={student.id} className="even:bg-gray-50">
+                    <td className="p-2 border">
+                      <input
+                        type="hidden"
+                        {...register(`marks.${index}.studentId`)}
+                        value={student.id}
+                      />
+                      {student.name}
+                    </td>
+                    {examType === "HALF_YEARLY" ? (
+                      <>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.halfYearly.ut1`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.halfYearly.ut2`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.halfYearly.noteBook`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.halfYearly.subEnrichment`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(
+                              (examType as "HALF_YEARLY" | "YEARLY") === "HALF_YEARLY"
+                                ? isFortyMarksSubject
+                                  ? `marks.${index}.halfYearly.examMarks40`
+                                  : isThirtyMarksSubject
+                                  ? `marks.${index}.halfYearly.examMarks30`
+                                  : `marks.${index}.halfYearly.examMarks`
+                                : isFortyMarksSubject
+                                ? `marks.${index}.yearly.yearlyexamMarks40`
+                                : isThirtyMarksSubject
+                                ? `marks.${index}.yearly.yearlyexamMarks30`
+                                : `marks.${index}.yearly.yearlyexamMarks`,
+                              { 
+                                valueAsNumber: true,
+                                setValueAs: (value) => value === "" ? null : parseFloat(value)
+                              }
+                            )}
+                            max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="text"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.halfYearly.remarks`)}
+                          />
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.yearly.ut3`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.yearly.ut4`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.yearly.yearlynoteBook`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { valueAsNumber: true })}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(
+                              (examType as "HALF_YEARLY" | "YEARLY") === "HALF_YEARLY"
+                                ? isFortyMarksSubject
+                                  ? `marks.${index}.halfYearly.examMarks40`
+                                  : isThirtyMarksSubject
+                                  ? `marks.${index}.halfYearly.examMarks30`
+                                  : `marks.${index}.halfYearly.examMarks`
+                                : isFortyMarksSubject
+                                ? `marks.${index}.yearly.yearlyexamMarks40`
+                                : isThirtyMarksSubject
+                                ? `marks.${index}.yearly.yearlyexamMarks30`
+                                : `marks.${index}.yearly.yearlyexamMarks`,
+                              { 
+                                valueAsNumber: true,
+                                setValueAs: (value) => value === "" ? null : parseFloat(value)
+                              }
+                            )}
+                            max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
+                          />
+                        </td>
+                        <td className="p-2 border">
+                          <input
+                            type="text"
+                            className="w-full p-1 border rounded text-sm"
+                            {...register(`marks.${index}.yearly.yearlyremarks`)}
+                          />
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

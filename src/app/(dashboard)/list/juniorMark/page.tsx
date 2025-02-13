@@ -357,7 +357,27 @@ const JuniorMarkListPage = async ({
 
 const renderRow = (item: any, examType?: string, role?: string) => {
   const examData = examType === 'HALF_YEARLY' ? item.halfYearly : item.yearly;
+  const subjectCode = item.classSubject?.subject?.code;
   
+  // Function to get the correct exam marks based on subject
+  const getExamMarks = () => {
+    if (examType === 'HALF_YEARLY') {
+      if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
+        return examData?.examMarks40 || '-';
+      } else if (subjectCode === 'Urdu01') {
+        return examData?.examMarks30 || '-';
+      }
+      return examData?.examMarks || '-';
+    } else {
+      if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
+        return examData?.yearlyexamMarks40 || '-';
+      } else if (subjectCode === 'Urdu01') {
+        return examData?.yearlyexamMarks30 || '-';
+      }
+      return examData?.yearlyexamMarks || '-';
+    }
+  };
+
   return (
     <tr
       key={item.id}
@@ -378,7 +398,7 @@ const renderRow = (item: any, examType?: string, role?: string) => {
         {examType === 'HALF_YEARLY' ? examData?.subEnrichment || '-' : examData?.yearlysubEnrichment || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === 'HALF_YEARLY' ? examData?.examMarks || '-' : examData?.yearlyexamMarks || '-'}
+        {getExamMarks()}
       </td>
       <td>
         {examType === 'HALF_YEARLY' ? examData?.totalMarks || '-' : examData?.yearlytotalMarks || '-'}
