@@ -124,8 +124,8 @@ export const calculateMarksAndGrade = (markData: any) => {
       // Special case for yearlyexamMarks40
       totalMarks = 
         (bestUT / 2) + // Half of best UT score
-        Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
-        Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
+        (Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0))) /2 +
         Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
     } else if (marks.yearlyexamMarks30 !== null) {
       totalMarks = 
@@ -145,11 +145,13 @@ export const calculateMarksAndGrade = (markData: any) => {
   }
 
   // Calculate grade based on percentage
-  // Get max marks based on exam type
+  // Get max marks based on exam type (this part needs to change)
   const maxMarks = marks.examMarks40 !== null ? 50 : 
                    marks.examMarks30 !== null ? 50 : 100;
   
   const percentage = (totalMarks / maxMarks) * 100;
+
+  // Use consistent grade boundaries regardless of max marks
   if (percentage >= 91) grade = 'A1';
   else if (percentage >= 81) grade = 'A2';
   else if (percentage >= 71) grade = 'B1';
@@ -170,10 +172,22 @@ export const calculateMarksAndGrade = (markData: any) => {
   if (examType === "YEARLY" && existingHalfYearly?.totalMarks) {
     // For yearly exam, calculate grand total as half yearly + yearly marks
     grandTotalMarks = totalMarks + existingHalfYearly.totalMarks;
-    // Calculate grand total grade based on combined marks
-    grandTotalGrade = calculateGrandTotalGrade(grandTotalMarks);
-    // Calculate overall percentage based on total possible marks (200)
-    overallPercentage = grandTotalMarks ? (grandTotalMarks / (maxMarks * 2)) * 100 : null;
+    
+    // Calculate percentage based on actual total possible marks
+    const totalPossibleMarks = maxMarks * 2; // Double the max marks for yearly total
+    overallPercentage = grandTotalMarks ? (grandTotalMarks / totalPossibleMarks) * 100 : null;
+    
+    // Calculate grand total grade using the same percentage boundaries
+    if (overallPercentage !== null) {
+      if (overallPercentage >= 91) grandTotalGrade = 'A1';
+      else if (overallPercentage >= 81) grandTotalGrade = 'A2';
+      else if (overallPercentage >= 71) grandTotalGrade = 'B1';
+      else if (overallPercentage >= 61) grandTotalGrade = 'B2';
+      else if (overallPercentage >= 51) grandTotalGrade = 'C1';
+      else if (overallPercentage >= 41) grandTotalGrade = 'C2';
+      else if (overallPercentage >= 33) grandTotalGrade = 'D';
+      else grandTotalGrade = 'E';
+    }
   } else if (examType === "HALF_YEARLY") {
     // For half yearly, only store the current total marks
     grandTotalMarks = totalMarks;

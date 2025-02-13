@@ -89,10 +89,17 @@ export const getOverallGrade = (percentage: number) => {
 
 const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
+    const subject = mark?.classSubject?.subject;
+    const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
+    const isThirtyMarksSubject = subject?.code === "Urdu01";
+    
+    // Calculate max marks per term based on subject type
+    let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 40 : 100;
+    
     const halfYearlyMarks = mark.halfYearly?.totalMarks || 0;
     const yearlyMarks = mark.yearly?.yearlytotalMarks || 0;
     acc.totalMarks += (halfYearlyMarks + yearlyMarks);
-    acc.maxPossibleMarks += 200;
+    acc.maxPossibleMarks += (maxMarksPerTerm * 2); // multiply by 2 for both terms
     return acc;
   }, { totalMarks: 0, maxPossibleMarks: 0 });
 
@@ -162,21 +169,39 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       { text: '(200)', alignment: 'center', style: 'columnHeader' }, 
       {}
     ],
-    ...safeMarksJunior.map(mark => [
-      { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
-      { text: mark?.halfYearly?.ut1 ?? '-', alignment: 'center' },
-      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
-      { text: mark?.halfYearly?.examMarks ?? '-', alignment: 'center' },
-      { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
-      { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
-      { text: mark?.yearly?.ut3 ?? '-', alignment: 'center' },
-      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
-      { text: mark?.yearly?.yearlyexamMarks ?? '-', alignment: 'center' },
-      { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
-      { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
-      { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
-      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
-    ]),
+    ...safeMarksJunior.map(mark => {
+      const subject = mark?.classSubject?.subject;
+      const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
+      const isThirtyMarksSubject = subject?.code === "Urdu01";
+
+      // Helper to get exam marks based on subject type
+      const getExamMarks = (examData: any, isYearly: boolean) => {
+        if (!examData) return '-';
+        
+        if (isFortyMarksSubject) {
+          return isYearly ? examData.yearlyexamMarks40 ?? '-' : examData.examMarks40 ?? '-';
+        } else if (isThirtyMarksSubject) {
+          return isYearly ? examData.yearlyexamMarks30 ?? '-' : examData.examMarks30 ?? '-';
+        }
+        return isYearly ? examData.yearlyexamMarks ?? '-' : examData.examMarks ?? '-';
+      };
+
+      return [
+        { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
+        { text: mark?.halfYearly?.ut1 ?? '-', alignment: 'center' },
+        { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
+        { text: getExamMarks(mark.halfYearly, false), alignment: 'center' },
+        { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
+        { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
+        { text: mark?.yearly?.ut3 ?? '-', alignment: 'center' },
+        { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
+        { text: getExamMarks(mark.yearly, true), alignment: 'center' },
+        { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
+        { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
+        { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
+        { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+      ];
+    }),
     totalRow,
     percentageRow
   ];
