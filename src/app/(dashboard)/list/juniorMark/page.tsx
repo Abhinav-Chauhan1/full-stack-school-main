@@ -364,14 +364,14 @@ const renderRow = (item: any, examType?: string, role?: string) => {
     if (examType === 'HALF_YEARLY') {
       if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
         return examData?.examMarks40 || '-';
-      } else if (subjectCode === 'Urdu01') {
+      } else if (['Urdu01', 'SAN01'].includes(subjectCode)) {
         return examData?.examMarks30 || '-';
       }
       return examData?.examMarks || '-';
     } else {
       if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
         return examData?.yearlyexamMarks40 || '-';
-      } else if (subjectCode === 'Urdu01') {
+      } else if (['Urdu01', 'SAN01'].includes(subjectCode)) {
         return examData?.yearlyexamMarks30 || '-';
       }
       return examData?.yearlyexamMarks || '-';

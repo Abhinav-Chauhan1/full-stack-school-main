@@ -91,7 +91,7 @@ const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
     const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-    const isThirtyMarksSubject = subject?.code === "Urdu01";
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
     
     // Calculate max marks per term based on subject type
     let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 40 : 100;
@@ -172,7 +172,7 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     ...safeMarksJunior.map(mark => {
       const subject = mark?.classSubject?.subject;
       const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-      const isThirtyMarksSubject = subject?.code === "Urdu01";
+      const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
 
       // Helper to get exam marks based on subject type
       const getExamMarks = (examData: any, isYearly: boolean) => {
