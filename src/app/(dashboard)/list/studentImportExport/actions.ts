@@ -109,3 +109,83 @@ export async function exportStudentsWithMarks(
     };
   }
 }
+
+export async function exportAllStudents(sessionId: number) {
+  try {
+    const students = await prisma.student.findMany({
+      where: {
+        sessionId,
+      },
+      select: {
+        admissiondate: true,
+        admissionno: true,
+        name: true,
+        address: true,
+        city: true,
+        village: true,
+        Sex: true,
+        birthday: true,
+        nationality: true,
+        Religion: true,
+        tongue: true,
+        category: true,
+        mothername: true,
+        mphone: true,
+        moccupation: true,
+        fathername: true,
+        fphone: true,
+        foccupation: true,
+        aadharcard: true,
+        house: true,
+        bloodgroup: true,
+        previousClass: true,
+        yearofpass: true,
+        board: true,
+        school: true,
+        grade: true,
+        Class: {
+          select: {
+            name: true,
+            classNumber: true
+          }
+        },
+        Section: {
+          select: {
+            name: true
+          }
+        }
+      },
+      orderBy: [
+        { Class: { classNumber: 'asc' } },
+        { Section: { name: 'asc' } },
+        { name: 'asc' }
+      ]
+    });
+
+    // Group students by class and section
+    const grouped = students.reduce((acc, student) => {
+      const sheetName = `${student.Class?.name}-${student.Section?.name}`;
+      if (!acc[sheetName]) {
+        acc[sheetName] = [];
+      }
+
+      // Format dates and remove Class/Section from student data
+      const { Class, Section, admissiondate, birthday, ...rest } = student;
+      acc[sheetName].push({
+        ...rest,
+        admissiondate: admissiondate.toISOString().split('T')[0],
+        birthday: birthday.toISOString().split('T')[0],
+      });
+
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    return { success: true, data: grouped };
+  } catch (error) {
+    console.error('Export error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error exporting students' 
+    };
+  }
+}
