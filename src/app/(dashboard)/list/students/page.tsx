@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import ClassFilterSelect from "./ClassFilterSelect"; // Add this import
+import SectionFilterSelect from "./SectionFilterSelect"; // Add this import
 
 interface StudentWithDetails extends Student {
   Class: Class | null;
@@ -228,6 +229,11 @@ const StudentListPage = async ({
                 <ClassFilterSelect 
                   classes={classes} 
                   selectedClassId={queryParams.classId} 
+                />
+                <SectionFilterSelect 
+                  sections={sections}
+                  selectedSectionId={queryParams.sectionId}
+                  selectedClassId={queryParams.classId}
                 />
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                   <Image 
