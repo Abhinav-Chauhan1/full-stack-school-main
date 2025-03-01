@@ -129,7 +129,8 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
 
       if (!marksData) return null;
 
-      const existingMark = await prisma.juniorMark.findUnique({
+      // Use upsert instead of findUnique + conditional create/update
+      return prisma.juniorMark.upsert({
         where: {
           studentId_classSubjectId_sessionId: {
             studentId: mark.studentId,
@@ -137,33 +138,18 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
             sessionId: mark.sessionId
           }
         },
-        include: {
-          halfYearly: true,
-          yearly: true
-        }
-      });
-
-      if (!existingMark) {
-        return prisma.juniorMark.create({
-          data: {
-            student: { connect: { id: mark.studentId }},
-            classSubject: { connect: { id: mark.classSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              create: marksData
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      }
-
-      return prisma.juniorMark.update({
-        where: {
-          id: existingMark.id
+        create: {
+          student: { connect: { id: mark.studentId }},
+          classSubject: { connect: { id: mark.classSubjectId }},
+          session: { connect: { id: mark.sessionId }},
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            create: marksData
+          },
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
         },
-        data: {
+        update: {
           [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
             upsert: {
               create: marksData,
