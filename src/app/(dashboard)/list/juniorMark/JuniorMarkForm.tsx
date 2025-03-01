@@ -140,25 +140,28 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         });
   
         if (result.success && result.data && result.data.length > 0) {
+          // Only consider marks that match the current exam type
           const hasExamTypeData = result.data.some((mark) =>
             examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
           );
   
+          setExistingMarksData(result.data);
+          
           if (hasExamTypeData) {
-            setExistingMarksData(result.data);
             setFormType("update");
             toast.info(`Existing ${examType.toLowerCase().replace('_', ' ')} marks found. Switching to update mode.`);
           } else {
-            setExistingMarksData(null);
             setFormType("create");
           }
         } else {
-          setExistingMarksData(null);
+          setExistingMarksData([]);
           setFormType("create");
         }
       } catch (error) {
         console.error("Error checking existing marks:", error);
         toast.error("Failed to check existing marks");
+        setExistingMarksData([]);
+        setFormType("create");
       } finally {
         setIsLoading(false);
       }
@@ -261,10 +264,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   // Update useEffect to reset form with new mark structure
   useEffect(() => {
     if (existingMarksData && existingMarksData.length > 0) {
-      // If marks exist for the selected exam type, switch to update mode
-      setFormType("update");
-      toast.info(`Existing ${examType.toLowerCase().replace('_', ' ')} marks found. Switching to update mode.`);
-      
+      // If marks exist, prepare to update them
       const updatedMarks = selectedSectionStudents.map((student) => {
         const existingMark = existingMarksData.find(
           (mark) => mark.studentId === student.id
@@ -276,36 +276,47 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           sessionId: selectedSession || 0,
           examType: examType,
           halfYearly: examType === "HALF_YEARLY" ? {
-            ut1: existingMark?.halfYearly?.ut1,
-            ut2: existingMark?.halfYearly?.ut2,
-            noteBook: existingMark?.halfYearly?.noteBook,
-            subEnrichment: existingMark?.halfYearly?.subEnrichment,
-            examMarks: existingMark?.halfYearly?.examMarks,
-            examMarks40: existingMark?.halfYearly?.examMarks40,
-            examMarks30: existingMark?.halfYearly?.examMarks30,
-            totalMarks: existingMark?.halfYearly?.totalMarks,
-            grade: existingMark?.halfYearly?.grade,
-            remarks: existingMark?.halfYearly?.remarks
+            ut1: existingMark?.halfYearly?.ut1 || null,
+            ut2: existingMark?.halfYearly?.ut2 || null,
+            noteBook: existingMark?.halfYearly?.noteBook || null,
+            subEnrichment: existingMark?.halfYearly?.subEnrichment || null,
+            examMarks: existingMark?.halfYearly?.examMarks || null,
+            examMarks40: existingMark?.halfYearly?.examMarks40 || null,
+            examMarks30: existingMark?.halfYearly?.examMarks30 || null,
+            totalMarks: existingMark?.halfYearly?.totalMarks || null,
+            grade: existingMark?.halfYearly?.grade || null,
+            remarks: existingMark?.halfYearly?.remarks || null
           } : null,
           yearly: examType === "YEARLY" ? {
-            ut3: existingMark?.yearly?.ut3,
-            ut4: existingMark?.yearly?.ut4,
-            yearlynoteBook: existingMark?.yearly?.yearlynoteBook,
-            yearlysubEnrichment: existingMark?.yearly?.yearlysubEnrichment,
-            yearlyexamMarks: existingMark?.yearly?.yearlyexamMarks,
-            yearlyexamMarks40: existingMark?.yearly?.yearlyexamMarks40,
-            yearlyexamMarks30: existingMark?.yearly?.yearlyexamMarks30,
-            yearlytotalMarks: existingMark?.yearly?.yearlytotalMarks,
-            yearlygrade: existingMark?.yearly?.yearlygrade,
-            yearlyremarks: existingMark?.yearly?.yearlyremarks
+            ut3: existingMark?.yearly?.ut3 || null,
+            ut4: existingMark?.yearly?.ut4 || null,
+            yearlynoteBook: existingMark?.yearly?.yearlynoteBook || null,
+            yearlysubEnrichment: existingMark?.yearly?.yearlysubEnrichment || null,
+            yearlyexamMarks: existingMark?.yearly?.yearlyexamMarks || null,
+            yearlyexamMarks40: existingMark?.yearly?.yearlyexamMarks40 || null,
+            yearlyexamMarks30: existingMark?.yearly?.yearlyexamMarks30 || null,
+            yearlytotalMarks: existingMark?.yearly?.yearlytotalMarks || null,
+            yearlygrade: existingMark?.yearly?.yearlygrade || null,
+            yearlyremarks: existingMark?.yearly?.yearlyremarks || null
           } : null,
-          grandTotalMarks: existingMark?.grandTotalMarks,
-          grandTotalGrade: existingMark?.grandTotalGrade,
-          overallPercentage: existingMark?.overallPercentage
+          grandTotalMarks: existingMark?.grandTotalMarks || null,
+          grandTotalGrade: existingMark?.grandTotalGrade || null,
+          overallPercentage: existingMark?.overallPercentage || null
         };
       });
 
       reset({ marks: updatedMarks });
+      
+      // Check if we are updating or creating based on whether all students have existing marks
+      const allStudentsHaveMarks = selectedSectionStudents.every(
+        student => existingMarksData.some(mark => mark.studentId === student.id)
+      );
+      
+      setFormType(allStudentsHaveMarks ? "update" : "create");
+      
+      if (!allStudentsHaveMarks) {
+        toast.info("Some students don't have existing marks. All marks will be saved as new records.");
+      }
     } else {
       // If no marks exist for the selected exam type, switch to create mode
       setFormType("create");
@@ -370,18 +381,19 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           } : null,
         };
   
-        // Calculate current term's marks
+        // Calculate grades and marks
         const calculatedResults = calculateMarksAndGrade({
-          examType: cleanedMark.examType,
-          [cleanedMark.examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]:
-            cleanedMark.examType === "HALF_YEARLY" ? cleanedMark.halfYearly : cleanedMark.yearly,
-          halfYearly: existingHalfYearlyMarks
+          ...cleanedMark,
+          // Add existing half yearly data for yearly calculation if available
+          halfYearly: mark.examType === "YEARLY" ? existingHalfYearlyMarks : cleanedMark.halfYearly
         });
-  
+
         return {
           ...cleanedMark,
           classSubjectId: selectedSubject,
-          ...calculatedResults
+          grandTotalMarks: calculatedResults.grandTotalMarks,
+          grandTotalGrade: calculatedResults.grandTotalGrade,
+          overallPercentage: calculatedResults.overallPercentage
         };
       });
   

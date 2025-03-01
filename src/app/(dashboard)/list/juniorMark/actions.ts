@@ -142,18 +142,18 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
     console.log('Update function called with data:', JSON.stringify(data, null, 2));
 
     const updatePromises = data.marks.map(async (mark) => {
-      console.log('Processing mark:', JSON.stringify(mark, null, 2));
+      console.log('Processing mark for student:', mark.studentId);
       
       const examType = mark.examType;
       const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
 
       if (!marksData) {
-        console.log('No marks data found for:', mark.studentId);
+        console.log('No marks data found for student:', mark.studentId);
         return null;
       }
 
-      // First, check if the record exists
-      const existingMark = await prisma.juniorMark.findUnique({
+      // Always use upsert to handle both create and update scenarios
+      return prisma.juniorMark.upsert({
         where: {
           studentId_classSubjectId_sessionId: {
             studentId: mark.studentId,
@@ -161,52 +161,42 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
             sessionId: mark.sessionId
           }
         },
+        create: {
+          student: { connect: { id: mark.studentId }},
+          classSubject: { connect: { id: mark.classSubjectId }},
+          session: { connect: { id: mark.sessionId }},
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            create: marksData
+          },
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
+        },
+        update: {
+          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+            upsert: {
+              create: marksData,
+              update: marksData
+            }
+          },
+          grandTotalMarks: mark.grandTotalMarks || 0,
+          grandTotalGrade: mark.grandTotalGrade || '',
+          overallPercentage: mark.overallPercentage || 0
+        },
         include: {
-          halfYearly: true,
-          yearly: true
+          student: {
+            select: {
+              name: true
+            }
+          }
         }
       });
-
-      console.log('Existing mark found:', existingMark ? 'yes' : 'no');
-
-      if (existingMark) {
-        console.log('Attempting to update existing mark for student:', mark.studentId);
-        return prisma.juniorMark.update({
-          where: {
-            id: existingMark.id
-          },
-          data: {
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              upsert: {
-                create: marksData,
-                update: marksData,
-              }
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      } else {
-        console.log('Creating new mark record for student:', mark.studentId);
-        return prisma.juniorMark.create({
-          data: {
-            student: { connect: { id: mark.studentId }},
-            classSubject: { connect: { id: mark.classSubjectId }},
-            session: { connect: { id: mark.sessionId }},
-            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-              create: marksData
-            },
-            grandTotalMarks: mark.grandTotalMarks || 0,
-            grandTotalGrade: mark.grandTotalGrade || '',
-            overallPercentage: mark.overallPercentage || 0
-          }
-        });
-      }
     });
 
     const results = await Promise.all(updatePromises);
-    console.log('Update operation completed. Results:', JSON.stringify(results, null, 2));
+    console.log('Update operation completed. Updated marks for students:', 
+      results.filter(Boolean).map(r => r?.student?.name).join(', '));
+      
     return { success: true, error: false, results };
   } catch (err) {
     console.error("Update Junior Marks Error:", err);
