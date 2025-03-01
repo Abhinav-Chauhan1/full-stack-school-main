@@ -123,11 +123,18 @@ export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
 
 export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
   try {
+    console.log('Update function called with data:', JSON.stringify(data, null, 2));
+
     const updatePromises = data.marks.map(async (mark) => {
+      console.log('Processing mark:', JSON.stringify(mark, null, 2));
+      
       const examType = mark.examType;
       const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
 
-      if (!marksData) return null;
+      if (!marksData) {
+        console.log('No marks data found for:', mark.studentId);
+        return null;
+      }
 
       // First, check if the record exists
       const existingMark = await prisma.juniorMark.findUnique({
@@ -144,8 +151,10 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
         }
       });
 
+      console.log('Existing mark found:', existingMark ? 'yes' : 'no');
+
       if (existingMark) {
-        // If record exists, update it
+        console.log('Attempting to update existing mark for student:', mark.studentId);
         return prisma.juniorMark.update({
           where: {
             id: existingMark.id
@@ -163,7 +172,7 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
           }
         });
       } else {
-        // If record doesn't exist, create new
+        console.log('Creating new mark record for student:', mark.studentId);
         return prisma.juniorMark.create({
           data: {
             student: { connect: { id: mark.studentId }},
@@ -181,9 +190,11 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
     });
 
     const results = await Promise.all(updatePromises);
+    console.log('Update operation completed. Results:', JSON.stringify(results, null, 2));
     return { success: true, error: false, results };
   } catch (err) {
     console.error("Update Junior Marks Error:", err);
+    console.error("Error stack:", err instanceof Error ? err.stack : 'No stack trace');
     return { 
       success: false, 
       error: true,
