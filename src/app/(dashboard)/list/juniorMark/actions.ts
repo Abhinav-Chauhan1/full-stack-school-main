@@ -48,8 +48,24 @@ export const checkExistingJuniorMarks = async (
       },
       include: {
         halfYearly: true,
-        yearly: true
+        yearly: true,
+        student: {
+          select: {
+            name: true,
+            Section: true
+          }
+        }
       }
+    });
+
+    console.log('Found existing marks:', {
+      count: existingMarks.length,
+      marks: existingMarks.map(m => ({
+        studentName: m.student.name,
+        section: m.student.Section?.name,
+        hasHalfYearly: !!m.halfYearly,
+        hasYearly: !!m.yearly
+      }))
     });
 
     return { 
