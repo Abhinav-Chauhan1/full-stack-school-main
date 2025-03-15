@@ -87,6 +87,75 @@ export const getOverallGrade = (percentage: number) => {
   return 'E';
 };
 
+// Helper to check if a subject has non-zero marks in any exam
+const hasNonZeroMarks = (mark: any) => {
+  if (!mark) return false;
+  
+  // Check half yearly marks
+  const halfYearlyExamMarks = 
+    mark?.halfYearly?.examMarks || 
+    mark?.halfYearly?.examMarks30 || 
+    mark?.halfYearly?.examMarks40;
+  
+  const halfYearlyHasMarks = 
+    (mark?.halfYearly?.ut1 > 0) ||
+    (mark?.halfYearly?.ut2 > 0) ||
+    (mark?.halfYearly?.noteBook > 0) ||
+    (mark?.halfYearly?.subEnrichment > 0) ||
+    (halfYearlyExamMarks > 0);
+  
+  // Check yearly marks
+  const yearlyExamMarks = 
+    mark?.yearly?.yearlyexamMarks || 
+    mark?.yearly?.yearlyexamMarks30 || 
+    mark?.yearly?.yearlyexamMarks40;
+    
+  const yearlyHasMarks =
+    (mark?.yearly?.ut3 > 0) ||
+    (mark?.yearly?.ut4 > 0) ||
+    (mark?.yearly?.yearlynoteBook > 0) ||
+    (mark?.yearly?.yearlysubEnrichment > 0) ||
+    (yearlyExamMarks > 0);
+  
+  return halfYearlyHasMarks || yearlyHasMarks;
+};
+
+// Filter language subjects (SAN01 and Urdu01) to keep only the one with marks
+const filterLanguageSubjects = (marks: any[]) => {
+  // Find marks for language subjects
+  const urduMarks = marks.find(mark => mark?.classSubject?.subject?.code === 'Urdu01');
+  const sanskritMarks = marks.find(mark => mark?.classSubject?.subject?.code === 'SAN01');
+  
+  // If student doesn't have both subjects, return original marks
+  if (!urduMarks || !sanskritMarks) {
+    return marks;
+  }
+  
+  // Check if each subject has non-zero marks
+  const urduHasMarks = hasNonZeroMarks(urduMarks);
+  const sanskritHasMarks = hasNonZeroMarks(sanskritMarks);
+  
+  // If both have marks or neither has marks, return original array
+  if ((urduHasMarks && sanskritHasMarks) || (!urduHasMarks && !sanskritHasMarks)) {
+    return marks;
+  }
+  
+  // Return filtered array excluding the subject with no marks
+  return marks.filter(mark => {
+    const subjectCode = mark?.classSubject?.subject?.code;
+    
+    if (subjectCode === 'Urdu01') {
+      return urduHasMarks;
+    }
+    if (subjectCode === 'SAN01') {
+      return sanskritHasMarks;
+    }
+    
+    // Keep all non-language subjects
+    return true;
+  });
+};
+
 const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
@@ -259,8 +328,12 @@ export const generatePdfDefinition = (
   }
 
   const safeMarksJunior = studentResult?.marksJunior ?? [];
-  const results = calculateOverallResults(safeMarksJunior);
-  const tableBody = generateTableBody(safeMarksJunior, results);
+  
+  // Filter language subjects to only include those with marks
+  const filteredMarks = filterLanguageSubjects(safeMarksJunior);
+  
+  const results = calculateOverallResults(filteredMarks);
+  const tableBody = generateTableBody(filteredMarks, results);
 
   return {
     pageSize: 'A4',
