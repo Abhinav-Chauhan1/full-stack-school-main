@@ -491,7 +491,7 @@ export const generatePdfDefinition = (
           {
             columns: [
               {
-                width: 25, // Slightly smaller logo
+                width: 55, // Slightly smaller logo
                 image: logoData || '',
                 alignment: 'center'
               },
@@ -550,8 +550,8 @@ export const generatePdfDefinition = (
                     },
                     studentImageData ?{
                       image: studentImageData || '', // Use the loaded student image
-                      width: 100,
-                      height: 100,
+                      width: 80,
+                      height: 80,
                       alignment: 'center',
                       margin: [0, 5],
                     }: {},
