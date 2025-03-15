@@ -454,9 +454,9 @@ const coScholasticTable = {
       { text: 'A', alignment: 'center' }
     ],
     [
-      'Discipline  [on a 5 Point(A - E) Grading Scale]',
+      'Discipline',
       { text: 'A', alignment: 'center' },
-      'Discipline  [on a 5 Point(A - E) Grading Scale]',
+      'Discipline',
       { text: 'A', alignment: 'center' }
     ]
   ]
@@ -481,224 +481,226 @@ export const generatePdfDefinition = (
 
   return {
     pageSize: 'A4',
-    pageMargins: [40, 20, 40, 20],
+    pageOrientation: 'portrait',
+    pageMargins: [15, 10, 15, 10], // Reduced margins
+    compress: true, // Compress content to fit better
     content: [
       // School header with improved layout
       {
-      stack: [
-        {
-        columns: [
+        stack: [
           {
-          width: 70,
-          image: logoData || '', // Use the loaded base64 image
-          alignment: 'center'
-            },
+            columns: [
+              {
+                width: 25, // Slightly smaller logo
+                image: logoData || '',
+                alignment: 'center'
+              },
+              {
+                stack: [
+                  { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 7 }, // Smaller font
+                  { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
+                  { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
+                  { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
+                ],
+                alignment: 'center',
+                width: '*'
+              }
+            ]
+          }
+        ],
+        margin: [0, 0, 0, 3] // Reduced margin
+      },
+      {
+        text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
+        style: 'reportCardHeader',
+        alignment: 'center',
+        margin: [0, 5, 0, 2] // Reduced margin
+      },
+      {
+        text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
+        style: 'subHeader',
+        alignment: 'center',
+        margin: [0, 0, 0, 5] // Reduced margin
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [[
             {
               stack: [
-                { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 8 },
-                { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
-                { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
-                { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
+                {
+                  columns: [
+                    {
+                      width: '50%',
+                      stack: [
+                        { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
+                        { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
+                        { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
+                        { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
+                        {text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
+                      ]
+                    },
+                    {
+                      width: '30%',
+                      stack: [
+                        { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
+                        { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
+                        { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
+                      ]
+                    },
+                    studentImageData ?{
+                      image: studentImageData || '', // Use the loaded student image
+                      width: 100,
+                      height: 100,
+                      alignment: 'center',
+                      margin: [0, 5],
+                    }: {},
+                  ]
+                }
               ],
-              alignment: 'center',
-              width: '*'
+              margin: [0, 0, 0, 10]
             }
-          ]
+          ]]
+        },
+        layout: 'noBorders'
+      },
+      // Marks table with new layout
+      {
+        table: {
+          headerRows: 2,
+          widths: ['*', 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 35, 35],
+          body: tableBody,
+          dontBreakRows: true
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => 'black',
+          vLineColor: () => 'black'
         }
-      ],
-      margin: [0, 0, 0, 10]
-    },
-    {
-      text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
-      style: 'reportCardHeader',
-      alignment: 'center',
-      margin: [0, 10, 0, 5]
-    },
-    {
-      text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
-      style: 'subHeader',
-      alignment: 'center',
-      margin: [0, 0, 0, 15]
-    },
-    {
-      table: {
-        widths: ['*'],
-        body: [[
-          {
-            stack: [
-              {
-                columns: [
-                  {
-                    width: '50%',
-                    stack: [
-                      { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
-                      {text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
-                    ]
-                  },
-                  {
-                    width: '30%',
-                    stack: [
-                      { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
-                      { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
-                    ]
-                  },
-                  studentImageData ?{
-                    image: studentImageData || '', // Use the loaded student image
-                    width: 100,
-                    height: 100,
-                    alignment: 'center',
-                    margin: [0, 5],
-                  }: {},
-                ]
-              }
-            ],
-            margin: [0, 0, 0, 10]
-          }
-        ]]
       },
-      layout: 'noBorders'
-    },
-    // Marks table with new layout
-    {
-      table: {
-        headerRows: 2,
-        widths: ['*', 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 35, 35],
-        body: tableBody,
-        dontBreakRows: true
+      {
+        table: coScholasticTable,
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => 'black',
+          vLineColor: () => 'black'
+        },
+        margin: [0, 2] // Remove margin
       },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => 'black',
-        vLineColor: () => 'black'
-      }
-    },
-    {
-      table: coScholasticTable,
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => 'black',
-        vLineColor: () => 'black'
-      },
-      margin: [0, 2] // Remove margin
-    },
-    {
-      table: {
-        widths: ['*'],
-        body: [[
-          {
-            text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),\nC1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
-            alignment: 'center',
-            style: 'columnHeader'
-          }
-        ]]
-      },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => 'black',
-        vLineColor: () => 'black'
-      },
-      margin: [0, 0] // Remove margin
-    },
-    {
-      table: {
-        widths: ['*', '*'],
-        body: [
-          [
+      {
+        table: {
+          widths: ['*'],
+          body: [[
             {
-              text: `Result: ${safeMarksJunior.every(mark => 
-                (mark.grandTotalGrade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
-              style: 'tableHeader',
-              alignment: 'center'
-            },
-            {
-              text: `Teacher Remarks: ${safeMarksJunior[0]?.yearly?.yearlyremarks ?? 'VERY GOOD WORK AND VERY WELL.'}`,
-              style: 'tableHeader',
-              alignment: 'center'
+              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),\nC1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
+              alignment: 'center',
+              style: 'columnHeader'
             }
+          ]]
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => 'black',
+          vLineColor: () => 'black'
+        },
+        margin: [0, 2] // Remove margin
+      },
+      {
+        table: {
+          widths: ['*', '*'],
+          body: [
+            [
+              {
+                text: `Result: ${safeMarksJunior.every(mark => 
+                  (mark.grandTotalGrade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
+                style: 'tableHeader',
+                alignment: 'center'
+              },
+              {
+                text: `Teacher Remarks: ${safeMarksJunior[0]?.yearly?.yearlyremarks ?? 'VERY GOOD WORK AND VERY WELL.'}`,
+                style: 'tableHeader',
+                alignment: 'center'
+              }
+            ]
           ]
-        ]
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => 'black',
+          vLineColor: () => 'black'
+        },
+        margin: [0, 0] // Remove margin
       },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => 'black',
-        vLineColor: () => 'black'
-      },
-      margin: [0, 0] // Remove margin
-    },
-    {
-      table: {
-        widths: ['*', '*', '*'],
-        body: [
-          [
-            { text: 'CLASS TEACHER', alignment: 'center' },
-            { text: 'EXAMINATION I/C', alignment: 'center' },
-            { text: 'PRINCIPAL', alignment: 'center' }
-          ],
-          [
-            { text: '_______________', alignment: 'center' },
-            { text: '_______________', alignment: 'center' },
-            { text: '_______________', alignment: 'center' }
+      {
+        table: {
+          widths: ['*', '*', '*'],
+          body: [
+            [
+              { text: 'CLASS TEACHER', alignment: 'center' },
+              { text: 'EXAMINATION I/C', alignment: 'center' },
+              { text: 'PRINCIPAL', alignment: 'center' }
+            ],
+            [
+              { text: '_______________', alignment: 'center' },
+              { text: '_______________', alignment: 'center' },
+              { text: '_______________', alignment: 'center' }
+            ]
           ]
-        ]
+        },
+        layout: 'noBorders',
+        margin: [0, 20]
+      }
+    ],
+    styles: {
+      schoolName: {
+        fontSize: 20, // Reduced from 24
+        bold: true,
+        alignment: 'center'
       },
-      layout: 'noBorders',
-      margin: [0, 20]
+      affiliation: {
+        fontSize: 12, // Reduced from 14
+        bold: true,
+        alignment: 'center'
+      },
+      address: {
+        fontSize: 10, // Reduced from 12
+        alignment: 'center'
+      },
+      reportCardHeader: {
+        fontSize: 12, // Reduced from 14
+        bold: true
+      },
+      subHeader: {
+        fontSize: 8, // Reduced from 10
+        alignment: 'center'
+      },
+      columnHeader: {
+        fontSize: 8 // Reduced from 9
+      },
+      fieldLabel: {
+        fontSize: 10, // Reduced from 10
+        margin: [0, 0, 0, 2] // Reduced margin
+      },
+      tableHeader: {
+        fontSize: 9, // Reduced from 10
+        bold: true,
+        alignment: 'center'
+      },
+      tableCell: {
+        fontSize: 8, // Reduced from 9
+        alignment: 'center'
+      },
+      sectionHeader: {
+        fontSize: 10, // Reduced from 11
+        bold: true,
+        margin: [0, 2, 0, 2] // Reduced margin
+      }
     }
-  ],
-  styles: {
-    schoolName: {
-      fontSize: 24,
-      bold: true,
-      alignment: 'center'
-    },
-    affiliation: {
-      fontSize: 14,
-      bold: true,
-      alignment: 'center'
-    },
-    address: {
-      fontSize: 12,
-      alignment: 'center'
-    },
-    reportCardHeader: {
-      fontSize: 14,
-      bold: true
-    },
-    subHeader: {
-      fontSize: 10,
-      alignment: 'center'
-    },
-    columnHeader: {
-      fontSize: 9
-    },
-    fieldLabel: {
-      fontSize: 10,
-      margin: [0, 0, 0, 5]
-    },
-    tableHeader: {
-      fontSize: 10,
-      bold: true,
-      alignment: 'center'
-    },
-    tableCell: {
-      fontSize: 9,
-      alignment: 'center'
-    },
-    sectionHeader: {
-      fontSize: 11,
-      bold: true,
-      margin: [0, 5, 0, 5]
-    }
-  }
-};
+  };
 };
 
 export const generateAndDownloadPdf = async (
@@ -715,8 +717,10 @@ export const generateAndDownloadPdf = async (
 
     const docDefinition = generatePdfDefinition(studentResult, logoData, studentImageData);
     
-    // Create and download the PDF
+    // Create and download the PDF with fit-to-page options
     const pdfDoc = pdfMake.createPdf(docDefinition);
+    
+    // Configure PDF to scale content to fit page
     pdfDoc.download(`Result_${studentResult.student.admissionno}.pdf`);
     
     onClose();
