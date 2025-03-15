@@ -93,11 +93,11 @@ export const calculateMarksAndGrade = (markData: any) => {
     
     // Calculate total based on exam mark type
     if (marks.examMarks40 !== null) {
-      // Special case for examMarks40: bestUT/2 + notebook + subenrichment + exammarks40
+      // Special case for examMarks40: bestUT/2 + (notebook+subenrichment)/2 + exammarks40
       totalMarks = 
         (bestUT / 2) + // Half of best UT score
-        (Math.min(5, (Number(marks.noteBook) || 0)) +
-        Math.min(5, (Number(marks.subEnrichment) || 0))) /2  +
+        ((Math.min(5, (Number(marks.noteBook) || 0)) +
+        Math.min(5, (Number(marks.subEnrichment) || 0))) / 2) +
         Math.min(40, (Number(marks.examMarks40) || 0));
     } else if (marks.examMarks30 !== null) {
       totalMarks = 
@@ -124,8 +124,8 @@ export const calculateMarksAndGrade = (markData: any) => {
       // Special case for yearlyexamMarks40
       totalMarks = 
         (bestUT / 2) + // Half of best UT score
-        (Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
-        Math.min(5, (Number(marks.yearlysubEnrichment) || 0))) /2 +
+        ((Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0))) / 2) +
         Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
     } else if (marks.yearlyexamMarks30 !== null) {
       totalMarks = 
@@ -145,9 +145,10 @@ export const calculateMarksAndGrade = (markData: any) => {
   }
 
   // Calculate grade based on percentage
-  // Get max marks based on exam type (this part needs to change)
-  const maxMarks = marks.examMarks40 !== null ? 50 : 
-                   marks.examMarks30 !== null ? 50 : 100;
+  // Get max marks based on exam type - this part has the bug
+  const maxMarks = examType === "HALF_YEARLY" 
+    ? (marks.examMarks40 !== null ? 50 : marks.examMarks30 !== null ? 50 : 100)
+    : (marks.yearlyexamMarks40 !== null ? 50 : marks.yearlyexamMarks30 !== null ? 50 : 100);
   
   const percentage = (totalMarks / maxMarks) * 100;
 
@@ -174,7 +175,14 @@ export const calculateMarksAndGrade = (markData: any) => {
     grandTotalMarks = totalMarks + existingHalfYearly.totalMarks;
     
     // Calculate percentage based on actual total possible marks
-    const totalPossibleMarks = maxMarks * 2; // Double the max marks for yearly total
+    // Need to determine half-yearly max marks separately
+    const halfYearlyMaxMarks = existingHalfYearly.examMarks40 !== null ? 50 : 
+                              existingHalfYearly.examMarks30 !== null ? 50 : 100;
+                              
+    const yearlyMaxMarks = marks.yearlyexamMarks40 !== null ? 50 : 
+                          marks.yearlyexamMarks30 !== null ? 50 : 100;
+                          
+    const totalPossibleMarks = halfYearlyMaxMarks + yearlyMaxMarks; // Sum actual max marks for both terms
     overallPercentage = grandTotalMarks ? (grandTotalMarks / totalPossibleMarks) * 100 : null;
     
     // Calculate grand total grade using the same percentage boundaries
@@ -190,7 +198,7 @@ export const calculateMarksAndGrade = (markData: any) => {
     }
   } else if (examType === "HALF_YEARLY") {
     // For half yearly, only store the current total marks
-    grandTotalMarks = totalMarks;
+    grandTotalMarks = totalMarks; 
     grandTotalGrade = grade; // Use same grade as current marks for half yearly
     overallPercentage = percentage;
   }

@@ -163,7 +163,8 @@ const calculateOverallResults = (marks: any[]) => {
     const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
     
     // Calculate max marks per term based on subject type
-    let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 40 : 100;
+    // Both 30-mark and 40-mark subjects have a maximum total of 50 points
+    let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 50 : 100;
     
     const halfYearlyMarks = mark.halfYearly?.totalMarks || 0;
     const yearlyMarks = mark.yearly?.yearlytotalMarks || 0;
@@ -177,6 +178,14 @@ const calculateOverallResults = (marks: any[]) => {
     : 0;
 
   return { ...totals, overallPercentage};
+};
+
+// Helper function to get best score between two unit tests
+const getBestUnitTest = (test1: any, test2: any) => {
+  if (test1 === null && test2 === null) return '-';
+  if (test1 === null) return test2;
+  if (test2 === null) return test1;
+  return Math.max(Number(test1), Number(test2));
 };
 
 const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMarks, overallPercentage}: any) => {
@@ -197,7 +206,124 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     {text: `${getOverallGrade(Number(overallPercentage))}`, alignment: 'center', style: 'columnHeader' }
   ];
 
-  // Update the tableBody to use these new rows
+  // Separate subjects by category
+  const regularSubjects = safeMarksJunior.filter(mark => {
+    const subject = mark?.classSubject?.subject;
+    const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
+    return !isFortyMarksSubject && !isThirtyMarksSubject;
+  });
+
+  const fortyMarkSubjects = safeMarksJunior.filter(mark => {
+    const subject = mark?.classSubject?.subject;
+    return subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
+  });
+
+  const thirtyMarkSubjects = safeMarksJunior.filter(mark => {
+    const subject = mark?.classSubject?.subject;
+    return subject?.code.match(/^(Urdu01|SAN01)$/);
+  });
+
+  // Helper to get exam marks based on subject type
+  const getExamMarks = (examData: any, isYearly: boolean, isFortyMarksSubject: boolean, isThirtyMarksSubject: boolean) => {
+    if (!examData) return '-';
+    
+    if (isFortyMarksSubject) {
+      return isYearly ? examData.yearlyexamMarks40 ?? '-' : examData.examMarks40 ?? '-';
+    } else if (isThirtyMarksSubject) {
+      return isYearly ? examData.yearlyexamMarks30 ?? '-' : examData.examMarks30 ?? '-';
+    }
+    return isYearly ? examData.yearlyexamMarks ?? '-' : examData.examMarks ?? '-';
+  };
+
+  // Generate rows for regular subjects
+  const regularSubjectRows = regularSubjects.map(mark => {
+    const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
+    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    
+    return [
+      { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
+      { text: bestHalfYearlyUT, alignment: 'center' },
+      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: getExamMarks(mark.halfYearly, false, false, false), alignment: 'center' },
+      { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
+      { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
+      { text: bestYearlyUT, alignment: 'center' },
+      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: getExamMarks(mark.yearly, true, false, false), alignment: 'center' },
+      { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+    ];
+  });
+
+  // Generate rows for 40-mark subjects
+  const fortyMarkSubjectRows = fortyMarkSubjects.map(mark => {
+    // Get best scores for half-yearly and yearly
+    const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
+    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    
+    // Display full values for NB+SE (without division)
+    const halfYearlyNBSE = ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-';
+    const yearlyNBSE = ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-';
+
+    return [
+      { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
+      // Show full UT value (not divided by 2)
+      { text: bestHalfYearlyUT, alignment: 'center' },
+      // Show full NB+SE value (not divided by 2)
+      { text: halfYearlyNBSE, alignment: 'center' },
+      { text: getExamMarks(mark.halfYearly, false, true, false), alignment: 'center' },
+      { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
+      { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
+      // Show full UT value (not divided by 2)
+      { text: bestYearlyUT, alignment: 'center' },
+      // Show full NB+SE value (not divided by 2)
+      { text: yearlyNBSE, alignment: 'center' },
+      { text: getExamMarks(mark.yearly, true, true, false), alignment: 'center' },
+      { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+    ];
+  });
+
+  // Generate rows for 30-mark subjects
+  const thirtyMarkSubjectRows = thirtyMarkSubjects.map(mark => {
+    // Get best scores for half-yearly and yearly
+    const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
+    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    
+    return [
+      { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
+      { text: bestHalfYearlyUT, alignment: 'center' },
+      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: getExamMarks(mark.halfYearly, false, false, true), alignment: 'center' },
+      { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
+      { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
+      { text: bestYearlyUT, alignment: 'center' },
+      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: getExamMarks(mark.yearly, true, false, true), alignment: 'center' },
+      { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
+      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+    ];
+  });
+
+  // Create section headers - removing regularSubjectsHeader
+  const fortyMarkSubjectsHeader = fortyMarkSubjects.length > 0 ? [
+    { text: 'ADDITIONAL SUBJECTS (40 MARKS EXAM)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+  ] : [];
+
+  const thirtyMarkSubjectsHeader = thirtyMarkSubjects.length > 0 ? [
+    { text: 'ADDITIONAL SUBJECTS (30 MARKS EXAM)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+  ] : [];
+
+  // Build the complete table
   return [
     [
       { text: 'SCHOLASTIC\nAREAS', rowSpan: 1, alignment: 'center', style: 'tableHeader' },
@@ -210,12 +336,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     ],
     [
       { text: 'Subjects',alignment:'center',rowSpan: 2, style: 'tableHeader' },
-      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
+      { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
       { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
       { text: 'H.Y.E', alignment: 'center', style: 'columnHeader' },
       { text: 'M.O', alignment: 'center', style: 'columnHeader' },
       { text: 'GR.', alignment: 'center',rowSpan: 2, style: 'columnHeader' },
-      { text: 'P.T', alignment: 'center', style: 'columnHeader' },
+      { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
       { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
       { text: 'Y.E', alignment: 'center', style: 'columnHeader' },
       { text: 'M.O', alignment: 'center', style: 'columnHeader' },
@@ -238,39 +364,51 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       { text: '(200)', alignment: 'center', style: 'columnHeader' }, 
       {}
     ],
-    ...safeMarksJunior.map(mark => {
-      const subject = mark?.classSubject?.subject;
-      const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-      const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
-
-      // Helper to get exam marks based on subject type
-      const getExamMarks = (examData: any, isYearly: boolean) => {
-        if (!examData) return '-';
-        
-        if (isFortyMarksSubject) {
-          return isYearly ? examData.yearlyexamMarks40 ?? '-' : examData.examMarks40 ?? '-';
-        } else if (isThirtyMarksSubject) {
-          return isYearly ? examData.yearlyexamMarks30 ?? '-' : examData.examMarks30 ?? '-';
-        }
-        return isYearly ? examData.yearlyexamMarks ?? '-' : examData.examMarks ?? '-';
-      };
-
-      return [
-        { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
-        { text: mark?.halfYearly?.ut1 ?? '-', alignment: 'center' },
-        { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
-        { text: getExamMarks(mark.halfYearly, false), alignment: 'center' },
-        { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
-        { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
-        { text: mark?.yearly?.ut3 ?? '-', alignment: 'center' },
-        { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
-        { text: getExamMarks(mark.yearly, true), alignment: 'center' },
-        { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
-        { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
-        { text: mark?.grandTotalMarks ?? '-', alignment: 'center' },
-        { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
-      ];
-    }),
+    // First include regular subjects if any - removing the header
+    ...(regularSubjects.length > 0 ? regularSubjectRows : []),
+    
+    // Include forty mark subjects with their header
+    ...(fortyMarkSubjects.length > 0 ? [
+      fortyMarkSubjectsHeader,
+      [
+        {},
+        { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
+        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(40)', alignment: 'center', style: 'columnHeader' },
+        { text: '(50)', alignment: 'center', style: 'columnHeader' },
+        {},
+        { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
+        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(40)', alignment: 'center', style: 'columnHeader' },
+        { text: '(50)', alignment: 'center', style: 'columnHeader' },
+        {},
+        { text: '(100)', alignment: 'center', style: 'columnHeader' }, 
+        {}
+      ],
+      ...fortyMarkSubjectRows
+    ] : []),
+    
+    // Include thirty mark subjects with their header
+    ...(thirtyMarkSubjects.length > 0 ? [
+      thirtyMarkSubjectsHeader,
+      [
+        {},
+        { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
+        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(30)', alignment: 'center', style: 'columnHeader' },
+        { text: '(50)', alignment: 'center', style: 'columnHeader' },
+        {},
+        { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
+        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(30)', alignment: 'center', style: 'columnHeader' },
+        { text: '(50)', alignment: 'center', style: 'columnHeader' },
+        {},
+        { text: '(100)', alignment: 'center', style: 'columnHeader' }, 
+        {}
+      ],
+      ...thirtyMarkSubjectRows
+    ] : []),
+    
     totalRow,
     percentageRow
   ];
@@ -547,6 +685,11 @@ export const generatePdfDefinition = (
     tableCell: {
       fontSize: 9,
       alignment: 'center'
+    },
+    sectionHeader: {
+      fontSize: 11,
+      bold: true,
+      margin: [0, 5, 0, 5]
     }
   }
 };
