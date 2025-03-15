@@ -94,11 +94,14 @@ export const calculateMarksAndGrade = (markData: any) => {
     // Calculate total based on exam mark type
     if (marks.examMarks40 !== null) {
       // Special case for examMarks40: bestUT/2 + (notebook+subenrichment)/2 + exammarks40
-      totalMarks = 
-        (bestUT / 2) + // Half of best UT score
-        ((Math.min(5, (Number(marks.noteBook) || 0)) +
-        Math.min(5, (Number(marks.subEnrichment) || 0))) / 2) +
-        Math.min(40, (Number(marks.examMarks40) || 0));
+      const roundedHalfUT = Math.round(bestUT / 2); // Round off half of best UT
+      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.noteBook) || 0)) + 
+                                      Math.min(5, (Number(marks.subEnrichment) || 0));
+      const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2); // Round off half of NB+SE
+      
+      totalMarks = roundedHalfUT + 
+                   roundedHalfNBSE +
+                   Math.min(40, (Number(marks.examMarks40) || 0));
     } else if (marks.examMarks30 !== null) {
       totalMarks = 
         bestUT +
@@ -122,11 +125,14 @@ export const calculateMarksAndGrade = (markData: any) => {
     
     if (marks.yearlyexamMarks40 !== null) {
       // Special case for yearlyexamMarks40
-      totalMarks = 
-        (bestUT / 2) + // Half of best UT score
-        ((Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
-        Math.min(5, (Number(marks.yearlysubEnrichment) || 0))) / 2) +
-        Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
+      const roundedHalfUT = Math.round(bestUT / 2); // Round off half of best UT
+      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.yearlynoteBook) || 0)) + 
+                                      Math.min(5, (Number(marks.yearlysubEnrichment) || 0));
+      const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2); // Round off half of NB+SE
+      
+      totalMarks = roundedHalfUT + 
+                   roundedHalfNBSE +
+                   Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
     } else if (marks.yearlyexamMarks30 !== null) {
       totalMarks = 
         bestUT +

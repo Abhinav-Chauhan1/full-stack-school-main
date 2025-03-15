@@ -183,9 +183,15 @@ const calculateOverallResults = (marks: any[]) => {
 // Helper function to get best score between two unit tests
 const getBestUnitTest = (test1: any, test2: any) => {
   if (test1 === null && test2 === null) return '-';
-  if (test1 === null) return test2;
-  if (test2 === null) return test1;
-  return Math.max(Number(test1), Number(test2));
+  if (test1 === null) return Math.round(Number(test2));
+  if (test2 === null) return Math.round(Number(test1));
+  return Math.round(Math.max(Number(test1), Number(test2)));
+};
+
+// Helper function to round the sum of notebook and sub enrichment
+const roundNBSE = (notebook: number | null, subEnrichment: number | null) => {
+  const sum = (notebook ?? 0) + (subEnrichment ?? 0);
+  return sum === 0 ? '-' : Math.round(sum);
 };
 
 const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMarks, overallPercentage}: any) => {
@@ -244,12 +250,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
       { text: bestHalfYearlyUT, alignment: 'center' },
-      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: roundNBSE(mark?.halfYearly?.noteBook, mark?.halfYearly?.subEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.halfYearly, false, false, false), alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
       { text: bestYearlyUT, alignment: 'center' },
-      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: roundNBSE(mark?.yearly?.yearlynoteBook, mark?.yearly?.yearlysubEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.yearly, true, false, false), alignment: 'center' },
       { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
@@ -264,9 +270,9 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
     const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
     
-    // Display full values for NB+SE (without division)
-    const halfYearlyNBSE = ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-';
-    const yearlyNBSE = ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-';
+    // Use the roundNBSE helper function
+    const halfYearlyNBSE = roundNBSE(mark?.halfYearly?.noteBook, mark?.halfYearly?.subEnrichment);
+    const yearlyNBSE = roundNBSE(mark?.yearly?.yearlynoteBook, mark?.yearly?.yearlysubEnrichment);
 
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
@@ -298,12 +304,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
       { text: bestHalfYearlyUT, alignment: 'center' },
-      { text: ((mark?.halfYearly?.noteBook ?? 0) + (mark?.halfYearly?.subEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: roundNBSE(mark?.halfYearly?.noteBook, mark?.halfYearly?.subEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.halfYearly, false, false, true), alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
       { text: bestYearlyUT, alignment: 'center' },
-      { text: ((mark?.yearly?.yearlynoteBook ?? 0) + (mark?.yearly?.yearlysubEnrichment ?? 0)) || '-', alignment: 'center' },
+      { text: roundNBSE(mark?.yearly?.yearlynoteBook, mark?.yearly?.yearlysubEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.yearly, true, false, true), alignment: 'center' },
       { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
@@ -336,12 +342,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     ],
     [
       { text: 'Subjects',alignment:'center',rowSpan: 2, style: 'tableHeader' },
-      { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
+      { text: 'UT', alignment: 'center', style: 'columnHeader' },
       { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
       { text: 'H.Y.E', alignment: 'center', style: 'columnHeader' },
       { text: 'M.O', alignment: 'center', style: 'columnHeader' },
       { text: 'GR.', alignment: 'center',rowSpan: 2, style: 'columnHeader' },
-      { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
+      { text: 'UT', alignment: 'center', style: 'columnHeader' },
       { text: 'N.B &\nSub\nEnrich', alignment: 'center', style: 'columnHeader' },
       { text: 'Y.E', alignment: 'center', style: 'columnHeader' },
       { text: 'M.O', alignment: 'center', style: 'columnHeader' },
@@ -372,13 +378,13 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       fortyMarkSubjectsHeader,
       [
         {},
-        { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
-        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
         { text: '(40)', alignment: 'center', style: 'columnHeader' },
         { text: '(50)', alignment: 'center', style: 'columnHeader' },
         {},
-        { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
-        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
         { text: '(40)', alignment: 'center', style: 'columnHeader' },
         { text: '(50)', alignment: 'center', style: 'columnHeader' },
         {},
@@ -393,13 +399,13 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       thirtyMarkSubjectsHeader,
       [
         {},
-        { text: 'Best P.T\n(UT1,UT2)', alignment: 'center', style: 'columnHeader' },
-        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
         { text: '(30)', alignment: 'center', style: 'columnHeader' },
         { text: '(50)', alignment: 'center', style: 'columnHeader' },
         {},
-        { text: 'Best P.T\n(UT3,UT4)', alignment: 'center', style: 'columnHeader' },
-        { text: 'NB+SE', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
+        { text: '(10)', alignment: 'center', style: 'columnHeader' },
         { text: '(30)', alignment: 'center', style: 'columnHeader' },
         { text: '(50)', alignment: 'center', style: 'columnHeader' },
         {},
