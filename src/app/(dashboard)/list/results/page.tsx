@@ -12,22 +12,31 @@ const ResultsPage = async ({
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  const { sessionClaims } = auth();
+  const { userId, sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
   
-  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/) 
-    ? assignedClassStr 
-    : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
-
-  // Check access permission
+  // Get the assigned class id and section id for the teacher (add this block)
+  let assignedClassId: number | null = null;
+  let assignedSectionId: number | null = null;
+  
+  if (role === "teacher" && userId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: userId },
+      select: { 
+        assignedClassId: true,
+        assignedSectionId: true
+      }
+    });
+    assignedClassId = teacher?.assignedClassId || null;
+    assignedSectionId = teacher?.assignedSectionId || null;
+  }
+  
+  // Change this check to use assignedClassId (modify this block)
   const hasAccess = role === "admin" || (
     role === "teacher" && 
-    assignedClass && (
-      typeof assignedClass === "number" 
-        ? assignedClass <= 8
-        : ["Nursery", "KG", "UKG"].includes(assignedClass)
-    )
+    assignedClassId !== null && 
+    (typeof assignedClassId === "number" ? assignedClassId <= 8 : true)
   );
 
   if (!hasAccess) {
@@ -51,10 +60,8 @@ const ResultsPage = async ({
             lte: 8
           }
         },
-        role === "teacher" && assignedClass
-          ? typeof assignedClass === "number"
-            ? { classNumber: assignedClass }
-            : { name: assignedClass }
+        role === "teacher" && assignedClassId
+          ? { id: assignedClassId }
           : {}
       ]
     },
@@ -62,7 +69,11 @@ const ResultsPage = async ({
       classNumber: "asc"
     },
     include: {
-      sections: true,
+      sections: {
+        where: role === "teacher" && assignedSectionId
+          ? { id: assignedSectionId }
+          : undefined,
+      },
     },
   });
 
@@ -169,9 +180,7 @@ const ResultsPage = async ({
             label="Class"
             options={classes.map((cls) => ({
               value: cls.id.toString(),
-              label: cls.classNumber === 0 
-                ? cls.name 
-                : `Class ${cls.classNumber}` 
+              label: cls.name, // Use direct name like in juniorMark page
             }))}
           />
           <Select
