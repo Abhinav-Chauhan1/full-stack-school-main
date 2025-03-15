@@ -205,7 +205,7 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       {}, {}, {}, {},
       { text: 'TERM - 2 (100 MARKS)', colSpan: 5, alignment: 'center', style: 'tableHeader' },
       {}, {}, {}, {},
-      {colSpan: 2},
+      { colSpan: 2, text: '', alignment: 'center', style: 'tableHeader' },
       {}
     ],
     [
