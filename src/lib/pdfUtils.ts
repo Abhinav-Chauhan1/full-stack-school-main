@@ -320,12 +320,12 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
 
   // Create section headers - removing regularSubjectsHeader
   const fortyMarkSubjectsHeader = fortyMarkSubjects.length > 0 ? [
-    { text: 'ADDITIONAL SUBJECTS (40 MARKS EXAM)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+    { text: 'ADDITIONAL SUBJECTS (40 MARKS THEORY | 10 MARKS PRACTICAL)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
     {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
   ] : [];
 
   const thirtyMarkSubjectsHeader = thirtyMarkSubjects.length > 0 ? [
-    { text: 'ADDITIONAL SUBJECTS (30 MARKS EXAM)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+    { text: 'ADDITIONAL SUBJECTS (30 MARKS THEORY | 20 MARKS PRACTICAL)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
     {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
   ] : [];
 
@@ -591,10 +591,16 @@ export const generatePdfDefinition = (
       },
       {
         table: {
-          widths: ['*'],
+          widths: ['*', '*'],
           body: [[
             {
-              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),\nC1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
+              text: `Result: ${safeMarksJunior.every(mark => 
+                (mark.grandTotalGrade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
+              style: 'tableHeader',
+              alignment: 'center'
+            },
+            {
+              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),C1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
               alignment: 'center',
               style: 'columnHeader'
             }
@@ -606,23 +612,62 @@ export const generatePdfDefinition = (
           hLineColor: () => 'black',
           vLineColor: () => 'black'
         },
-        margin: [0, 2] // Remove margin
+        margin: [0, 0, 0, 2] // Remove margin
       },
       {
         table: {
-          widths: ['*', '*'],
+          widths: ['*'],
           body: [
             [
               {
-                text: `Result: ${safeMarksJunior.every(mark => 
-                  (mark.grandTotalGrade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
-                style: 'tableHeader',
-                alignment: 'center'
-              },
-              {
-                text: `Teacher Remarks: ${safeMarksJunior[0]?.yearly?.yearlyremarks ?? 'VERY GOOD WORK AND VERY WELL.'}`,
-                style: 'tableHeader',
-                alignment: 'center'
+                columns: [
+                  { text: 'Teacher Remarks:', style: 'tableHeader', width: 120 },
+                  {
+                    columns: [
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'GOOD', margin: [5, 0, 15, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'EXCELLENT', margin: [5, 0, 15, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'V.GOOD', margin: [5, 0, 15, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0] }
+                    ],
+                    width: '*'
+                  }
+                ]
               }
             ]
           ]
@@ -633,7 +678,6 @@ export const generatePdfDefinition = (
           hLineColor: () => 'black',
           vLineColor: () => 'black'
         },
-        margin: [0, 0] // Remove margin
       },
       {
         table: {
