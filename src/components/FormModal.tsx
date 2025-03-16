@@ -11,6 +11,7 @@ import {
 import { deleteSubject } from "@/app/(dashboard)/list/subjects/actions";
 import { deleteJuniorMark } from "@/app/(dashboard)/list/juniorMark/actions";
 import { deleteSeniorMark } from "@/app/(dashboard)/list/seniorMark/actions";
+import { deleteJuniorCoScholastic } from "@/app/(dashboard)/list/juniorCoScholastic/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ const deleteActionMap: { [key: string]: (currentState: any, data: any) => Promis
   section: deleteSection,
   subCategory: deleteSubCategory,
   seniorMark: deleteSeniorMark,
+  juniorCoScholastic: deleteJuniorCoScholastic,
 };
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
@@ -60,6 +62,9 @@ const SeniorMarkForm = dynamic(() => import("../app/(dashboard)/list/seniorMark/
   loading: () => <h1>Loading...</h1>,
 });
 const HigherMarkForm = dynamic(() => import("../app/(dashboard)/list/higherMark/HigherMarkForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const JuniorCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/juniorCoScholastic/JuniorCoScholasticForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 // TODO: OTHER FORMS
@@ -144,6 +149,13 @@ const forms: {
   ),
   higherMark: (setOpen, type, data, relatedData) => (
     <HigherMarkForm
+      type={type}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  juniorCoScholastic: (setOpen, type, data, relatedData) => (
+    <JuniorCoScholasticForm
       type={type}
       setOpen={setOpen}
       relatedData={relatedData}

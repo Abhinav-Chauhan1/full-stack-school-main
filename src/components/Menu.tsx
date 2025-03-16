@@ -70,6 +70,7 @@ const menuItems = [
           role === "admin" || (role === "teacher" && assignedClass && assignedClass <= 8),
         subItems: [
           { label: "Marks", href: "/list/juniorMark" },
+          { label: "Co-Scholastic", href: "/list/juniorCoScholastic" },
           { label: "Results", href: "/list/results" }
         ]
       },
