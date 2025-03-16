@@ -643,7 +643,7 @@ export const generatePdfDefinition = (
                           }
                         ]
                       },
-                      { text: 'EXCELLENT', margin: [5, 0, 15, 0] },
+                      { text: 'V.GOOD', margin: [5, 0, 15, 0] },
                       {
                         width: 'auto',
                         stack: [
@@ -653,7 +653,7 @@ export const generatePdfDefinition = (
                           }
                         ]
                       },
-                      { text: 'V.GOOD', margin: [5, 0, 15, 0] },
+                      { text: 'EXCELLENT', margin: [5, 0, 15, 0] },
                       {
                         width: 'auto',
                         stack: [
