@@ -32,6 +32,44 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
 };
 
 const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], totalObtained: number, totalMarks: number, overallPercentage: number) => {
+  // Separate regular subjects from additional subjects (like Painting)
+  const regularSubjects = marks.filter(mark => 
+    mark?.sectionSubject?.subject?.code !== 'PAI01'
+  );
+  
+  const additionalSubjects = marks.filter(mark => 
+    mark?.sectionSubject?.subject?.code === 'PAI01'
+  );
+
+  const regularSubjectRows = regularSubjects.map(mark => [
+    { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
+    { text: mark?.unitTest1 ?? '-', alignment: 'center' },
+    { text: mark?.halfYearly ?? '-', alignment: 'center' },
+    { text: mark?.unitTest2 ?? '-', alignment: 'center' },
+    { text: mark?.theory ?? '-', alignment: 'center' },
+    { text: mark?.practical ?? '-', alignment: 'center' },
+    { text: mark?.totalWithout ?? '-', alignment: 'center' },
+    { text: mark?.grandTotal ?? '-', alignment: 'center' }
+  ]);
+
+  const additionalSubjectsHeader = additionalSubjects.length > 0 ? [
+    [
+      { text: 'ADDITIONAL SUBJECTS', colSpan: 8, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+      {}, {}, {}, {}, {}, {}, {}
+    ]
+  ] : [];
+
+  const additionalSubjectRows = additionalSubjects.map(mark => [
+    { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
+    { text: mark?.unitTest1 ?? '-', alignment: 'center' },
+    { text: mark?.halfYearly ?? '-', alignment: 'center' },
+    { text: mark?.unitTest2 ?? '-', alignment: 'center' },
+    { text: mark?.theory ?? '-', alignment: 'center' },
+    { text: mark?.practical ?? '-', alignment: 'center' },
+    { text: mark?.totalWithout ?? '-', alignment: 'center' },
+    { text: mark?.grandTotal ?? '-', alignment: 'center' }
+  ]);
+
   return [
     [
       { text: 'SUBJECTS', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
@@ -53,16 +91,9 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
       { text: 'Total Without\nPractical\n(85)', alignment: 'center', style: 'outHeader' },
       { text: 'Grand Total\n(100)', alignment: 'center', style: 'outHeader' }
     ],
-    ...marks.map(mark => [
-      { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
-      { text: mark?.unitTest1 ?? '-', alignment: 'center' },
-      { text: mark?.halfYearly ?? '-', alignment: 'center' },
-      { text: mark?.unitTest2 ?? '-', alignment: 'center' },
-      { text: mark?.theory ?? '-', alignment: 'center' },
-      { text: mark?.practical ?? '-', alignment: 'center' },
-      { text: mark?.totalWithout ?? '-', alignment: 'center' },
-      { text: mark?.grandTotal ?? '-', alignment: 'center' }
-    ]),
+    ...regularSubjectRows,
+    ...additionalSubjectsHeader,
+    ...additionalSubjectRows,
     [
         { text: 'Total', colSpan: 6, alignment: 'right', style: 'tableHeader' },
         {}, {}, {}, {}, {},
@@ -118,7 +149,7 @@ const generateStudentInfo = (studentResult: StudentResult11, studentImageData: s
                 width: '50%',
                 stack: [
                   { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                  { text: `Class: ${studentResult?.student?.Class?.name} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
+                  { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
                   { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
                   { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
                 ]
@@ -177,7 +208,8 @@ export const generatePdfDefinition11 = (
           vLineWidth: () => 1,
           hLineColor: () => 'black',
           vLineColor: () => 'black'
-        }
+        },
+        margin: [0, 20, 0, 0]
       },
       // Co-scholastic Activities
       {
@@ -201,17 +233,24 @@ export const generatePdfDefinition11 = (
           hLineColor: () => 'black',
           vLineColor: () => 'black'
         },
-        margin: [0, 10]
+        margin: [0, 10, 0, 0]
       },
       // Grading Scale
       {
         table: {
-          widths: ['*'],
-          body: [[{
-            text: 'Grading Scale : A1(91-100%), A2(81-90%), B1(71-80%), B2(61-70%), C1(51-60%), C2(41-50%), D(33-40%), E(Below 33%)',
-            style: 'gradingScale',
-            alignment: 'center'
-          }]]
+          widths: ['*', '*'],
+          body: [[
+            {
+              text: `Result: ${overallPercentage >= 33 ? 'PASSED' : 'FAILED'}`,
+              style: 'tableHeader',
+              alignment: 'center'
+            },
+            {
+              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),C1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
+              alignment: 'center',
+              style: 'columnHeader'
+            }
+          ]]
         },
         layout: {
           hLineWidth: () => 1,
@@ -219,35 +258,77 @@ export const generatePdfDefinition11 = (
           hLineColor: () => 'black',
           vLineColor: () => 'black'
         },
-        margin: [0, 10]
+        margin: [0, 10, 0, 10] // Added proper vertical margins
       },
-      // Result and Remarks
       {
-        columns: [
-          {
-            width: '50%',
-            table: {
-              widths: ['*'],
-              body: [[{
-                text: `Result: ${Number(overallPercentage) >= 33 ? 'PASSED' : 'FAILED'}`,
-                style: 'tableHeader',
-                alignment: 'center'
-              }]]
-            }
-          },
-          {
-            width: '50%',
-            table: {
-              widths: ['*'],
-              body: [[{
-                text: `Teacher Remarks: ${safeMarksHigher[0]?.remarks || 'Good'}`,
-                style: 'tableHeader',
-                alignment: 'center'
-              }]]
-            }
-          }
-        ],
-        columnGap: 10
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                columns: [
+                  { text: 'Teacher Remarks:', style: 'tableHeader', width: 100 },
+                  {
+                    columns: [
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ],
+                        margin: [0, 1, 0, 0]
+                      },
+                      { text: 'GOOD', margin: [5, 0, 15, 0], fontSize: 9 },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ],
+                        margin: [0, 1, 0, 0]
+                      },
+                      { text: 'V.GOOD', margin: [5, 0, 15, 0], fontSize: 9 },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ],
+                        margin: [0, 1, 0, 0]
+                      },
+                      { text: 'EXCELLENT', margin: [5, 0, 15, 0], fontSize: 9 },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ],
+                        margin: [0, 1, 0, 0]
+                      },
+                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0], fontSize: 9 }
+                    ],
+                    width: '*'
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => 'black',
+          vLineColor: () => 'black'
+        },
+        margin: [0, 0, 0, 10] // Maintain bottom margin before signatures
       },
       // Signatures
       {
@@ -316,6 +397,11 @@ export const generatePdfDefinition11 = (
         fontSize: 9,
         alignment: 'center',
         margin: [0, 5]
+      },
+      sectionHeader: {
+        fontSize: 10,
+        bold: true,
+        margin: [0, 2, 0, 2]
       }
     }
   };
