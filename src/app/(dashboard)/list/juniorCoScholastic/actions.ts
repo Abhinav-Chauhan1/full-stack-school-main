@@ -53,19 +53,51 @@ export const checkExistingJuniorCoScholastic = async (
             admissionno: true
           }
         },
-        coScholastic: true
+        coScholastic: {
+          select: {
+            term1ValueEducation: true,
+            term1PhysicalEducation: true,
+            term1ArtCraft: true, 
+            term1Discipline: true,
+            term2ValueEducation: true,
+            term2PhysicalEducation: true,
+            term2ArtCraft: true,
+            term2Discipline: true
+          }
+        }
       },
       distinct: ['studentId'] // One entry per student
     });
 
-    // Map to a more structured format
-    const mappedData = juniorMarks.map(mark => ({
-      juniorMarkId: mark.id,
-      studentId: mark.studentId,
-      studentName: mark.student.name,
-      admissionno: mark.student.admissionno,
-      ...mark.coScholastic
-    }));
+    // Map to a more structured format with explicit property mapping
+    const mappedData = juniorMarks.map(mark => {
+      // Ensure we have default values for each field even if coScholastic is null
+      const coScholasticData: {
+        term1ValueEducation?: string | null;
+        term1PhysicalEducation?: string | null;
+        term1ArtCraft?: string | null;
+        term1Discipline?: string | null;
+        term2ValueEducation?: string | null;
+        term2PhysicalEducation?: string | null;
+        term2ArtCraft?: string | null;
+        term2Discipline?: string | null;
+      } = mark.coScholastic || {};
+      
+      return {
+        juniorMarkId: mark.id,
+        studentId: mark.studentId,
+        studentName: mark.student.name,
+        admissionno: mark.student.admissionno,
+        term1ValueEducation: coScholasticData.term1ValueEducation || "",
+        term1PhysicalEducation: coScholasticData.term1PhysicalEducation || "",
+        term1ArtCraft: coScholasticData.term1ArtCraft || "",
+        term1Discipline: coScholasticData.term1Discipline || "",
+        term2ValueEducation: coScholasticData.term2ValueEducation || "",
+        term2PhysicalEducation: coScholasticData.term2PhysicalEducation || "",
+        term2ArtCraft: coScholasticData.term2ArtCraft || "",
+        term2Discipline: coScholasticData.term2Discipline || ""
+      };
+    });
 
     return { 
       success: true, 

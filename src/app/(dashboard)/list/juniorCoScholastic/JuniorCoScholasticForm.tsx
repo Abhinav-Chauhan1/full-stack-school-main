@@ -6,8 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogTitle, DialogContent } from "@mui/material";
-import Image from "next/image";
 
 import { 
   saveJuniorCoScholastic, 
@@ -58,6 +56,7 @@ const JuniorCoScholasticForm = ({ type = "create", relatedData, setOpen }: Junio
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<JuniorCoScholasticSchema>({
     resolver: zodResolver(juniorCoScholasticSchema),
@@ -124,37 +123,54 @@ const JuniorCoScholasticForm = ({ type = "create", relatedData, setOpen }: Junio
             sessionId: selectedSession
           });
           
-          if (existingDataResult.success && existingDataResult.data.length > 0) {
+          if (existingDataResult.success && existingDataResult.data && existingDataResult.data.length > 0) {
             setExistingData(existingDataResult.data);
             setFormType("update");
             toast.info("Existing co-scholastic data found. Switched to update mode.");
+            
+            // Create form values with existing data
+            const formValues = {
+              marks: formattedStudents.map(student => {
+                // Find existing record for this student by juniorMarkId
+                const existingRecord = existingDataResult.data.find(
+                  (record: any) => record.juniorMarkId === student.juniorMarkId
+                );
+                
+                return {
+                  juniorMarkId: student.juniorMarkId,
+                  term1ValueEducation: existingRecord?.term1ValueEducation || "",
+                  term1PhysicalEducation: existingRecord?.term1PhysicalEducation || "",
+                  term1ArtCraft: existingRecord?.term1ArtCraft || "",
+                  term1Discipline: existingRecord?.term1Discipline || "",
+                  term2ValueEducation: existingRecord?.term2ValueEducation || "",
+                  term2PhysicalEducation: existingRecord?.term2PhysicalEducation || "",
+                  term2ArtCraft: existingRecord?.term2ArtCraft || "",
+                  term2Discipline: existingRecord?.term2Discipline || ""
+                };
+              })
+            };
+            
+            // Reset the form with the existing data
+            reset(formValues);
           } else {
             setExistingData(null);
             setFormType("create");
-          }
-          
-          // Set default form values
-          reset({
-            marks: studentsData.students.map((student: any) => {
-              const existingRecord = existingDataResult.success 
-                ? existingDataResult.data.find(
-                    (record: any) => record.juniorMarkId === student.juniorMarkId
-                  )
-                : null;
-                
-              return {
+            
+            // Initialize empty form for create mode
+            reset({
+              marks: formattedStudents.map((student: any) => ({
                 juniorMarkId: student.juniorMarkId,
-                term1ValueEducation: existingRecord?.term1ValueEducation || null,
-                term1PhysicalEducation: existingRecord?.term1PhysicalEducation || null,
-                term1ArtCraft: existingRecord?.term1ArtCraft || null,
-                term1Discipline: existingRecord?.term1Discipline || null,
-                term2ValueEducation: existingRecord?.term2ValueEducation || null,
-                term2PhysicalEducation: existingRecord?.term2PhysicalEducation || null,
-                term2ArtCraft: existingRecord?.term2ArtCraft || null,
-                term2Discipline: existingRecord?.term2Discipline || null,
-              };
-            })
-          });
+                term1ValueEducation: "",
+                term1PhysicalEducation: "",
+                term1ArtCraft: "",
+                term1Discipline: "",
+                term2ValueEducation: "",
+                term2PhysicalEducation: "",
+                term2ArtCraft: "",
+                term2Discipline: "",
+              }))
+            });
+          }
         } else {
           toast.error(studentsData.message || "Failed to load students");
         }

@@ -1,64 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
-import { StudentResult } from '@/types/result';
+import { StudentResult, CoScholasticData } from '@/types/result';
 
-interface PdfGeneratorProps {
-  studentResult: {
-    student: {
-      name: string;
-      birthday: Date;
-      Class: { name: string; classNumber: number };
-      Section: { name: string };
-      admissionno: number;
-      mothername: string;
-      moccupation: string;
-      fathername: string;
-      foccupation: string;
-      address: string;
-      city: string;
-      village: string;
-      bloodgroup: string;
-      img?: string; // Add img field for student image
-    };
-    marksJunior?: Array<{  // Make this optional
-      classSubject: {
-        subject: { 
-          name: string;
-          code: string;
-        };
-      };
-      halfYearly: {
-        ut1: number | null;
-        ut2: number | null;
-        noteBook: number | null;
-        subEnrichment: number | null;
-        examMarks: number | null;
-        totalMarks: number | null;
-        grade: string | null;
-        remarks: string | null;
-      } | null;
-      yearly: {
-        ut3: number | null;
-        ut4: number | null;
-        yearlynoteBook: number | null;
-        yearlysubEnrichment: number | null;
-        yearlyexamMarks: number | null;
-        yearlytotalMarks: number | null;
-        yearlygrade: string | null;
-        yearlyremarks: string | null;
-      } | null;
-      grandTotalMarks: number | null;
-      grandTotalGrade: string | null;
-      overallPercentage: number | null;
-    }>;
-    session: {
-      sessioncode: string;
-      sessionfrom: Date;
-      sessionto: Date;
-    };
-  };
-  onClose: () => void;
-}
 
 export const loadImage = async (url: string) => {
   try {
@@ -420,46 +363,64 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
   ];
 };
 
-const coScholasticTable = {
-  headerRows: 2,
-  widths: ['40%', '10%', '40%', '10%'],
-  body: [
-    [
-      { text: 'TERM I', style: 'tableHeader', alignment: 'center' , colSpan: 2, },
-      {}, { text: 'TERM II', style: 'tableHeader', alignment: 'center' , colSpan: 2, 
-      }, {}
-    ],
-    [
-      { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left' },
-      { text: 'Grade', style: 'tableHeader', alignment: 'center' },
-      { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left' },
-      { text: 'Grade', style: 'tableHeader', alignment: 'center' }
-    ],
-    [
-      'Value Education',
-      { text: 'A', alignment: 'center' },
-      'Value Education',
-      { text: 'A', alignment: 'center' }
-    ],
-    [
-      'Physical Education /Sports',
-      { text: 'A', alignment: 'center' },
-      'Physical Education /Sports',
-      { text: 'A', alignment: 'center' }
-    ],
-    [
-      'Art & Craft',
-      { text: 'A', alignment: 'center' },
-      'Art & Craft',
-      { text: 'A', alignment: 'center' }
-    ],
-    [
-      'Discipline',
-      { text: 'A', alignment: 'center' },
-      'Discipline',
-      { text: 'A', alignment: 'center' }
+const generateCoScholasticTable = (coScholasticData: any) => {
+  // If no data provided, create a table with empty values
+  if (!coScholasticData) {
+    console.log('No co-scholastic data found, using empty table');
+    coScholasticData = {
+      term1ValueEducation: "-",
+      term1PhysicalEducation: "-",
+      term1ArtCraft: "-",
+      term1Discipline: "-",
+      term2ValueEducation: "-",
+      term2PhysicalEducation: "-",
+      term2ArtCraft: "-",
+      term2Discipline: "-"
+    };
+  }
+  
+  return {
+    headerRows: 2,
+    widths: ['40%', '10%', '40%', '10%'],
+    body: [
+      [
+        { text: 'TERM I', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' },
+        {}, 
+        { text: 'TERM II', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' }, 
+        {}
+      ],
+      [
+        { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left', fillColor: '#f2f2f2' },
+        { text: 'Grade', style: 'tableHeader', alignment: 'center', fillColor: '#f2f2f2' },
+        { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left', fillColor: '#f2f2f2' },
+        { text: 'Grade', style: 'tableHeader', alignment: 'center', fillColor: '#f2f2f2' }
+      ],
+      [
+        'Value Education',
+        { text: coScholasticData.term1ValueEducation || '-', alignment: 'center' },
+        'Value Education',
+        { text: coScholasticData.term2ValueEducation || '-', alignment: 'center' }
+      ],
+      [
+        'Physical Education /Sports',
+        { text: coScholasticData.term1PhysicalEducation || '-', alignment: 'center' },
+        'Physical Education /Sports',
+        { text: coScholasticData.term2PhysicalEducation || '-', alignment: 'center' }
+      ],
+      [
+        'Art & Craft',
+        { text: coScholasticData.term1ArtCraft || '-', alignment: 'center' },
+        'Art & Craft',
+        { text: coScholasticData.term2ArtCraft || '-', alignment: 'center' }
+      ],
+      [
+        'Discipline',
+        { text: coScholasticData.term1Discipline || '-', alignment: 'center' },
+        'Discipline',
+        { text: coScholasticData.term2Discipline || '-', alignment: 'center' }
+      ]
     ]
-  ]
+  };
 };
 
 export const generatePdfDefinition = (
@@ -478,6 +439,24 @@ export const generatePdfDefinition = (
   
   const results = calculateOverallResults(filteredMarks);
   const tableBody = generateTableBody(filteredMarks, results);
+  
+  // Find co-scholastic data properly
+  let coScholasticData = null;
+  
+  // Log what we're working with for debugging
+  console.log('Student result structure:', JSON.stringify(studentResult, null, 2).substring(0, 500) + '...');
+  
+  // First check if any marks have direct co-scholastic data
+  for (const mark of safeMarksJunior) {
+    if (mark && typeof mark === 'object' && mark.coScholastic) {
+      console.log('Found co-scholastic data:', mark.coScholastic);
+      coScholasticData = mark.coScholastic;
+      break;
+    }
+  }
+  
+  // Generate co-scholastic table with the data we found
+  const coScholasticTableData = generateCoScholasticTable(coScholasticData);
 
   return {
     pageSize: 'A4',
@@ -579,15 +558,16 @@ export const generatePdfDefinition = (
           vLineColor: () => 'black'
         }
       },
+      // Co-scholastic table - make sure it's included and properly structured
       {
-        table: coScholasticTable,
+        table: coScholasticTableData,
         layout: {
           hLineWidth: () => 1,
           vLineWidth: () => 1,
           hLineColor: () => 'black',
           vLineColor: () => 'black'
         },
-        margin: [0, 2] // Remove margin
+        margin: [0, 10, 0, 10] // Add more margin for separation
       },
       {
         table: {

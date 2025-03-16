@@ -16,7 +16,7 @@ const ResultsPage = async ({
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
   
-  // Get the assigned class id and section id for the teacher (add this block)
+  // Get the assigned class id and section id for the teacher
   let assignedClassId: number | null = null;
   let assignedSectionId: number | null = null;
   
@@ -32,7 +32,7 @@ const ResultsPage = async ({
     assignedSectionId = teacher?.assignedSectionId || null;
   }
   
-  // Change this check to use assignedClassId (modify this block)
+  // Change this check to use assignedClassId
   const hasAccess = role === "admin" || (
     role === "teacher" && 
     assignedClassId !== null && 
@@ -101,6 +101,7 @@ const ResultsPage = async ({
             session: true,
             halfYearly: true,
             yearly: true,
+            coScholastic: true, // Make sure to include co-scholastic data
             classSubject: {
               include: {
                 subject: {
@@ -163,6 +164,7 @@ const ResultsPage = async ({
                 data={{ classId, sectionId }}
               />
             )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -202,7 +204,7 @@ const ResultsPage = async ({
       </div>
 
       {/* Students List */}
-      <div className="mt-6"></div>
+      <div className="mt-6">
         <Table
           columns={columns}
           data={students}

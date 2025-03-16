@@ -402,6 +402,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   },
                   halfYearly: true,
                   yearly: true,
+                  coScholastic: true,  // Add this line to fetch co-scholastic data
                   session: {
                     select: {
                       sessioncode: true,
@@ -451,6 +452,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   },
                   halfYearly: true,
                   yearly: true,
+                  coScholastic: true,  // Add this line to fetch co-scholastic data
                   session: {
                     select: {
                       sessioncode: true,

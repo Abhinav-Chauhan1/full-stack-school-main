@@ -6,7 +6,6 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
-import { useState } from "react";
 
 /**
  * JuniorCoScholasticPage component
