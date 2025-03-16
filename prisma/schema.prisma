@@ -175,6 +175,9 @@ model JuniorMark {
   grandTotalMarks Float?
   grandTotalGrade String?
   overallPercentage Float?
+  
+  // Co-scholastic activities
+  coScholastic   JuniorCoScholastic?
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -218,6 +221,28 @@ model YearlyMarks {
   yearlyremarks        String?
 }
 
+// Co-scholastic model for Junior Marks
+model JuniorCoScholastic {
+  id             String     @id @default(uuid())
+  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+  juniorMarkId   String     @unique
+  
+  // Term I
+  term1ValueEducation     String?  // A, B, C grade
+  term1PhysicalEducation  String?  // A, B, C grade
+  term1ArtCraft           String?  // A, B, C grade
+  term1Discipline         String?  // A, B, C grade
+  
+  // Term II
+  term2ValueEducation     String?  // A, B, C grade
+  term2PhysicalEducation  String?  // A, B, C grade
+  term2ArtCraft           String?  // A, B, C grade
+  term2Discipline         String?  // A, B, C grade
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
 model SeniorMark {
   id                 Int            @id @default(autoincrement())
   student            Student        @relation(fields: [studentId], references: [id])
@@ -244,10 +269,33 @@ model SeniorMark {
   studentId          String
   sectionSubjectId   Int
   sessionId          Int
+  coScholastic       SeniorCoScholastic?
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
   @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+// Co-scholastic model for Senior Marks
+model SeniorCoScholastic {
+  id               Int        @id @default(autoincrement())
+  seniorMark       SeniorMark @relation(fields: [seniorMarkId], references: [id], onDelete: Cascade)
+  seniorMarkId     Int        @unique
+  
+  // Term I
+  term1ValueEducation     String?  // A, B, C grade
+  term1PhysicalEducation  String?  // A, B, C grade
+  term1ArtCraft           String?  // A, B, C grade
+  term1Discipline         String?  // A, B, C grade
+  
+  // Term II
+  term2ValueEducation     String?  // A, B, C grade
+  term2PhysicalEducation  String?  // A, B, C grade
+  term2ArtCraft           String?  // A, B, C grade
+  term2Discipline         String?  // A, B, C grade
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model HigherMark {
@@ -270,8 +318,24 @@ model HigherMark {
   percentage         Float?
   grade              String?
   remarks            String?
+  coScholastic       HigherCoScholastic?
 
   @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+// Co-scholastic model for Higher Marks
+model HigherCoScholastic {
+  id               Int        @id @default(autoincrement())
+  higherMark       HigherMark @relation(fields: [higherMarkId], references: [id], onDelete: Cascade)
+  higherMarkId     Int        @unique
+  
+  // Single term for higher classes
+  physicalEducation  String?  // A, B, C grade
+  workExperience     String?  // A, B, C grade
+  discipline         String?  // A, B, C grade
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Session {
