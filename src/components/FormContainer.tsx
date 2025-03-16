@@ -16,6 +16,8 @@ export type FormContainerProps = {
     | "seniorMark"
     | "higherMark"  // Add this new type
     | "juniorCoScholastic"  // Add this new type
+    | "seniorCoScholastic"  // Add Senior Co-Scholastic type
+    | "higherCoScholastic"  // Add this new type
     | "result"
     | "result9"  // Add this new type
     | "result11";  // Add this new type
@@ -831,6 +833,117 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         relatedData = {
           classes: classesForCoScholastic,
           sessions: sessionsForCoScholastic,
+        };
+        break;
+
+      case "seniorCoScholastic":
+        // Fetch classes with sections and students for senior classes only (9-10)
+        const classesForSeniorCoScholastic = await prisma.class.findMany({
+          select: {
+            id: true,
+            name: true,
+            classNumber: true,
+            sections: {
+              select: {
+                id: true,
+                name: true,
+                students: {
+                  select: {
+                    id: true,
+                    name: true,
+                    admissionno: true,
+                  },
+                  orderBy: {
+                    name: 'asc',
+                  },
+                },
+              },
+            },
+          },
+          where: {
+            classNumber: {
+              gte: 9,
+              lte: 10 // Senior co-scholastic applies to classes 9-10
+            }
+          },
+          orderBy: {
+            classNumber: 'asc',
+          },
+        });
+
+        // Fetch active sessions
+        const sessionsForSeniorCoScholastic = await prisma.session.findMany({
+          where: {
+            isActive: true
+          },
+          select: {
+            id: true,
+            sessioncode: true,
+            isActive: true,
+          },
+          orderBy: {
+            sessioncode: 'asc',
+          },
+        });
+
+        relatedData = {
+          classes: classesForSeniorCoScholastic,
+          sessions: sessionsForSeniorCoScholastic,
+        };
+        break;
+
+      case "higherCoScholastic":
+        // Fetch classes with sections and students for higher classes only (11-12)
+        const classesForHigherCoScholastic = await prisma.class.findMany({
+          select: {
+            id: true,
+            name: true,
+            classNumber: true,
+            sections: {
+              select: {
+                id: true,
+                name: true,
+                students: {
+                  select: {
+                    id: true,
+                    name: true,
+                    admissionno: true,
+                  },
+                  orderBy: {
+                    name: 'asc',
+                  },
+                },
+              },
+            },
+          },
+          where: {
+            classNumber: {
+              gte: 11 // Higher co-scholastic applies to classes 11-12
+            }
+          },
+          orderBy: {
+            classNumber: 'asc',
+          },
+        });
+
+        // Fetch active sessions
+        const sessionsForHigherCoScholastic = await prisma.session.findMany({
+          where: {
+            isActive: true
+          },
+          select: {
+            id: true,
+            sessioncode: true,
+            isActive: true,
+          },
+          orderBy: {
+            sessioncode: 'asc',
+          },
+        });
+
+        relatedData = {
+          classes: classesForHigherCoScholastic,
+          sessions: sessionsForHigherCoScholastic,
         };
         break;
 

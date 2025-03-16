@@ -83,6 +83,7 @@ const menuItems = [
           role === "admin" || (role === "teacher" && assignedClass === 9),
         subItems: [
           { label: "Marks", href: "/list/seniorMark" },
+          { label: "Co-Scholastic", href: "/list/seniorCoScholastic" },
           { label: "Results", href: "/list/results9" }
         ]
       },
@@ -95,6 +96,7 @@ const menuItems = [
           role === "admin" || (role === "teacher" && assignedClass === 11),
         subItems: [
           { label: "Marks", href: "/list/higherMark" },
+          { label: "Co-Scholastic", href: "/list/higherCoScholastic" },
           { label: "Results", href: "/list/results11" }
         ]
       },

@@ -12,6 +12,8 @@ import { deleteSubject } from "@/app/(dashboard)/list/subjects/actions";
 import { deleteJuniorMark } from "@/app/(dashboard)/list/juniorMark/actions";
 import { deleteSeniorMark } from "@/app/(dashboard)/list/seniorMark/actions";
 import { deleteJuniorCoScholastic } from "@/app/(dashboard)/list/juniorCoScholastic/actions";
+import { deleteSeniorCoScholastic } from "@/app/(dashboard)/list/seniorCoScholastic/actions";
+import { deleteHigherCoScholastic } from "@/app/(dashboard)/list/higherCoScholastic/actions"; // Add this import
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -32,6 +34,8 @@ const deleteActionMap: { [key: string]: (currentState: any, data: any) => Promis
   subCategory: deleteSubCategory,
   seniorMark: deleteSeniorMark,
   juniorCoScholastic: deleteJuniorCoScholastic,
+  seniorCoScholastic: deleteSeniorCoScholastic,
+  higherCoScholastic: deleteHigherCoScholastic, // Add this line
 };
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
@@ -65,6 +69,12 @@ const HigherMarkForm = dynamic(() => import("../app/(dashboard)/list/higherMark/
   loading: () => <h1>Loading...</h1>,
 });
 const JuniorCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/juniorCoScholastic/JuniorCoScholasticForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const SeniorCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/seniorCoScholastic/SeniorCoScholasticForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const HigherCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/higherCoScholastic/HigherCoScholasticForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 // TODO: OTHER FORMS
@@ -156,6 +166,20 @@ const forms: {
   ),
   juniorCoScholastic: (setOpen, type, data, relatedData) => (
     <JuniorCoScholasticForm
+      type={type}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  seniorCoScholastic: (setOpen, type, data, relatedData) => (
+    <SeniorCoScholasticForm
+      type={type}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  higherCoScholastic: (setOpen, type, data, relatedData) => (
+    <HigherCoScholasticForm
       type={type}
       setOpen={setOpen}
       relatedData={relatedData}
@@ -318,10 +342,10 @@ const FormModal = ({
         />
       </button>
       {open && (
-        <div className={`w-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center ${table === "juniorMark" || table === "seniorMark" || table === "higherMark" || table === "student" || table === "juniorCoScholastic" ? "h-auto" : "h-screen"}`}>
+        <div className={`w-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center ${table === "juniorMark" || table === "seniorMark" || table === "higherMark" || table === "student" || table === "juniorCoScholastic" || table === "seniorCoScholastic" || table === "higherCoScholastic" ? "h-auto" : "h-screen"}`}>
 
           <div
-            className={`bg-white p-4 rounded-md relative ${table === "juniorMark" || table === "student" || table === "seniorMark" || table === "higherMark" || table === "juniorCoScholastic"
+            className={`bg-white p-4 rounded-md relative ${table === "juniorMark" || table === "student" || table === "seniorMark" || table === "higherMark" || table === "juniorCoScholastic" || table === "seniorCoScholastic" || table === "higherCoScholastic"
                 ? "w-full"
                 : "w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]"
               }`}

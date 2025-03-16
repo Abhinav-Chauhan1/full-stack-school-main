@@ -366,7 +366,6 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
 const generateCoScholasticTable = (coScholasticData: any) => {
   // If no data provided, create a table with empty values
   if (!coScholasticData) {
-    console.log('No co-scholastic data found, using empty table');
     coScholasticData = {
       term1ValueEducation: "-",
       term1PhysicalEducation: "-",
@@ -443,13 +442,9 @@ export const generatePdfDefinition = (
   // Find co-scholastic data properly
   let coScholasticData = null;
   
-  // Log what we're working with for debugging
-  console.log('Student result structure:', JSON.stringify(studentResult, null, 2).substring(0, 500) + '...');
-  
   // First check if any marks have direct co-scholastic data
   for (const mark of safeMarksJunior) {
     if (mark && typeof mark === 'object' && mark.coScholastic) {
-      console.log('Found co-scholastic data:', mark.coScholastic);
       coScholasticData = mark.coScholastic;
       break;
     }

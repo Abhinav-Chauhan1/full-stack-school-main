@@ -25,21 +25,9 @@ export default function PdfGenerator({ studentResult, onClose }: PdfGeneratorPro
       setLogoData(logo);
       setStudentImageData(studentImg);
       setLoading(false);
-      
-      // Debug the studentResult to see if co-scholastic data is present
-      console.log('Student data loaded:', studentResult.student.name);
-      console.log('Co-scholastic data check:');
-      if (studentResult.marksJunior) {
-        const hasCoScholastic = studentResult.marksJunior.some(mark => mark.coScholastic);
-        console.log('Has co-scholastic data:', hasCoScholastic);
-        if (hasCoScholastic) {
-          console.log('Example co-scholastic data:', 
-            studentResult.marksJunior.find(mark => mark.coScholastic)?.coScholastic);
-        }
-      }
     };
     init();
-  }, [studentResult.student.img, studentResult.marksJunior, studentResult.student.name]);
+  }, [studentResult.student.img]);
 
   const handleGeneratePDF = async () => {
     try {
