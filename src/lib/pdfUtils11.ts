@@ -139,23 +139,23 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
     ...additionalSubjectsHeader,
     ...additionalSubjectRows,
     [
-        { text: 'Total', colSpan: 6, alignment: 'right', style: 'tableHeader' },
-        {}, {}, {}, {}, {},
-        { text:`${totalObtained.toString()} / ${totalMarks.toString()}`, alignment: 'center', style: 'tableHeader' , colSpan: 2},
-        {}
-      ],
-      [
-        { text: 'Percentage', colSpan: 6, alignment: 'right', style: 'tableHeader' },
-        {}, {}, {}, {}, {},
-        { text: overallPercentage.toString(), alignment: 'center', style: 'tableHeader' , colSpan: 2},
-        {}
-      ],
-      [
-        { text: 'Grade', colSpan: 6, alignment: 'right', style: 'tableHeader' },
-        {}, {}, {}, {}, {},
-        { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'tableHeader' , colSpan: 2},
-        {}
-      ]
+      { text: 'Total', colSpan: 6, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {}, {},
+      { text:`${totalObtained.toString()} / ${totalMarks.toString()}`, alignment: 'center', style: 'totalsRow', colSpan: 2},
+      {}
+    ],
+    [
+      { text: 'Percentage', colSpan: 6, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {}, {},
+      { text: overallPercentage.toString(), alignment: 'center', style: 'totalsRow', colSpan: 2},
+      {}
+    ],
+    [
+      { text: 'Grade', colSpan: 6, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {}, {},
+      { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'totalsRow', colSpan: 2},
+      {}
+    ]
   ];
 };
 
@@ -352,6 +352,17 @@ export const generatePdfDefinition11 = (
                         ],
                         margin: [0, 1, 0, 0]
                       },
+                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0], fontSize: 9 },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ],
+                        margin: [0, 1, 0, 0]
+                      },
                       { text: 'GOOD', margin: [5, 0, 15, 0], fontSize: 9 },
                       {
                         width: 'auto',
@@ -375,17 +386,6 @@ export const generatePdfDefinition11 = (
                         margin: [0, 1, 0, 0]
                       },
                       { text: 'EXCELLENT', margin: [5, 0, 15, 0], fontSize: 9 },
-                      {
-                        width: 'auto',
-                        stack: [
-                          { 
-                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
-                            width: 12
-                          }
-                        ],
-                        margin: [0, 1, 0, 0]
-                      },
-                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0], fontSize: 9 }
                     ],
                     width: '*'
                   }
@@ -474,6 +474,13 @@ export const generatePdfDefinition11 = (
         fontSize: 10,
         bold: true,
         margin: [0, 2, 0, 2]
+      },
+      totalsRow: {
+        fontSize: 12,
+        bold: true,
+        italics: false,
+        alignment: 'center',
+        fillColor: '#f8f9fa'
       }
     }
   };

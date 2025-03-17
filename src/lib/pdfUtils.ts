@@ -143,16 +143,16 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     {text: `OVER ALL TOTAL (TERM -1 & TERM 2) OF MAIN SUBJECTS`, colSpan: 9, alignment: 'center', style: 'columnHeader' },
     {}, {}, {}, {}, {}, {}, {}, {},
     {},
-    {text: `${totalMarks} / ${maxPossibleMarks}`, alignment: 'center', style: 'columnHeader' },
+    {text: `${totalMarks} / ${maxPossibleMarks}`, alignment: 'center', style: 'boldValue' },
     {}
   ];
 
   const percentageRow = [
     {text: `Over All Percentage:`, colSpan: 2, alignment: 'center', style: 'columnHeader' },{},
-    {text: `${overallPercentage}%`, colSpan: 9, alignment: 'left', style: 'columnHeader' },
+    {text: `${overallPercentage}%`, colSpan: 9, alignment: 'left', style: 'boldValue' },
     {}, {}, {}, {}, {}, {}, {}, {},
     {text: `Overall Grade:`, alignment: 'center', style: 'columnHeader' },
-    {text: `${getOverallGrade(Number(overallPercentage))}`, alignment: 'center', style: 'columnHeader' }
+    {text: `${getOverallGrade(Number(overallPercentage))}`, alignment: 'center', style: 'boldValue' }
   ];
 
   // Separate subjects by category
@@ -508,7 +508,7 @@ export const generatePdfDefinition = (
                       width: '50%',
                       stack: [
                         { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                        { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
+                        { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - (${studentResult?.student?.Section?.name ?? '-'})`, style: 'fieldLabel' },
                         { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
                         { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
                         {text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
@@ -608,6 +608,16 @@ export const generatePdfDefinition = (
                           }
                         ]
                       },
+                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
                       { text: 'GOOD', margin: [5, 0, 15, 0] },
                       {
                         width: 'auto',
@@ -629,16 +639,6 @@ export const generatePdfDefinition = (
                         ]
                       },
                       { text: 'EXCELLENT', margin: [5, 0, 15, 0] },
-                      {
-                        width: 'auto',
-                        stack: [
-                          { 
-                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
-                            width: 12
-                          }
-                        ]
-                      },
-                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0] }
                     ],
                     width: '*'
                   }
@@ -717,6 +717,11 @@ export const generatePdfDefinition = (
         fontSize: 10, // Reduced from 11
         bold: true,
         margin: [0, 2, 0, 2] // Reduced margin
+      },
+      boldValue: {
+        fontSize: 11,
+        bold: true,
+        alignment: 'center',
       }
     }
   };
