@@ -161,8 +161,8 @@ export const updateSection = async (
       for (const subjectId of subjectsToAdd) {
         await tx.sectionSubject.create({
           data: {
-            sectionId: formData.id,
-            subjectId
+            sectionId: Number(formData.id),
+            subjectId: Number(subjectId)
           }
         });
       }
