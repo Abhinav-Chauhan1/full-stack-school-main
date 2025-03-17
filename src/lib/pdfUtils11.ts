@@ -19,7 +19,23 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
   let totalMarks = 0;
 
   marks.forEach(mark => {
-    if (mark.grandTotal) {
+    // Check if we have a PAI02 subject (Painting)
+    const isPaintingSubject = mark?.sectionSubject?.subject?.code === 'PAI02';
+    
+    if (isPaintingSubject) {
+      // For PAI02 subjects, use theory30 and practical70 if grandTotal is missing
+      if (mark.grandTotal) {
+        totalObtained += mark.grandTotal;
+        totalMarks += 100;
+      } else if (mark.theory30 !== null || mark.practical70 !== null) {
+        // Calculate it manually if grandTotal is missing
+        const theory30 = mark.theory30 || 0;
+        const practical70 = mark.practical70 || 0;
+        totalObtained += (theory30 + practical70);
+        totalMarks += 100;
+      }
+    } else if (mark.grandTotal) {
+      // For regular subjects
       totalObtained += mark.grandTotal;
       totalMarks += 100; // Each subject is out of 100
     }
@@ -32,13 +48,13 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
 };
 
 const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], totalObtained: number, totalMarks: number, overallPercentage: number) => {
-  // Separate regular subjects from additional subjects (like Painting)
+  // Separate regular subjects from additional subjects (like Painting PAI02)
   const regularSubjects = marks.filter(mark => 
-    mark?.sectionSubject?.subject?.code !== 'PAI01'
+    mark?.sectionSubject?.subject?.code !== 'PAI02'
   );
   
   const additionalSubjects = marks.filter(mark => 
-    mark?.sectionSubject?.subject?.code === 'PAI01'
+    mark?.sectionSubject?.subject?.code === 'PAI02'
   );
 
   const regularSubjectRows = regularSubjects.map(mark => [
@@ -52,20 +68,31 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
     { text: mark?.grandTotal ?? '-', alignment: 'center' }
   ]);
 
+  // Create a custom header for painting subjects (PAI02)
   const additionalSubjectsHeader = additionalSubjects.length > 0 ? [
     [
       { text: 'ADDITIONAL SUBJECTS', colSpan: 8, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
       {}, {}, {}, {}, {}, {}, {}
+    ],
+    [
+      { text: 'SUBJECTS', rowSpan: 1, alignment: 'center', style: 'tableHeader' },
+      { text: 'Theory(30)', colSpan: 3, alignment: 'center', style: 'outHeader' },
+      { text: '', alignment: 'center', style: 'tableHeader' },
+      { text: '', alignment: 'center', style: 'tableHeader' },
+      { text: 'Practical(70)', colSpan: 2, alignment: 'center', style: 'outHeader' },
+      { text: '', alignment: 'center', style: 'tableHeader' },
+      { text: 'Total', alignment: 'center', style: 'outHeader' },
+      { text: 'Grand Total', alignment: 'center', style: 'outHeader' }
     ]
   ] : [];
 
   const additionalSubjectRows = additionalSubjects.map(mark => [
-    { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
-    { text: mark?.unitTest1 ?? '-', alignment: 'center' },
-    { text: mark?.halfYearly ?? '-', alignment: 'center' },
-    { text: mark?.unitTest2 ?? '-', alignment: 'center' },
-    { text: mark?.theory ?? '-', alignment: 'center' },
-    { text: mark?.practical ?? '-', alignment: 'center' },
+    { text: `${mark?.sectionSubject?.subject?.name ?? '-'}`, alignment: 'left' },
+    { text: mark?.theory30 ?? '-', colSpan: 3, alignment: 'center' }, // Theory (30) in its own column
+    { text: '', alignment: 'center'},
+    { text: '', alignment: 'center'},
+    { text: mark?.practical70 ?? '-', colSpan: 2, alignment: 'center' }, // Practical (70) in its own column
+    { text: '', alignment: 'center'},
     { text: mark?.totalWithout ?? '-', alignment: 'center' },
     { text: mark?.grandTotal ?? '-', alignment: 'center' }
   ]);

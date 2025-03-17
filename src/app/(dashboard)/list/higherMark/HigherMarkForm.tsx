@@ -400,43 +400,54 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                   {student.name}
                 </td>
                 
-                {isPaintingSubject ? (
+                {selectedSubjectCode === 'PAI02' ? (
                   <>
                     <td className="p-2 border">
                       <input 
                         type="number" 
                         step="0.1" 
-                        max="30" 
-                        className="w-full p-1 border rounded text-sm" 
-                        {...register(`marks.${index}.theory30`, { valueAsNumber: true })}
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.theory30`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
                       />
                     </td>
                     <td className="p-2 border">
                       <input 
                         type="number" 
                         step="0.1" 
-                        max="70" 
-                        className="w-full p-1 border rounded text-sm" 
-                        {...register(`marks.${index}.practical70`, { valueAsNumber: true })}
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.practical70`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
                       />
                     </td>
                   </>
                 ) : (
                   <>
                     <td className="p-2 border">
-                      <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}/>
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.theory`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
+                      />
                     </td>
                     <td className="p-2 border">
-                      <input type="number" step="0.1" max="30" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}/>
-                    </td>
-                    <td className="p-2 border">
-                      <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}/>
-                    </td>
-                    <td className="p-2 border">
-                      <input type="number" step="0.1" max="35" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.theory`, { valueAsNumber: true })}/>
-                    </td>
-                    <td className="p-2 border">
-                      <input type="number" step="0.1" max="15" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.practical`, { valueAsNumber: true })}/>
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.practical`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
+                      />
                     </td>
                   </>
                 )}

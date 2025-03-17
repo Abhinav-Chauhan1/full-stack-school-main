@@ -371,20 +371,26 @@ export const HigherMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
-  unitTest1: z.number().min(0).max(10).nullable(),
-  halfYearly: z.number().min(0).max(30).nullable(),
-  unitTest2: z.number().min(0).max(10).nullable(),
-  theory: z.number().min(0).max(35).nullable(),
-  theory30: z.number().min(0).max(30).nullable(),
-  practical: z.number().min(0).max(15).nullable(),
-  practical70: z.number().min(0).max(70).nullable(),
-  totalWithout: z.number().nullable(),
-  grandTotal: z.number().nullable(),
-  total: z.number().nullable(),
-  percentage: z.number().nullable(),
-  grade: z.string().nullable(),
-  overallGrade: z.string().nullable(),
-  remarks: z.string().nullable()
+  
+  // Regular fields
+  unitTest1: z.number().min(0).max(10).nullable().optional(),
+  halfYearly: z.number().min(0).max(30).nullable().optional(),
+  unitTest2: z.number().min(0).max(10).nullable().optional(),
+  theory: z.number().min(0).max(35).nullable().optional(),
+  practical: z.number().min(0).max(15).nullable().optional(),
+  
+  // PAI02 specific fields
+  theory30: z.number().min(0).max(30).nullable().optional(),
+  practical70: z.number().min(0).max(70).nullable().optional(),
+  
+  // Common fields
+  totalWithout: z.number().nullable().optional(),
+  grandTotal: z.number().nullable().optional(),
+  total: z.number().nullable().optional(),
+  percentage: z.number().nullable().optional(),
+  grade: z.string().nullable().optional(),
+  overallGrade: z.string().nullable().optional(),
+  remarks: z.string().nullable().optional(),
 });
 
 export type HigherMarkSchema = z.infer<typeof HigherMarkSchema>;

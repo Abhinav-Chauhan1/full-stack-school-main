@@ -147,6 +147,8 @@ export interface StudentResult11 {
     unitTest2?: number;
     theory?: number;
     practical?: number;
+    theory30?: number;  // Added field for PAI02 subject
+    practical70?: number; // Added field for PAI02 subject
     totalWithout?: number;
     grandTotal?: number;
     sectionSubject: {

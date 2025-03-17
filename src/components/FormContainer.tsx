@@ -619,7 +619,20 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
             relatedData = {
               studentResult: {
                 student: studentData,
-                marksHigher: studentData.markHigher, // Note this should match PdfGenerator11Props
+                marksHigher: studentData.markHigher.map(mark => ({
+                  id: mark.id,
+                  unitTest1: mark.unitTest1,
+                  halfYearly: mark.halfYearly,
+                  unitTest2: mark.unitTest2,
+                  theory: mark.theory,
+                  practical: mark.practical,
+                  theory30: mark.theory30,       // Add this line
+                  practical70: mark.practical70, // Add this line
+                  totalWithout: mark.totalWithout,
+                  grandTotal: mark.grandTotal,
+                  sectionSubject: mark.sectionSubject,
+                  coScholastic: mark.coScholastic
+                })),
                 session: studentData.Session
               }
             };
