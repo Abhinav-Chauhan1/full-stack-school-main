@@ -499,7 +499,8 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   subject: true
                 }
               },
-              session: true
+              session: true,
+              coScholastic: true // Added this to include co-scholastic data
             },
             where: {
               session: {
@@ -550,7 +551,8 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   subject: true
                 }
               },
-              session: true
+              session: true,
+              coScholastic: true // Added this to include co-scholastic data
             },
             where: {
               session: {
@@ -594,7 +596,8 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                       subject: true
                     }
                   },
-                  session: true
+                  session: true,
+                  coScholastic: true // Added this to include co-scholastic data
                 },
                 where: {
                   session: {

@@ -39,6 +39,17 @@ interface StudentResult {
         code: string;
       };
     };
+    coScholastic?: {
+      // Added co-scholastic fields
+      term1ValueEducation?: string;
+      term1PhysicalEducation?: string;
+      term1ArtCraft?: string;
+      term1Discipline?: string;
+      term2ValueEducation?: string;
+      term2PhysicalEducation?: string;
+      term2ArtCraft?: string;
+      term2Discipline?: string;
+    };
   }>;
   session: {
     sessioncode: string;
@@ -118,6 +129,74 @@ const calculateOverallResults = (marks: StudentMark[]) => {
   };
 };
 
+// Add a function to generate the co-scholastic table
+const generateCoScholasticTable = (marksSenior: any[]) => {
+  // Extract co-scholastic data from the first mark that has it
+  let coScholasticData = null;
+  for (const mark of marksSenior) {
+    if (mark && mark.coScholastic) {
+      coScholasticData = mark.coScholastic;
+      break;
+    }
+  }
+
+  // If no data provided, create a table with empty values
+  if (!coScholasticData) {
+    coScholasticData = {
+      term1ValueEducation: "-",
+      term1PhysicalEducation: "-",
+      term1ArtCraft: "-",
+      term1Discipline: "-",
+      term2ValueEducation: "-",
+      term2PhysicalEducation: "-",
+      term2ArtCraft: "-",
+      term2Discipline: "-"
+    };
+  }
+  
+  return {
+    headerRows: 2,
+    widths: ['40%', '10%', '40%', '10%'],
+    body: [
+      [
+        { text: 'TERM I', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' },
+        {}, 
+        { text: 'TERM II', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' }, 
+        {}
+      ],
+      [
+        { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left', fillColor: '#f2f2f2' },
+        { text: 'Grade', style: 'tableHeader', alignment: 'center', fillColor: '#f2f2f2' },
+        { text: `Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]`, style: 'tableHeader', alignment: 'left', fillColor: '#f2f2f2' },
+        { text: 'Grade', style: 'tableHeader', alignment: 'center', fillColor: '#f2f2f2' }
+      ],
+      [
+        'Value Education',
+        { text: coScholasticData.term1ValueEducation || '-', alignment: 'center' },
+        'Value Education',
+        { text: coScholasticData.term2ValueEducation || '-', alignment: 'center' }
+      ],
+      [
+        'Physical Education /Sports',
+        { text: coScholasticData.term1PhysicalEducation || '-', alignment: 'center' },
+        'Physical Education /Sports',
+        { text: coScholasticData.term2PhysicalEducation || '-', alignment: 'center' }
+      ],
+      [
+        'Art & Craft',
+        { text: coScholasticData.term1ArtCraft || '-', alignment: 'center' },
+        'Art & Craft',
+        { text: coScholasticData.term2ArtCraft || '-', alignment: 'center' }
+      ],
+      [
+        'Discipline',
+        { text: coScholasticData.term1Discipline || '-', alignment: 'center' },
+        'Discipline',
+        { text: coScholasticData.term2Discipline || '-', alignment: 'center' }
+      ]
+    ]
+  };
+};
 
 export const generatePdfDefinition9 = (
   studentResult: StudentResult,
@@ -224,50 +303,8 @@ export const generatePdfDefinition9 = (
       ]
     ];
 
-
-  // Define co-scholastic table structure
-  const coScholasticTable = {
-    headerRows: 1,
-    widths: ['40%', '10%', '40%', '10%'], // Equal width columns
-    body: [
-      [
-        { text: 'TERM I', colSpan: 2, style: 'tableHeader', alignment: 'center' },
-        {},
-        { text: 'TERM II', colSpan: 2, style: 'tableHeader', alignment: 'center' },
-        {}
-      ],
-      [
-        { text: 'Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]', style: 'fieldLabel' },
-        { text: 'Grade', style: 'tableHeader', alignment: 'center' },
-        { text: 'Co-Scholastic Areas : [on a 3 Point(A - C) Grading Scale]', style: 'fieldLabel' },
-        { text: 'Grade', style: 'tableHeader', alignment: 'center' }
-      ],
-      [
-        'Value Education',
-        { text: 'A', alignment: 'center' },
-        'Value Education',
-        { text: 'A', alignment: 'center' }
-      ],
-      [
-        'Physical Education /Sports',
-        { text: 'A', alignment: 'center' },
-        'Physical Education /Sports',
-        { text: 'A', alignment: 'center' }
-      ],
-      [
-        'Art & Craft',
-        { text: 'A', alignment: 'center' },
-        'Art & Craft',
-        { text: 'A', alignment: 'center' }
-      ],
-      [
-        'Discipline  [on a 5 Point(A - E) Grading Scale]',
-        { text: 'A', alignment: 'center' },
-        'Discipline  [on a 5 Point(A - E) Grading Scale]',
-        { text: 'A', alignment: 'center' }
-      ],
-    ]
-  };
+  // Generate co-scholastic table data
+  const coScholasticTable = generateCoScholasticTable(safeMarksSenior);
 
   const docDefinition: TDocumentDefinitions = {
     pageSize: 'A4',
@@ -366,7 +403,6 @@ export const generatePdfDefinition9 = (
         }
       },
 
-
       // Note about failing criteria
       {
         text: 'Note:-Student Obtaining Below 33% marks in [A+B+C] indicated as (*) in Failed in That Subject.',
@@ -374,7 +410,7 @@ export const generatePdfDefinition9 = (
         margin: [0, 2]
       },
 
-      // Co-scholastic table
+      // Co-scholastic table - updated to use the generated data
       {
         table: coScholasticTable,
         layout: {

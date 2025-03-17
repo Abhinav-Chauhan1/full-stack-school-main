@@ -125,35 +125,40 @@ export interface StudentResult {
 
 export interface StudentResult11 {
   student: {
+    id: string;
     name: string;
+    admissionno: string | number;
     birthday: Date;
-    Class: { name: string };
-    Section: { name: string };
-    admissionno: number;
-    mothername: string;
-    fathername: string;
-    address: string;
-    city: string;
-    village: string;
+    mothername?: string;
+    fathername?: string;
+    address?: string;
     img?: string;
+    Class: {
+      name: string;
+    };
+    Section: {
+      name: string;
+    };
   };
   marksHigher: Array<{
-    unitTest1: number | null;
-    halfYearly: number | null;
-    unitTest2: number | null;
-    theory: number | null;
-    practical: number | null;
-    totalWithout: number | null;
-    grandTotal: number | null;
-    total: number | null;
-    percentage: number | null;
-    grade: string | null;
-    remarks: string | null;
+    id: number;
+    unitTest1?: number;
+    halfYearly?: number;
+    unitTest2?: number;
+    theory?: number;
+    practical?: number;
+    totalWithout?: number;
+    grandTotal?: number;
     sectionSubject: {
       subject: {
         name: string;
         code: string;
       };
+    };
+    coScholastic?: {
+      physicalEducation?: string;
+      workExperience?: string;
+      discipline?: string;
     };
   }>;
   session: {

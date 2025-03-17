@@ -177,6 +177,31 @@ const generateStudentInfo = (studentResult: StudentResult11, studentImageData: s
   };
 };
 
+// Add this function to extract co-scholastic data from student marks
+const extractCoScholasticData = (marksHigher: StudentResult11['marksHigher']) => {
+  // Initialize with default values
+  const defaultData = {
+    physicalEducation: "-",
+    workExperience: "-",
+    discipline: "-"
+  };
+  
+  // Find any mark with co-scholastic data
+  const markWithCoScholastic = marksHigher.find(mark => mark.coScholastic);
+  
+  // If no co-scholastic data found, return defaults
+  if (!markWithCoScholastic || !markWithCoScholastic.coScholastic) {
+    return defaultData;
+  }
+  
+  // Return the co-scholastic data
+  return {
+    physicalEducation: markWithCoScholastic.coScholastic.physicalEducation || "-",
+    workExperience: markWithCoScholastic.coScholastic.workExperience || "-",
+    discipline: markWithCoScholastic.coScholastic.discipline || "-"
+  };
+};
+
 export const generatePdfDefinition11 = (
   studentResult: StudentResult11,
   logoData: string | null,
@@ -190,6 +215,9 @@ export const generatePdfDefinition11 = (
   const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(safeMarksHigher);
   const tableBody = generateHigherClassesTableBody(safeMarksHigher, totalObtained, totalMarks, overallPercentage);
   const grade = getOverallGrade(overallPercentage);
+  
+  // Extract co-scholastic data
+  const coScholasticData = extractCoScholasticData(safeMarksHigher);
 
   return {
     pageSize: 'A4',
@@ -211,7 +239,7 @@ export const generatePdfDefinition11 = (
         },
         margin: [0, 20, 0, 0]
       },
-      // Co-scholastic Activities
+      // Co-scholastic Activities - Updated to use actual data
       {
         table: {
           headerRows: 1,
@@ -222,9 +250,9 @@ export const generatePdfDefinition11 = (
               {},
             ],
             ['Activities', { text: 'Grade', alignment: 'center' }],
-            ['Physical Education', { text: 'A', alignment: 'center' }],
-            ['Work Experience', { text: 'A', alignment: 'center' }],
-            ['Discipline', { text: 'A', alignment: 'center' }]
+            ['Physical Education', { text: coScholasticData.physicalEducation, alignment: 'center' }],
+            ['Work Experience', { text: coScholasticData.workExperience, alignment: 'center' }],
+            ['Discipline', { text: coScholasticData.discipline, alignment: 'center' }]
           ]
         },
         layout: {

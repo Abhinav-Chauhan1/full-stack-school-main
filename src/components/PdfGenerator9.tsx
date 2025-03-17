@@ -34,11 +34,24 @@ interface PdfGenerator9Props {
       grandTotal: number | null;
       grade: string | null;
       remarks: string | null;
+      theory?: number | null;
+      practical?: number | null;
+      total?: number | null;
       sectionSubject: {
         subject: {
           name: string;
           code: string;
         };
+      };
+      coScholastic?: {
+        term1ValueEducation?: string;
+        term1PhysicalEducation?: string;
+        term1ArtCraft?: string;
+        term1Discipline?: string;
+        term2ValueEducation?: string;
+        term2PhysicalEducation?: string;
+        term2ArtCraft?: string;
+        term2Discipline?: string;
       };
     }>;
     session: {
