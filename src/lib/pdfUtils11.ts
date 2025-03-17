@@ -48,12 +48,22 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
 };
 
 const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], totalObtained: number, totalMarks: number, overallPercentage: number) => {
+  // Filter out subjects with all zeros or null values
+  const nonEmptyMarks = marks.filter(mark => {
+    // For PAI02 subjects, check theory30 and practical70
+    if (mark?.sectionSubject?.subject?.code === 'PAI02') {
+      return (mark.theory30 || mark.practical70);
+    }
+    // For regular subjects, check all the regular mark fields
+    return (mark.unitTest1 || mark.halfYearly || mark.unitTest2 || mark.theory || mark.practical);
+  });
+
   // Separate regular subjects from additional subjects (like Painting PAI02)
-  const regularSubjects = marks.filter(mark => 
+  const regularSubjects = nonEmptyMarks.filter(mark => 
     mark?.sectionSubject?.subject?.code !== 'PAI02'
   );
   
-  const additionalSubjects = marks.filter(mark => 
+  const additionalSubjects = nonEmptyMarks.filter(mark => 
     mark?.sectionSubject?.subject?.code === 'PAI02'
   );
 
