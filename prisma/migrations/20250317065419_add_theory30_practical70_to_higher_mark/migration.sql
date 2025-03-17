@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "HigherMark" ADD COLUMN     "practical70" DOUBLE PRECISION,
+ADD COLUMN     "theory30" DOUBLE PRECISION;

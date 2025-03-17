@@ -63,6 +63,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
   const [formType, setFormType] = useState<"create" | "update">(initialType);
   const [existingMarksData, setExistingMarksData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -92,6 +93,9 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
     () => selectedSectionData?.sectionSubjects || [],
     [selectedSectionData]
   );
+
+  // Determine if current subject is PAI02
+  const isPaintingSubject = selectedSubjectCode === 'PAI02';
 
   // Add useEffect for checking existing marks
   useEffect(() => {
@@ -141,6 +145,21 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
     ),
   });
 
+  // Add useEffect to fetch subject code when subject changes
+  useEffect(() => {
+    if (selectedSubject) {
+      const subject = selectedSectionSubjects.find(ss => ss.id === selectedSubject);
+      if (subject && subject.subject) {
+        // For the sake of this implementation, we're assuming the subject code is accessible
+        // You might need to fetch it from the API if not available
+        const subjectCode = subject.subject.code || null;
+        setSelectedSubjectCode(subjectCode);
+      }
+    } else {
+      setSelectedSubjectCode(null);
+    }
+  }, [selectedSubject, selectedSectionSubjects]);
+
   // Update form data when students/selections change
   useEffect(() => {
     const getDefaultValues = () => {
@@ -148,24 +167,26 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
         studentId: student.id,
         sectionSubjectId: selectedSubject || 0,
         sessionId: selectedSession || 0,
-        unitTest1: null,
-        halfYearly: null,
-        unitTest2: null,
-        theory: null,
-        practical: null,
+        unitTest1: isPaintingSubject ? null : null,
+        halfYearly: isPaintingSubject ? null : null,
+        unitTest2: isPaintingSubject ? null : null,
+        theory: isPaintingSubject ? null : null,
+        practical: isPaintingSubject ? null : null,
+        theory30: isPaintingSubject ? null : null,
+        practical70: isPaintingSubject ? null : null,
         totalWithout: null,
         grandTotal: null,
         total: null,
         percentage: null,
         grade: null,
         overallGrade: null,
-        remarks: "" // Add this field
+        remarks: "" 
       }));
       return { marks: values };
     };
 
     reset(getDefaultValues());
-  }, [selectedSectionStudents, selectedSubject, selectedSession, reset]);
+  }, [selectedSectionStudents, selectedSubject, selectedSession, reset, isPaintingSubject]);
 
   // Add effect to handle existing marks data
   useEffect(() => {
@@ -176,23 +197,25 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
           studentId: student.id,
           sectionSubjectId: selectedSubject!,
           sessionId: selectedSession!,
-          unitTest1: existing?.unitTest1 ?? null,
-          halfYearly: existing?.halfYearly ?? null,
-          unitTest2: existing?.unitTest2 ?? null,
-          theory: existing?.theory ?? null,
-          practical: existing?.practical ?? null,
+          unitTest1: isPaintingSubject ? null : existing?.unitTest1 ?? null,
+          halfYearly: isPaintingSubject ? null : existing?.halfYearly ?? null,
+          unitTest2: isPaintingSubject ? null : existing?.unitTest2 ?? null,
+          theory: isPaintingSubject ? null : existing?.theory ?? null,
+          practical: isPaintingSubject ? null : existing?.practical ?? null,
+          theory30: isPaintingSubject ? existing?.theory30 ?? null : null,
+          practical70: isPaintingSubject ? existing?.practical70 ?? null : null,
           totalWithout: existing?.totalWithout ?? null,
           grandTotal: existing?.grandTotal ?? null,
           total: existing?.total ?? null,
           percentage: existing?.percentage ?? null,
           grade: existing?.grade ?? null,
           overallGrade: existing?.overallGrade ?? null,
-          remarks: existing?.remarks ?? "" // Add this field
+          remarks: existing?.remarks ?? ""
         };
       });
       reset({ marks: updatedMarks });
     }
-  }, [existingMarksData, selectedSectionStudents, selectedSubject, selectedSession, reset]);
+  }, [existingMarksData, selectedSectionStudents, selectedSubject, selectedSession, reset, isPaintingSubject]);
 
   // Form submission handler
   const onSubmit = async (formData: { marks: HigherMarkSchema[] }) => {
@@ -203,17 +226,21 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
 
     try {
       const processedMarks = formData.marks
-        .filter(mark => 
-          mark.unitTest1 !== null || 
-          mark.halfYearly !== null || 
-          mark.unitTest2 !== null ||
-          mark.theory !== null ||
-          mark.practical !== null
-        )
+        .filter(mark => {
+          if (isPaintingSubject) {
+            return mark.theory30 !== null || mark.practical70 !== null;
+          }
+          return mark.unitTest1 !== null || 
+                 mark.halfYearly !== null || 
+                 mark.unitTest2 !== null ||
+                 mark.theory !== null ||
+                 mark.practical !== null;
+        })
         .map(mark => ({
           ...mark,
           sectionSubjectId: selectedSubject,
-          sessionId: selectedSession
+          sessionId: selectedSession,
+          subjectCode: selectedSubjectCode
         }));
 
       if (processedMarks.length === 0) {
@@ -349,11 +376,20 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
           <table className="w-full border-collapse">
             <thead><tr className="bg-gray-100">
               <th className="p-2 border">Student</th>
-              <th className="p-2 border">Unit Test 1 (10)</th>
-              <th className="p-2 border">Half Yearly (30)</th>
-              <th className="p-2 border">Unit Test 2 (10)</th>
-              <th className="p-2 border">Theory (35)</th>
-              <th className="p-2 border">Practical (15)</th>
+              {isPaintingSubject ? (
+                <>
+                  <th className="p-2 border">Theory (30)</th>
+                  <th className="p-2 border">Practical (70)</th>
+                </>
+              ) : (
+                <>
+                  <th className="p-2 border">Unit Test 1 (10)</th>
+                  <th className="p-2 border">Half Yearly (30)</th>
+                  <th className="p-2 border">Unit Test 2 (10)</th>
+                  <th className="p-2 border">Theory (35)</th>
+                  <th className="p-2 border">Practical (15)</th>
+                </>
+              )}
               <th className="p-2 border">Remarks</th>
             </tr></thead>
             <tbody>{selectedSectionStudents.map((student, index) => (
@@ -362,21 +398,48 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                   <input type="hidden" {...register(`marks.${index}.studentId`)} value={student.id}/>
                   {student.name}
                 </td>
-                <td className="p-2 border">
-                  <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}/>
-                </td>
-                <td className="p-2 border">
-                  <input type="number" step="0.1" max="30" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}/>
-                </td>
-                <td className="p-2 border">
-                  <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}/>
-                </td>
-                <td className="p-2 border">
-                  <input type="number" step="0.1" max="35" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.theory`, { valueAsNumber: true })}/>
-                </td>
-                <td className="p-2 border">
-                  <input type="number" step="0.1" max="15" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.practical`, { valueAsNumber: true })}/>
-                </td>
+                
+                {isPaintingSubject ? (
+                  <>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        max="30" 
+                        className="w-full p-1 border rounded text-sm" 
+                        {...register(`marks.${index}.theory30`, { valueAsNumber: true })}
+                      />
+                    </td>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        max="70" 
+                        className="w-full p-1 border rounded text-sm" 
+                        {...register(`marks.${index}.practical70`, { valueAsNumber: true })}
+                      />
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="p-2 border">
+                      <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest1`, { valueAsNumber: true })}/>
+                    </td>
+                    <td className="p-2 border">
+                      <input type="number" step="0.1" max="30" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.halfYearly`, { valueAsNumber: true })}/>
+                    </td>
+                    <td className="p-2 border">
+                      <input type="number" step="0.1" max="10" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.unitTest2`, { valueAsNumber: true })}/>
+                    </td>
+                    <td className="p-2 border">
+                      <input type="number" step="0.1" max="35" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.theory`, { valueAsNumber: true })}/>
+                    </td>
+                    <td className="p-2 border">
+                      <input type="number" step="0.1" max="15" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.practical`, { valueAsNumber: true })}/>
+                    </td>
+                  </>
+                )}
+
                 <td className="p-2 border">
                   <input type="text" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.remarks`)} placeholder="Add remarks"/>
                 </td>

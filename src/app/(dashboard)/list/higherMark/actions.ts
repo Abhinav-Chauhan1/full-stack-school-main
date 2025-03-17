@@ -44,29 +44,52 @@ export const checkExistingHigherMarks = async (
   }
 };
 
-export const createHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
+export const createHigherMarks = async (data: { marks: (HigherMarkSchema & { subjectCode?: string })[] }) => {
   try {
     const createPromises = data.marks
-      .filter(mark => 
-        mark.unitTest1 !== null || 
-        mark.halfYearly !== null || 
-        mark.unitTest2 !== null ||
-        mark.theory !== null ||
-        mark.practical !== null
-      )
+      .filter(mark => {
+        const isPaintingSubject = mark.subjectCode === 'PAI02';
+        if (isPaintingSubject) {
+          return mark.theory30 !== null || mark.practical70 !== null;
+        }
+        return mark.unitTest1 !== null || 
+               mark.halfYearly !== null || 
+               mark.unitTest2 !== null ||
+               mark.theory !== null ||
+               mark.practical !== null;
+      })
       .map(async (mark) => {
+        // Get subject code if not provided
+        if (!mark.subjectCode) {
+          const subject = await prisma.sectionSubject.findUnique({
+            where: { id: mark.sectionSubjectId },
+            include: { subject: true }
+          });
+          mark.subjectCode = subject?.subject.code || null;
+        }
+        
         const calculations = calculateHigherMarksAndGrade(mark);
+        
+        const isPaintingSubject = mark.subjectCode === 'PAI02';
         
         return prisma.higherMark.create({
           data: {
             student: { connect: { id: mark.studentId }},
             sectionSubject: { connect: { id: mark.sectionSubjectId }},
             session: { connect: { id: mark.sessionId }},
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
+            
+            // Set appropriate fields based on subject type
+            unitTest1: isPaintingSubject ? null : mark.unitTest1,
+            halfYearly: isPaintingSubject ? null : mark.halfYearly,
+            unitTest2: isPaintingSubject ? null : mark.unitTest2,
+            theory: isPaintingSubject ? null : mark.theory,
+            practical: isPaintingSubject ? null : mark.practical,
+            
+            // PAI02 specific fields
+            theory30: isPaintingSubject ? mark.theory30 : null,
+            practical70: isPaintingSubject ? mark.practical70 : null,
+            
+            // Common fields
             totalWithout: calculations.totalWithout,
             grandTotal: calculations.grandTotal,
             total: calculations.total,
@@ -90,18 +113,32 @@ export const createHigherMarks = async (data: { marks: HigherMarkSchema[] }) => 
   }
 };
 
-export const updateHigherMarks = async (data: { marks: HigherMarkSchema[] }) => {
+export const updateHigherMarks = async (data: { marks: (HigherMarkSchema & { subjectCode?: string })[] }) => {
   try {
     const updatePromises = data.marks
-      .filter(mark => 
-        mark.unitTest1 !== null || 
-        mark.halfYearly !== null || 
-        mark.unitTest2 !== null ||
-        mark.theory !== null ||
-        mark.practical !== null
-      )
+      .filter(mark => {
+        const isPaintingSubject = mark.subjectCode === 'PAI02';
+        if (isPaintingSubject) {
+          return mark.theory30 !== null || mark.practical70 !== null;
+        }
+        return mark.unitTest1 !== null || 
+               mark.halfYearly !== null || 
+               mark.unitTest2 !== null ||
+               mark.theory !== null ||
+               mark.practical !== null;
+      })
       .map(async (mark) => {
+        // Get subject code if not provided
+        if (!mark.subjectCode) {
+          const subject = await prisma.sectionSubject.findUnique({
+            where: { id: mark.sectionSubjectId },
+            include: { subject: true }
+          });
+          mark.subjectCode = subject?.subject.code || null;
+        }
+        
         const calculations = calculateHigherMarksAndGrade(mark);
+        const isPaintingSubject = mark.subjectCode === 'PAI02';
 
         return prisma.higherMark.upsert({
           where: {
@@ -115,11 +152,19 @@ export const updateHigherMarks = async (data: { marks: HigherMarkSchema[] }) => 
             student: { connect: { id: mark.studentId }},
             sectionSubject: { connect: { id: mark.sectionSubjectId }},
             session: { connect: { id: mark.sessionId }},
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
+            
+            // Set appropriate fields based on subject type
+            unitTest1: isPaintingSubject ? null : mark.unitTest1,
+            halfYearly: isPaintingSubject ? null : mark.halfYearly,
+            unitTest2: isPaintingSubject ? null : mark.unitTest2,
+            theory: isPaintingSubject ? null : mark.theory,
+            practical: isPaintingSubject ? null : mark.practical,
+            
+            // PAI02 specific fields
+            theory30: isPaintingSubject ? mark.theory30 : null,
+            practical70: isPaintingSubject ? mark.practical70 : null,
+            
+            // Common fields
             totalWithout: calculations.totalWithout,
             grandTotal: calculations.grandTotal,
             total: calculations.total,
@@ -129,11 +174,18 @@ export const updateHigherMarks = async (data: { marks: HigherMarkSchema[] }) => 
             remarks: mark.remarks
           },
           update: {
-            unitTest1: mark.unitTest1,
-            halfYearly: mark.halfYearly,
-            unitTest2: mark.unitTest2,
-            theory: mark.theory,
-            practical: mark.practical,
+            // Set appropriate fields based on subject type
+            unitTest1: isPaintingSubject ? null : mark.unitTest1,
+            halfYearly: isPaintingSubject ? null : mark.halfYearly,
+            unitTest2: isPaintingSubject ? null : mark.unitTest2,
+            theory: isPaintingSubject ? null : mark.theory,
+            practical: isPaintingSubject ? null : mark.practical,
+            
+            // PAI02 specific fields
+            theory30: isPaintingSubject ? mark.theory30 : null,
+            practical70: isPaintingSubject ? mark.practical70 : null,
+            
+            // Common fields
             totalWithout: calculations.totalWithout,
             grandTotal: calculations.grandTotal,
             total: calculations.total,

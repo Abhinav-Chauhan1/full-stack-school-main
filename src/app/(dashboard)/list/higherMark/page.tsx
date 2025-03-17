@@ -117,20 +117,47 @@ const HigherMarkListPage = async ({
   ]);
 
   // Define columns for the table based on HigherMark schema
-  const columns = [
-    { header: "Student Name", accessor: "student.name" },
-    { header: "Admission No", accessor: "student.admissionno", className: "hidden md:table-cell" },
-    { header: "Unit Test 1", accessor: "unitTest1", className: "hidden md:table-cell" },
-    { header: "Half Yearly", accessor: "halfYearly", className: "hidden md:table-cell" },
-    { header: "Unit Test 2", accessor: "unitTest2", className: "hidden md:table-cell" },
-    { header: "Theory", accessor: "theory" },
-    { header: "Practical", accessor: "practical" },
-    { header: "Total Without", accessor: "totalWithout" },
-    { header: "Grand Total", accessor: "grandTotal" },
-    { header: "Total", accessor: "total" },
-    { header: "Percentage", accessor: "percentage" },
-    { header: "Grade", accessor: "grade" },
-  ];
+  const getColumns = () => {
+    // If a subject is selected and that subject is PAI02, show specific columns
+    if (subjectId) {
+      const subject = selectedSection?.sectionSubjects.find(ss => 
+        ss.subject.id === parseInt(subjectId))?.subject;
+        
+      if (subject?.code === 'PAI02') {
+        return [
+          { header: "Student Name", accessor: "student.name" },
+          { header: "Admission No", accessor: "student.admissionno", className: "hidden md:table-cell" },
+          { header: "Theory (30)", accessor: "theory30" },
+          { header: "Practical (70)", accessor: "practical70" },
+          { header: "Total", accessor: "grandTotal" },
+          { header: "Percentage", accessor: "percentage" },
+          { header: "Grade", accessor: "grade" }
+        ];
+      }
+    }
+    
+    // Default columns for regular subjects
+    return [
+      { header: "Student Name", accessor: "student.name" },
+      { header: "Admission No", accessor: "student.admissionno", className: "hidden md:table-cell" },
+      { header: "Unit Test 1", accessor: "unitTest1", className: "hidden md:table-cell" },
+      { header: "Half Yearly", accessor: "halfYearly", className: "hidden md:table-cell" },
+      { header: "Unit Test 2", accessor: "unitTest2", className: "hidden md:table-cell" },
+      { header: "Theory", accessor: "theory" },
+      { header: "Practical", accessor: "practical" },
+      { header: "Total Without", accessor: "totalWithout" },
+      { header: "Grand Total", accessor: "grandTotal" },
+      { header: "Total", accessor: "total" },
+      { header: "Percentage", accessor: "percentage" },
+      { header: "Grade", accessor: "grade" }
+    ];
+  };
+  
+  const columns = getColumns();
+  
+  // Check if current subject is PAI02
+  const isPaintingSubject = selectedSection?.sectionSubjects.find(ss => 
+    ss.subject.id === parseInt(subjectId || '0'))?.subject.code === 'PAI02';
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -214,16 +241,29 @@ const HigherMarkListPage = async ({
                 >
                   <td className="p-4">{item.student.name}</td>
                   <td className="hidden md:table-cell">{item.student.admissionno}</td>
-                  <td className="hidden md:table-cell">{item.unitTest1}</td>
-                  <td className="hidden md:table-cell">{item.halfYearly}</td>
-                  <td className="hidden md:table-cell">{item.unitTest2}</td>
-                  <td>{item.theory}</td>
-                  <td>{item.practical}</td>
-                  <td>{item.totalWithout}</td>
-                  <td>{item.grandTotal}</td>
-                  <td>{item.total}</td>
-                  <td>{item.percentage}</td>
-                  <td>{item.grade}</td>
+                  
+                  {isPaintingSubject ? (
+                    <>
+                      <td>{item.theory30}</td>
+                      <td>{item.practical70}</td>
+                      <td>{item.grandTotal}</td>
+                      <td>{item.percentage}</td>
+                      <td>{item.grade}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="hidden md:table-cell">{item.unitTest1}</td>
+                      <td className="hidden md:table-cell">{item.halfYearly}</td>
+                      <td className="hidden md:table-cell">{item.unitTest2}</td>
+                      <td>{item.theory}</td>
+                      <td>{item.practical}</td>
+                      <td>{item.totalWithout}</td>
+                      <td>{item.grandTotal}</td>
+                      <td>{item.total}</td>
+                      <td>{item.percentage}</td>
+                      <td>{item.grade}</td>
+                    </>
+                  )}
                 </tr>
               )}
             />

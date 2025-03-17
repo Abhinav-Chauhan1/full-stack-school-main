@@ -311,6 +311,8 @@ model HigherMark {
   unitTest2          Float?
   theory             Float?
   practical          Float?
+  theory30           Float?         // New field for 30-point theory component
+  practical70        Float?         // New field for 70-point practical component
   totalWithout       Float?
   grandTotal         Float?
   overallGrade       String?        // Changed from Float? to String?
