@@ -169,7 +169,7 @@ const generateHeader = (logoData: string | null, studentResult: StudentResult11)
       }, {
         width: '*',
         stack: [
-          { text: 'Affiliation No.: 2132850', alignment: 'center', color: 'red', fontSize: 8 },
+          { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 8 },
           { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
           { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
           { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
