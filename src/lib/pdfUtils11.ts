@@ -86,16 +86,23 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
     ]
   ] : [];
 
-  const additionalSubjectRows = additionalSubjects.map(mark => [
-    { text: `${mark?.sectionSubject?.subject?.name ?? '-'}`, alignment: 'left' },
-    { text: mark?.theory30 ?? '-', colSpan: 3, alignment: 'center' }, // Theory (30) in its own column
-    { text: '', alignment: 'center'},
-    { text: '', alignment: 'center'},
-    { text: mark?.practical70 ?? '-', colSpan: 2, alignment: 'center' }, // Practical (70) in its own column
-    { text: '', alignment: 'center'},
-    { text: mark?.totalWithout ?? '-', alignment: 'center' },
-    { text: mark?.grandTotal ?? '-', alignment: 'center' }
-  ]);
+  const additionalSubjectRows = additionalSubjects.map(mark => {
+    const theory30 = mark?.theory30 || 0;
+    const practical70 = mark?.practical70 || 0;
+    const calculatedTotalWithout = theory30;
+    const calculatedGrandTotal = theory30 + practical70;
+  
+    return [
+      { text: `${mark?.sectionSubject?.subject?.name ?? '-'}`, alignment: 'left' },
+      { text: theory30, colSpan: 3, alignment: 'center' },
+      { text: '', alignment: 'center'},
+      { text: '', alignment: 'center'},
+      { text: practical70, colSpan: 2, alignment: 'center' },
+      { text: '', alignment: 'center'},
+      { text: calculatedTotalWithout, alignment: 'center' },
+      { text: calculatedGrandTotal, alignment: 'center' }
+    ];
+  });
 
   return [
     [
