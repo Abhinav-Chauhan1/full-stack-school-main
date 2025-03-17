@@ -132,29 +132,22 @@ export const updateSection = async (
     const subjectsToRemove = currentSectionSubjects.filter(ss => !newSubjectIds.includes(ss.subjectId));
 
     await prisma.$transaction(async (tx) => {
-      // Check if any SectionSubject to be deleted has related HigherMark records
-      const sectionSubjectsWithMarks = [];
-      
+      // For each section subject to be removed, delete associated marks first, then the section subject
       for (const sectionSubject of subjectsToRemove) {
-        const relatedHigherMarks = await tx.higherMark.findFirst({
-          where: { sectionSubjectId: sectionSubject.id },
-          select: { id: true }
-        });
-
-        const relatedSeniorMarks = await tx.seniorMark.findFirst({
-          where: { sectionSubjectId: sectionSubject.id },
-          select: { id: true }
+        // Delete any higher marks associated with this section subject
+        await tx.higherMark.deleteMany({
+          where: { sectionSubjectId: sectionSubject.id }
         });
         
-        // If this section subject has related marks, track it
-        if (relatedHigherMarks || relatedSeniorMarks) {
-          sectionSubjectsWithMarks.push(sectionSubject.subjectId);
-        } else {
-          // Only delete section subjects without related marks
-          await tx.sectionSubject.delete({
-            where: { id: sectionSubject.id }
-          });
-        }
+        // Delete any senior marks associated with this section subject
+        await tx.seniorMark.deleteMany({
+          where: { sectionSubjectId: sectionSubject.id }
+        });
+        
+        // Now delete the section subject itself
+        await tx.sectionSubject.delete({
+          where: { id: sectionSubject.id }
+        });
       }
 
       // Add new section subjects
@@ -175,15 +168,6 @@ export const updateSection = async (
           classId: formData.classId
         }
       });
-
-      // Return warning if some subjects couldn't be removed
-      if (sectionSubjectsWithMarks.length > 0) {
-        return { 
-          success: true, 
-          warning: true, 
-          message: `Some subjects could not be removed because they have associated marks.`
-        };
-      }
     });
 
     return { success: true, error: false };
