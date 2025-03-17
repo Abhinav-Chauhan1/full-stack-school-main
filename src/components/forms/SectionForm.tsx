@@ -76,7 +76,13 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
   useEffect(() => {
     if (state.success) {
       console.log('State changed:', state);
-      toast(`Section has been ${type === "create" ? "created" : "updated"}!`);
+      
+      if (state.error) {
+        toast.warning(state.error || `Section has been ${type === "create" ? "created" : "updated"}, but some subjects couldn't be removed because they have associated marks.`);
+      } else {
+        toast.success(`Section has been ${type === "create" ? "created" : "updated"}!`);
+      }
+      
       setOpen(false);
       router.refresh();
     } else if (state.error) {
@@ -147,7 +153,7 @@ const SectionForm = ({ type, data, setOpen, relatedData }: SectionFormProps) => 
         )}
       </div>
 
-      {state.error && <span className="text-red-500">Something went wrong!</span>}
+      {state.error && <span className="text-red-500">{"Something went wrong!"}</span>}
 
       <button type="submit" className="bg-blue-400 text-white p-2 rounded-md">
         {type === "create" ? "Create" : "Update"}

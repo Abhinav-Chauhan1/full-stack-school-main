@@ -112,43 +112,88 @@ export const updateSection = async (
 ) => {
   try {
     if (!formData.id) {
-      return { success: false, error: true };
+      return { success: false, error: true, message: "Section ID is required" };
     }
 
+    // Get current section subjects
+    const currentSectionSubjects = await prisma.sectionSubject.findMany({
+      where: { sectionId: formData.id },
+      select: { id: true, subjectId: true }
+    });
+
+    // Get current subject IDs
+    const currentSubjectIds = currentSectionSubjects.map(ss => ss.subjectId);
+    
+    // Get new subject IDs (handle undefined or null subjects)
+    const newSubjectIds = formData.subjects || [];
+    
+    // Find subjects to add and remove
+    const subjectsToAdd = newSubjectIds.filter(id => !currentSubjectIds.includes(id));
+    const subjectsToRemove = currentSectionSubjects.filter(ss => !newSubjectIds.includes(ss.subjectId));
+
     await prisma.$transaction(async (tx) => {
-      // First delete any associated senior marks
-      await tx.seniorMark.deleteMany({
-        where: {
-          sectionSubject: {
-            sectionId: formData.id
-          }
+      // Check if any SectionSubject to be deleted has related HigherMark records
+      const sectionSubjectsWithMarks = [];
+      
+      for (const sectionSubject of subjectsToRemove) {
+        const relatedHigherMarks = await tx.higherMark.findFirst({
+          where: { sectionSubjectId: sectionSubject.id },
+          select: { id: true }
+        });
+
+        const relatedSeniorMarks = await tx.seniorMark.findFirst({
+          where: { sectionSubjectId: sectionSubject.id },
+          select: { id: true }
+        });
+        
+        // If this section subject has related marks, track it
+        if (relatedHigherMarks || relatedSeniorMarks) {
+          sectionSubjectsWithMarks.push(sectionSubject.subjectId);
+        } else {
+          // Only delete section subjects without related marks
+          await tx.sectionSubject.delete({
+            where: { id: sectionSubject.id }
+          });
         }
-      });
+      }
 
-      // Then delete existing section-subject relationships
-      await tx.sectionSubject.deleteMany({
-        where: { sectionId: formData.id }
-      });
+      // Add new section subjects
+      for (const subjectId of subjectsToAdd) {
+        await tx.sectionSubject.create({
+          data: {
+            sectionId: formData.id,
+            subjectId
+          }
+        });
+      }
 
-      // Update section and create new relationships
+      // Update section basic info
       await tx.section.update({
         where: { id: formData.id },
         data: {
           name: formData.name,
-          classId: formData.classId,
-          sectionSubjects: {
-            create: formData.subjects?.map((subjectId) => ({
-              subject: { connect: { id: subjectId } }
-            }))
-          }
-        },
+          classId: formData.classId
+        }
       });
+
+      // Return warning if some subjects couldn't be removed
+      if (sectionSubjectsWithMarks.length > 0) {
+        return { 
+          success: true, 
+          warning: true, 
+          message: `Some subjects could not be removed because they have associated marks.`
+        };
+      }
     });
 
     return { success: true, error: false };
   } catch (err) {
     console.error("Error updating section:", err);
-    return { success: false, error: true };
+    return { 
+      success: false, 
+      error: true, 
+      message: err instanceof Error ? err.message : "Unknown error occurred"
+    };
   }
 };
 
