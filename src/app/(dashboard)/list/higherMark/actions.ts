@@ -65,7 +65,7 @@ export const createHigherMarks = async (data: { marks: (HigherMarkSchema & { sub
             where: { id: mark.sectionSubjectId },
             include: { subject: true }
           });
-          mark.subjectCode = subject?.subject.code || null;
+          mark.subjectCode = subject?.subject.code || undefined;
         }
         
         const calculations = calculateHigherMarksAndGrade(mark);
@@ -134,7 +134,7 @@ export const updateHigherMarks = async (data: { marks: (HigherMarkSchema & { sub
             where: { id: mark.sectionSubjectId },
             include: { subject: true }
           });
-          mark.subjectCode = subject?.subject.code || null;
+          mark.subjectCode = subject?.subject.code || undefined;
         }
         
         const calculations = calculateHigherMarksAndGrade(mark);

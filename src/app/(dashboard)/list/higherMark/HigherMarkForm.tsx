@@ -42,6 +42,7 @@ type HigherMarkFormProps = {
           subject: {
             id: number;
             name: string;
+            code?: string;
           };
         }>;
       }>;
@@ -226,22 +227,22 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
 
     try {
       const processedMarks = formData.marks
-        .filter(mark => {
-          if (isPaintingSubject) {
-            return mark.theory30 !== null || mark.practical70 !== null;
-          }
-          return mark.unitTest1 !== null || 
-                 mark.halfYearly !== null || 
-                 mark.unitTest2 !== null ||
-                 mark.theory !== null ||
-                 mark.practical !== null;
-        })
-        .map(mark => ({
-          ...mark,
-          sectionSubjectId: selectedSubject,
-          sessionId: selectedSession,
-          subjectCode: selectedSubjectCode
-        }));
+      .filter(mark => {
+        if (isPaintingSubject) {
+          return mark.theory30 !== null || mark.practical70 !== null;
+        }
+        return mark.unitTest1 !== null || 
+               mark.halfYearly !== null || 
+               mark.unitTest2 !== null ||
+               mark.theory !== null ||
+               mark.practical !== null;
+      })
+      .map(mark => ({
+        ...mark,
+        sectionSubjectId: selectedSubject,
+        sessionId: selectedSession,
+        subjectCode: selectedSubjectCode || undefined
+      }));
 
       if (processedMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
