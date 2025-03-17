@@ -1058,29 +1058,6 @@ export async function updateCalculatedMarks(type: 'junior' | 'senior' | 'higher'
   }
 }
 
-function calculateTotalMarks(
-  ut1?: number | null,
-  ut2?: number | null,
-  noteBook?: number | null,
-  subEnrichment?: number | null,
-  examMarks?: number | null
-): number {
-  const utAvg = ((ut1 || 0) + (ut2 || 0)) / 2 * 0.1; // 10%
-  const internal = ((noteBook || 0) + (subEnrichment || 0)) * 0.1; // 20% (10% each)
-  const exam = (examMarks || 0) * 0.7; // 70%
-  return Math.round(utAvg + internal + exam);
-}
-
-function calculateGrade(totalMarks: number): string {
-  if (totalMarks >= 91) return 'A1';
-  if (totalMarks >= 81) return 'A2';
-  if (totalMarks >= 71) return 'B1';
-  if (totalMarks >= 61) return 'B2';
-  if (totalMarks >= 51) return 'C1';
-  if (totalMarks >= 41) return 'C2';
-  if (totalMarks >= 33) return 'D';
-  return 'F';
-}
 
 
 

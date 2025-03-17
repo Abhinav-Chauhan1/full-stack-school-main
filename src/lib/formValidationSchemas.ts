@@ -273,7 +273,7 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
   let bestTwoPTAvg = null;
   if (ptScores.length >= 2) {
     const sortedScores = [...ptScores].sort((a, b) => b - a);
-    bestTwoPTAvg = ((sortedScores[0] + sortedScores[1]) / 2);
+    bestTwoPTAvg = Math.round((sortedScores[0] + sortedScores[1]) / 2);
   }
 
   // Calculate other components (each out of 5)

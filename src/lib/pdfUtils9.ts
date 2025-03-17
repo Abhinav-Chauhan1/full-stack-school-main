@@ -210,7 +210,22 @@ export const generatePdfDefinition9 = (
   const regularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
   const itMarks = safeMarksSenior.find(mark => mark.sectionSubject.subject.code === 'IT001');
 
+  // Calculate results for regular subjects
   const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(regularMarks);
+  
+  // Add IT marks to the total if available
+  let finalTotalObtained = totalObtained;
+  let finalTotalMarks = totalMarks;
+  
+  if (itMarks && itMarks.total) {
+    finalTotalObtained += itMarks.total;
+    finalTotalMarks += 100; // IT subject is out of 100
+  }
+  
+  // Recalculate percentage with IT included
+  const finalOverallPercentage = finalTotalMarks > 0 
+    ? ((finalTotalObtained / finalTotalMarks) * 100).toFixed(2) 
+    : "0";
 
   // Regular subjects table body
   const tableBody = [
@@ -296,10 +311,11 @@ export const generatePdfDefinition9 = (
         { text: itMarks?.total ?? '-', colSpan:3, alignment: 'center' },{},{},
       ],
       [
-        { text: 'Over All Total Marks', colSpan: 11, alignment: 'right', style: 'tableHeader' },
-        {}, {}, {}, {}, {}, {}, {}, {}, {},
-        { text: totalObtained.toString(), alignment: 'center', style: 'tableHeader' },
-        { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'tableHeader' }
+        { text: 'Over All Total Marks', colSpan: 8, alignment: 'right', style: 'tableHeader' },
+        {}, {}, {}, {}, {}, {}, {},
+        { text: `${finalTotalObtained}/${finalTotalMarks}`, colSpan: 3, alignment: 'center', style: 'tableHeader' },
+        {}, {},
+        { text: getOverallGrade(Number(finalOverallPercentage)), alignment: 'center', style: 'tableHeader' }
       ]
     ];
 
@@ -403,12 +419,6 @@ export const generatePdfDefinition9 = (
         }
       },
 
-      // Note about failing criteria
-      {
-        text: 'Note:-Student Obtaining Below 33% marks in [A+B+C] indicated as (*) in Failed in That Subject.',
-        style: 'note',
-        margin: [0, 2]
-      },
 
       // Co-scholastic table - updated to use the generated data
       {
@@ -425,17 +435,20 @@ export const generatePdfDefinition9 = (
       // Grading scales
       {
         table: {
-          widths: ['*'],
-          body: [
+          widths: ['*', '*'],
+          body: [[
             [{
-              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),\nC1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
-              style: 'gradingScale'
+              text: `Result: ${safeMarksSenior.every(mark => 
+                (mark.grade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
+              style: 'tableHeader',
+              alignment: 'center'
             }],
             [{
-              text: 'Co-Scholastic Activities (Grading on 5 point Scale) : A-5, B-4, C-3, D-2, E-1',
-              style: 'gradingScale'
+              text: '8 Point Grading Scale : A1(90% - 100%), A2(80% - 90%), B1(70% - 80%), B2(60% - 70%),C1(50% - 60%), C2(40% - 50%), D(33% - 40%), E(32% - Below)',
+              alignment: 'center',
+              style: 'columnHeader'
             }]
-          ]
+          ]]
         },
         layout: {
           hLineWidth: () => 1,
@@ -449,26 +462,68 @@ export const generatePdfDefinition9 = (
       // Result and remarks
       {
         table: {
-          widths: ['50%', '50%'],
-          body: [[
-            {
-              text: `Result: ${Number(overallPercentage) >= 33 ? 'PASSED' : 'FAILED'}`,
-              style: 'tableHeader',
-              alignment: 'center'
-            },
-            {
-              text: 'Teacher Remarks: GOOD, KEEP IT UP',
-              style: 'tableHeader',
-              alignment: 'center'
-            }
-          ]]
+          widths: ['*'],
+          body: [
+            [
+              {
+                columns: [
+                  { text: 'Teacher Remarks:', style: 'tableHeader', width: 120 },
+                  {
+                    columns: [
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'IMPROVEMENT', margin: [5, 0, 0, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'GOOD', margin: [5, 0, 15, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'V.GOOD', margin: [5, 0, 15, 0] },
+                      {
+                        width: 'auto',
+                        stack: [
+                          { 
+                            canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
+                            width: 12
+                          }
+                        ]
+                      },
+                      { text: 'EXCELLENT', margin: [5, 0, 15, 0] },
+                    ],
+                    width: '*'
+                  }
+                ]
+              }
+            ]
+          ]
         },
         layout: {
           hLineWidth: () => 1,
           vLineWidth: () => 1,
           hLineColor: () => 'black',
           vLineColor: () => 'black'
-        }
+        },
       },
 
       // Signatures

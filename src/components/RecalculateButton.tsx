@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { getMarksForRecalculation, updateCalculatedMarks } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
-import { calculateMarksAndGrade } from '@/lib/formValidationSchemas';
+import { calculateMarksAndGrade, calculateSeniorMarksAndGrade } from '@/lib/formValidationSchemas';
 import { calculateHigherMarksAndGrade } from '@/lib/markCalculations';
 
 interface RecalculateButtonProps {
@@ -50,40 +50,21 @@ export default function RecalculateButton({ type = 'junior' }: RecalculateButton
           };
 
         case 'senior':
-          const ptScores = [mark.pt1, mark.pt2, mark.pt3]
-            .filter((score): score is number => score !== null)
-            .sort((a, b) => b - a);
-          
-          const bestTwoPTAvg = ptScores.length >= 2 ? 
-            (ptScores[0] + ptScores[1]) / 2 : null;
-
-          const bestScore = bestTwoPTAvg !== null ? 
-            bestTwoPTAvg + 
-            (mark.multipleAssessment || 0) + 
-            (mark.portfolio || 0) + 
-            (mark.subEnrichment || 0) : null;
-
-          const grandTotal = bestScore !== null && mark.finalExam !== null ?
-            bestScore + mark.finalExam : null;
-
-          let grade = null;
-          if (grandTotal !== null) {
-            if (grandTotal >= 91) grade = 'A1';
-            else if (grandTotal >= 81) grade = 'A2';
-            else if (grandTotal >= 71) grade = 'B1';
-            else if (grandTotal >= 61) grade = 'B2';
-            else if (grandTotal >= 51) grade = 'C1';
-            else if (grandTotal >= 41) grade = 'C2';
-            else if (grandTotal >= 33) grade = 'D';
-            else grade = 'E';
-          }
+          const seniorResults = calculateSeniorMarksAndGrade({
+            pt1: mark.pt1,
+            pt2: mark.pt2,
+            pt3: mark.pt3,
+            multipleAssessment: mark.multipleAssessment,
+            portfolio: mark.portfolio,
+            subEnrichment: mark.subEnrichment,
+            finalExam: mark.finalExam,
+            theory: mark.theory,
+            practical: mark.practical
+          });
 
           return {
             id: mark.id,
-            bestTwoPTAvg,
-            bestScore,
-            grandTotal,
-            grade
+            ...seniorResults
           };
 
         case 'higher':
@@ -92,6 +73,8 @@ export default function RecalculateButton({ type = 'junior' }: RecalculateButton
             halfYearly: mark.halfYearly,
             unitTest2: mark.unitTest2,
             theory: mark.theory,
+            theory30: mark.theory30,
+            practical70: mark.practical70,
             practical: mark.practical
           });
 
