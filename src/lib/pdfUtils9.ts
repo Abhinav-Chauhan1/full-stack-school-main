@@ -311,11 +311,15 @@ export const generatePdfDefinition9 = (
         { text: itMarks?.total ?? '-', colSpan:3, alignment: 'center' },{},{},
       ],
       [
-        { text: 'Over All Total Marks', colSpan: 8, alignment: 'right', style: 'tableHeader' },
-        {}, {}, {}, {}, {}, {}, {},
-        { text: `${finalTotalObtained}/${finalTotalMarks}`, colSpan: 3, alignment: 'center', style: 'tableHeader' },
-        {}, {},
-        { text: getOverallGrade(Number(finalOverallPercentage)), alignment: 'center', style: 'tableHeader' }
+        { text: 'Over All Total Marks', colSpan: 2, alignment: 'right', style: 'tableHeader' },
+        {},
+        { text: `${finalTotalObtained}/${finalTotalMarks}`, colSpan: 2, alignment: 'center', style: 'overallValue' },
+        {},
+        { text: 'Over All Percentage', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {}, 
+        { text: `${finalOverallPercentage}%`, colSpan: 2, alignment: 'center', style: 'overallValue' }, {},
+        { text: 'Over All Grade', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {},
+        { text: getOverallGrade(Number(finalOverallPercentage)), colSpan: 2, alignment: 'center', style: 'overallValue' },
+        {}
       ]
     ];
 
@@ -608,6 +612,11 @@ export const generatePdfDefinition9 = (
       },
       outHeader: {
         fontSize: 8,
+        bold: true,
+        alignment: 'center'
+      },
+      overallValue: {
+        fontSize: 12,
         bold: true,
         alignment: 'center'
       }
