@@ -432,6 +432,39 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.unitTest1`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
+                      />
+                    </td>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.halfYearly`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
+                      />
+                    </td>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        className="w-full p-1 border rounded text-sm"
+                        {...register(`marks.${index}.unitTest2`, { 
+                          valueAsNumber: true,
+                          setValueAs: v => v === "" ? null : parseFloat(v)
+                        })} 
+                      />
+                    </td>
+                    <td className="p-2 border">
+                      <input 
+                        type="number" 
+                        step="0.1" 
+                        className="w-full p-1 border rounded text-sm"
                         {...register(`marks.${index}.theory`, { 
                           valueAsNumber: true,
                           setValueAs: v => v === "" ? null : parseFloat(v)
