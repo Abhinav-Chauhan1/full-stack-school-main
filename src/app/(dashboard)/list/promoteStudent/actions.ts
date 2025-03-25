@@ -1,6 +1,7 @@
 "use server";
 
 import { PrismaClient } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
 
@@ -40,6 +41,22 @@ export const promoteStudents = async (
   newSessionId: number
 ) => {
   try {
+    // Validate that the new section belongs to the new class
+    if (newSectionId) {
+      const section = await prisma.section.findUnique({
+        where: { id: newSectionId },
+        select: { classId: true }
+      });
+      
+      if (!section || section.classId !== newClassId) {
+        return {
+          success: false,
+          error: true,
+          message: "The selected section doesn't belong to the selected class"
+        };
+      }
+    }
+    
     const updates = await prisma.$transaction(
       studentIds.map((id) =>
         prisma.student.update({
@@ -53,6 +70,8 @@ export const promoteStudents = async (
       )
     );
 
+    revalidatePath('/list/students');
+    
     return {
       success: true,
       message: `Successfully promoted ${updates.length} students`

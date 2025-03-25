@@ -17,8 +17,12 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
   const { register, handleSubmit, watch } = useForm();
 
   const selectedClassId = watch("fromClassId");
+  const selectedToClassId = watch("toClassId");
   const filteredSections = sections.filter(
     section => section.classId === Number(selectedClassId)
+  );
+  const filteredToSections = sections.filter(
+    section => section.classId === Number(selectedToClassId)
   );
 
   const loadStudents = async (data: any) => {
@@ -137,7 +141,7 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
               <label className="block text-sm font-medium text-gray-700">To Section</label>
               <select {...register("toSectionId")} className="mt-1 block w-full rounded-md border p-2">
                 <option value="">Select Section</option>
-                {filteredSections.map(section => (
+                {filteredToSections.map(section => (
                   <option key={section.id} value={section.id}>
                     {section.name}
                   </option>
