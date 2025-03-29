@@ -129,6 +129,21 @@ const calculateOverallResults = (marks: StudentMark[]) => {
   };
 };
 
+// Add this deduplication function after the calculateOverallResults function
+const deduplicateSubjects = (marks: any[]) => {
+  const uniqueSubjects = new Map();
+  
+  marks.forEach(mark => {
+    const subjectCode = mark.sectionSubject.subject.code;
+    // Only keep the first occurrence of each subject code
+    if (!uniqueSubjects.has(subjectCode)) {
+      uniqueSubjects.set(subjectCode, mark);
+    }
+  });
+  
+  return Array.from(uniqueSubjects.values());
+};
+
 // Add a function to generate the co-scholastic table
 const generateCoScholasticTable = (marksSenior: any[]) => {
   // Extract co-scholastic data from the first mark that has it
@@ -207,7 +222,9 @@ export const generatePdfDefinition9 = (
   const safeMarksSenior = studentResult?.marksSenior ?? [];
   
   // Separate IT001 marks from other subjects
-  const regularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
+  const allRegularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
+  // Deduplicate regular marks
+  const regularMarks = deduplicateSubjects(allRegularMarks);
   const itMarks = safeMarksSenior.find(mark => mark.sectionSubject.subject.code === 'IT001');
 
   // Calculate results for regular subjects
