@@ -129,19 +129,58 @@ const calculateOverallResults = (marks: StudentMark[]) => {
   };
 };
 
-// Add this deduplication function after the calculateOverallResults function
+// Replace the deduplicateSubjects function with this improved version
 const deduplicateSubjects = (marks: any[]) => {
+  // Use a map to track the best record for each subject
   const uniqueSubjects = new Map();
   
   marks.forEach(mark => {
+    if (!mark?.sectionSubject?.subject?.code) {
+      return; // Skip invalid marks
+    }
+    
     const subjectCode = mark.sectionSubject.subject.code;
-    // Only keep the first occurrence of each subject code
+    
+    // If we haven't seen this subject before, add it
     if (!uniqueSubjects.has(subjectCode)) {
+      uniqueSubjects.set(subjectCode, mark);
+      return;
+    }
+    
+    // If we've seen this subject before, compare the records
+    const existingMark = uniqueSubjects.get(subjectCode);
+    
+    // Prefer marks with more complete data
+    const existingScore = calculateCompleteness(existingMark);
+    const newScore = calculateCompleteness(mark);
+    
+    if (newScore > existingScore) {
       uniqueSubjects.set(subjectCode, mark);
     }
   });
   
   return Array.from(uniqueSubjects.values());
+};
+
+// Helper function to score a mark record based on data completeness
+const calculateCompleteness = (mark: any): number => {
+  if (!mark) return 0;
+  
+  let score = 0;
+  // Award points for each non-null field that's important for calculations
+  if (mark.pt1 !== null) score += 1;
+  if (mark.pt2 !== null) score += 1;
+  if (mark.pt3 !== null) score += 1;
+  if (mark.bestTwoPTAvg !== null) score += 2;
+  if (mark.multipleAssessment !== null) score += 1;
+  if (mark.portfolio !== null) score += 1;
+  if (mark.subEnrichment !== null) score += 1;
+  if (mark.bestScore !== null) score += 2;
+  if (mark.finalExam !== null) score += 3;
+  if (mark.grandTotal !== null) score += 5;
+  if (mark.grade !== null) score += 2;
+  
+  return score;
 };
 
 // Add a function to generate the co-scholastic table
@@ -223,7 +262,7 @@ export const generatePdfDefinition9 = (
   
   // Separate IT001 marks from other subjects
   const allRegularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
-  // Deduplicate regular marks
+  // Deduplicate regular marks with our improved function
   const regularMarks = deduplicateSubjects(allRegularMarks);
   const itMarks = safeMarksSenior.find(mark => mark.sectionSubject.subject.code === 'IT001');
 
