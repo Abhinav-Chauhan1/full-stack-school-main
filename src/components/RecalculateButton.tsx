@@ -64,6 +64,9 @@ export default function RecalculateButton({ type = 'junior' }: RecalculateButton
 
           return {
             id: mark.id,
+            sectionSubjectId: mark.sectionSubjectId,
+            studentId: mark.studentId,
+            sessionId: mark.sessionId,
             ...seniorResults
           };
 

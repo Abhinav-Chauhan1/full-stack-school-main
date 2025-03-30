@@ -129,60 +129,6 @@ const calculateOverallResults = (marks: StudentMark[]) => {
   };
 };
 
-// Replace the deduplicateSubjects function with this improved version
-const deduplicateSubjects = (marks: any[]) => {
-  // Use a map to track the best record for each subject
-  const uniqueSubjects = new Map();
-  
-  marks.forEach(mark => {
-    if (!mark?.sectionSubject?.subject?.code) {
-      return; // Skip invalid marks
-    }
-    
-    const subjectCode = mark.sectionSubject.subject.code;
-    
-    // If we haven't seen this subject before, add it
-    if (!uniqueSubjects.has(subjectCode)) {
-      uniqueSubjects.set(subjectCode, mark);
-      return;
-    }
-    
-    // If we've seen this subject before, compare the records
-    const existingMark = uniqueSubjects.get(subjectCode);
-    
-    // Prefer marks with more complete data
-    const existingScore = calculateCompleteness(existingMark);
-    const newScore = calculateCompleteness(mark);
-    
-    if (newScore > existingScore) {
-      uniqueSubjects.set(subjectCode, mark);
-    }
-  });
-  
-  return Array.from(uniqueSubjects.values());
-};
-
-// Helper function to score a mark record based on data completeness
-const calculateCompleteness = (mark: any): number => {
-  if (!mark) return 0;
-  
-  let score = 0;
-  // Award points for each non-null field that's important for calculations
-  if (mark.pt1 !== null) score += 1;
-  if (mark.pt2 !== null) score += 1;
-  if (mark.pt3 !== null) score += 1;
-  if (mark.bestTwoPTAvg !== null) score += 2;
-  if (mark.multipleAssessment !== null) score += 1;
-  if (mark.portfolio !== null) score += 1;
-  if (mark.subEnrichment !== null) score += 1;
-  if (mark.bestScore !== null) score += 2;
-  if (mark.finalExam !== null) score += 3;
-  if (mark.grandTotal !== null) score += 5;
-  if (mark.grade !== null) score += 2;
-  
-  return score;
-};
-
 // Add a function to generate the co-scholastic table
 const generateCoScholasticTable = (marksSenior: any[]) => {
   // Extract co-scholastic data from the first mark that has it
@@ -262,9 +208,62 @@ export const generatePdfDefinition9 = (
   
   // Separate IT001 marks from other subjects
   const allRegularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
-  // Deduplicate regular marks with our improved function
-  const regularMarks = deduplicateSubjects(allRegularMarks);
-  const itMarks = safeMarksSenior.find(mark => mark.sectionSubject.subject.code === 'IT001');
+  
+  // Process marks: filter out invalid marks and handle duplicates by taking the entry with best scores
+  const subjectMap = new Map<string, any>();
+  
+  allRegularMarks.forEach(mark => {
+    if (!mark?.sectionSubject?.subject?.code) return;
+    
+    const subjectCode = mark.sectionSubject.subject.code;
+    // Check if this mark has any meaningful data
+    const hasData = mark.pt1 !== null || 
+                    mark.pt2 !== null || 
+                    mark.pt3 !== null || 
+                    mark.bestTwoPTAvg !== null || 
+                    mark.multipleAssessment !== null || 
+                    mark.portfolio !== null || 
+                    mark.subEnrichment !== null || 
+                    mark.bestScore !== null || 
+                    mark.finalExam !== null || 
+                    mark.grandTotal !== null ||
+                    mark.theory !== null ||
+                    mark.practical !== null ||
+                    mark.total !== null ||
+                    mark.grade !== null;
+                    
+    if (!hasData) return;
+    
+    // Calculate a score for this mark to compare with existing entries
+    const calculateScore = (m: any): number => {
+      let score = 0;
+      // Prioritize entries with higher PT scores and final exam scores
+      score += (m.pt1 || 0) * 10;
+      score += (m.pt2 || 0) * 10;
+      score += (m.pt3 || 0) * 10;
+      score += (m.bestTwoPTAvg || 0) * 20;
+      score += (m.finalExam || 0);
+      score += (m.grandTotal || 0) * 2;
+      return score;
+    };
+    
+    // Get the score for current mark
+    const currentScore = calculateScore(mark);
+    
+    // If we don't have this subject yet, or current mark has better scores, use it
+    if (!subjectMap.has(subjectCode) || currentScore > calculateScore(subjectMap.get(subjectCode))) {
+      subjectMap.set(subjectCode, mark);
+    }
+  });
+  
+  // Convert map to array of unique marks
+  const regularMarks = Array.from(subjectMap.values());
+  
+  // Find IT marks separately (no duplicate handling needed)
+  // If there are multiple IT entries, choose the one with highest total
+  const itMarks = safeMarksSenior
+    .filter(mark => mark.sectionSubject.subject.code === 'IT001')
+    .sort((a, b) => (b.total || 0) - (a.total || 0))[0]; // Get the IT entry with highest total
 
   // Calculate results for regular subjects
   const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(regularMarks);

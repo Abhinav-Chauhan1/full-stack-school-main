@@ -1027,9 +1027,12 @@ export async function updateCalculatedMarks(type: 'junior' | 'senior' | 'higher'
               data: {
                 bestTwoPTAvg: update.bestTwoPTAvg,
                 bestScore: update.bestScore,
+                total: update.total,         // Make sure to include total field
                 grandTotal: update.grandTotal,
                 grade: update.grade,
-                overallGrade: update.grade
+                overallGrade: update.grade,
+                // Make sure sectionSubject relationship is preserved
+                sectionSubjectId: update.sectionSubjectId
               }
             });
             break;
