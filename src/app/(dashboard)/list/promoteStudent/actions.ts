@@ -1,9 +1,8 @@
 "use server";
 
-import { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export const getStudentsByClassAndSection = async (
   classId: number,
@@ -14,7 +13,7 @@ export const getStudentsByClassAndSection = async (
     const students = await prisma.student.findMany({
       where: {
         classId,
-        sectionId,
+        ...(sectionId ? { sectionId } : {}),
         sessionId
       },
       include: {
@@ -56,6 +55,29 @@ export const promoteStudents = async (
         };
       }
     }
+
+    // Check class capacity
+    const targetClass = await prisma.class.findUnique({
+      where: { id: newClassId },
+      include: { _count: { select: { students: true } } }
+    });
+
+    if (!targetClass) {
+      return {
+        success: false,
+        error: true,
+        message: "Target class not found"
+      };
+    }
+
+    const availableCapacity = targetClass.capacity - targetClass._count.students;
+    if (availableCapacity < studentIds.length) {
+      return {
+        success: false,
+        error: true,
+        message: `Target class only has ${availableCapacity} available seat${availableCapacity !== 1 ? 's' : ''}, but you're trying to promote ${studentIds.length} student${studentIds.length !== 1 ? 's' : ''}`
+      };
+    }
     
     const updates = await prisma.$transaction(
       studentIds.map((id) =>
@@ -70,14 +92,44 @@ export const promoteStudents = async (
       )
     );
 
+    // Revalidate multiple paths
     revalidatePath('/list/students');
+    revalidatePath('/list/promoteStudent');
+    revalidatePath('/list/classes');
+    revalidatePath('/list/sections');
     
     return {
       success: true,
-      message: `Successfully promoted ${updates.length} students`
+      message: `Successfully promoted ${updates.length} student${updates.length !== 1 ? 's' : ''}`
     };
   } catch (err) {
     console.error("Promote Students Error:", err);
+    
+    // Check for specific Prisma errors
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === 'P2025') {
+        return {
+          success: false,
+          error: true,
+          message: "One or more students not found"
+        };
+      }
+      if (err.code === 'P2002') {
+        return {
+          success: false,
+          error: true,
+          message: "A unique constraint violation occurred"
+        };
+      }
+      if (err.code === 'P2003') {
+        return {
+          success: false,
+          error: true,
+          message: "Invalid class, section, or session reference"
+        };
+      }
+    }
+    
     return {
       success: false,
       error: true,
