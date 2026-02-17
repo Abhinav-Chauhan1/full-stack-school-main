@@ -188,7 +188,9 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
   const regularSubjectRows = regularSubjects.map(mark => {
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
     const yearlyUT = mark?.yearly?.ut3 ?? 0;
-    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
+    // Convert to number if it's a string, otherwise use 0
+    const halfYearlyUTNum = typeof bestHalfYearlyUT === 'string' ? 0 : bestHalfYearlyUT;
+    const bestOverallUT = Math.max(halfYearlyUTNum, yearlyUT);
     
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
@@ -212,7 +214,9 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     // Get best scores for half-yearly and yearly
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
     const yearlyUT = mark?.yearly?.ut3 ?? 0;
-    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
+    // Convert to number if it's a string, otherwise use 0
+    const halfYearlyUTNum = typeof bestHalfYearlyUT === 'string' ? 0 : bestHalfYearlyUT;
+    const bestOverallUT = Math.max(halfYearlyUTNum, yearlyUT);
     
     // Use the roundNBSE helper function
     const halfYearlyNBSE = roundNBSE(mark?.halfYearly?.noteBook, mark?.halfYearly?.subEnrichment);
@@ -227,8 +231,8 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       { text: getExamMarks(mark.halfYearly, false, true, false), alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
-      // Show full UT value (not divided by 2)
-      { text: bestYearlyUT, alignment: 'center' },
+      // Show best overall UT
+      { text: bestOverallUT, alignment: 'center' },
       // Show full NB+SE value (not divided by 2)
       { text: yearlyNBSE, alignment: 'center' },
       { text: getExamMarks(mark.yearly, true, true, false), alignment: 'center' },
@@ -244,7 +248,9 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
     // Get best scores for half-yearly and yearly
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
     const yearlyUT = mark?.yearly?.ut3 ?? 0;
-    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
+    // Convert to number if it's a string, otherwise use 0
+    const halfYearlyUTNum = typeof bestHalfYearlyUT === 'string' ? 0 : bestHalfYearlyUT;
+    const bestOverallUT = Math.max(halfYearlyUTNum, yearlyUT);
     
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
