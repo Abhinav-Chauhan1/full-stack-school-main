@@ -210,7 +210,6 @@ model YearlyMarks {
   juniorMarkId   String     @unique
 
   ut3            Float?
-  ut4            Float?
   yearlynoteBook       Float?
   yearlysubEnrichment  Float?
   yearlyexamMarks      Float?     // For 80 marks subjects

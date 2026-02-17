@@ -44,7 +44,6 @@ export interface StudentResult {
     } | null;
     yearly: {
       ut3: number | null;
-      ut4: number | null;
       yearlynoteBook: number | null;
       yearlysubEnrichment: number | null;
       yearlyexamMarks: number | null;

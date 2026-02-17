@@ -164,11 +164,6 @@ const JuniorMarkListPage = async ({
         className: "hidden md:table-cell",
       },
       {
-        header: "UT4",
-        accessor: "yearly.ut4",
-        className: "hidden md:table-cell",
-      },
-      {
         header: "Notebook",
         accessor: "yearly.yearlynoteBook",
         className: "hidden md:table-cell",
@@ -389,7 +384,7 @@ const renderRow = (item: any, examType?: string, role?: string) => {
         {examType === 'HALF_YEARLY' ? examData?.ut1 || '-' : examData?.ut3 || '-'}
       </td>
       <td className="hidden md:table-cell">
-        {examType === 'HALF_YEARLY' ? examData?.ut2 || '-' : examData?.ut4 || '-'}
+        {examType === 'HALF_YEARLY' ? examData?.ut2 || '-' : '-'}
       </td>
       <td className="hidden md:table-cell">
         {examType === 'HALF_YEARLY' ? examData?.noteBook || '-' : examData?.yearlynoteBook || '-'}

@@ -203,7 +203,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         } : null,
         yearly: examType === "YEARLY" ? {
           ut3: null,
-          ut4: null,
           yearlynoteBook: null,
           yearlysubEnrichment: null,
           yearlyexamMarks: null,
@@ -240,7 +239,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
       } : null,
       yearly: examType === "YEARLY" ? {
         ut3: null,
-        ut4: null,
         yearlynoteBook: null,
         yearlysubEnrichment: null,
         yearlyexamMarks: null,
@@ -289,7 +287,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           } : null,
           yearly: examType === "YEARLY" ? {
             ut3: existingMark?.yearly?.ut3 || null,
-            ut4: existingMark?.yearly?.ut4 || null,
             yearlynoteBook: existingMark?.yearly?.yearlynoteBook || null,
             yearlysubEnrichment: existingMark?.yearly?.yearlysubEnrichment || null,
             yearlyexamMarks: existingMark?.yearly?.yearlyexamMarks || null,
@@ -368,7 +365,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           yearly: mark.yearly ? {
             ...mark.yearly,
             ut3: mark.yearly.ut3 || null,
-            ut4: mark.yearly.ut4 || null,
             yearlynoteBook: mark.yearly.yearlynoteBook || null,
             yearlysubEnrichment: mark.yearly.yearlysubEnrichment || null,
             // Clear other exam marks fields when one is set
@@ -528,7 +524,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                     } : null,
                     yearly: examType === "YEARLY" ? {
                       ut3: null,
-                      ut4: null,
                       yearlynoteBook: null,
                       yearlysubEnrichment: null,
                       yearlyexamMarks: null,
@@ -594,7 +589,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                 ) : (
                   <>
                     <th className="p-2 border">UT3 (10)</th>
-                    <th className="p-2 border">UT4 (10)</th>
                   </>
                 )}
                 <th className="p-2 border">Notebook (5)</th>
@@ -706,14 +700,6 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
                             {...register(`marks.${index}.yearly.ut3`, { valueAsNumber: true })}
-                          />
-                        </td>
-                        <td className="p-2 border">
-                          <input
-                            type="number"
-                            step="0.1"
-                            className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.ut4`, { valueAsNumber: true })}
                           />
                         </td>
                         <td className="p-2 border">

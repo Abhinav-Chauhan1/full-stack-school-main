@@ -55,7 +55,6 @@ const hasNonZeroMarks = (mark: any) => {
     
   const yearlyHasMarks =
     (mark?.yearly?.ut3 > 0) ||
-    (mark?.yearly?.ut4 > 0) ||
     (mark?.yearly?.yearlynoteBook > 0) ||
     (mark?.yearly?.yearlysubEnrichment > 0) ||
     (yearlyExamMarks > 0);
@@ -188,7 +187,8 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
   // Generate rows for regular subjects
   const regularSubjectRows = regularSubjects.map(mark => {
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
-    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    const yearlyUT = mark?.yearly?.ut3 ?? 0;
+    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
     
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
@@ -197,7 +197,7 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       { text: getExamMarks(mark.halfYearly, false, false, false), alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
-      { text: bestYearlyUT, alignment: 'center' },
+      { text: bestOverallUT, alignment: 'center' },
       { text: roundNBSE(mark?.yearly?.yearlynoteBook, mark?.yearly?.yearlysubEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.yearly, true, false, false), alignment: 'center' },
       { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
@@ -211,7 +211,8 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
   const fortyMarkSubjectRows = fortyMarkSubjects.map(mark => {
     // Get best scores for half-yearly and yearly
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
-    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    const yearlyUT = mark?.yearly?.ut3 ?? 0;
+    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
     
     // Use the roundNBSE helper function
     const halfYearlyNBSE = roundNBSE(mark?.halfYearly?.noteBook, mark?.halfYearly?.subEnrichment);
@@ -242,7 +243,8 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
   const thirtyMarkSubjectRows = thirtyMarkSubjects.map(mark => {
     // Get best scores for half-yearly and yearly
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
-    const bestYearlyUT = getBestUnitTest(mark?.yearly?.ut3, mark?.yearly?.ut4);
+    const yearlyUT = mark?.yearly?.ut3 ?? 0;
+    const bestOverallUT = Math.max(bestHalfYearlyUT, yearlyUT);
     
     return [
       { text: mark?.classSubject?.subject?.name ?? '-', alignment: 'left' },
@@ -251,7 +253,7 @@ const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossibleMark
       { text: getExamMarks(mark.halfYearly, false, false, true), alignment: 'center' },
       { text: mark?.halfYearly?.totalMarks ?? '-', alignment: 'center' },
       { text: mark?.halfYearly?.grade ?? '-', alignment: 'center' },
-      { text: bestYearlyUT, alignment: 'center' },
+      { text: bestOverallUT, alignment: 'center' },
       { text: roundNBSE(mark?.yearly?.yearlynoteBook, mark?.yearly?.yearlysubEnrichment), alignment: 'center' },
       { text: getExamMarks(mark.yearly, true, false, true), alignment: 'center' },
       { text: mark?.yearly?.yearlytotalMarks ?? '-', alignment: 'center' },
