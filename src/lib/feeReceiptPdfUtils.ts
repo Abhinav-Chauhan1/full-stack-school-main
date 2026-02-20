@@ -37,8 +37,8 @@ export const generateFeeReceiptPdf = (
 
   if (receiptData.discount > 0) {
     feeTableBody.push([
-      { text: 'Discount', style: 'tableCell', color: 'green' },
-      { text: `- ${receiptData.discount.toFixed(2)}`, style: 'tableCell', alignment: 'right', color: 'green' },
+      { text: 'Discount', style: 'tableCellGreen' },
+      { text: `- ${receiptData.discount.toFixed(2)}`, style: 'tableCellGreen', alignment: 'right' },
     ]);
   }
 
@@ -54,9 +54,10 @@ export const generateFeeReceiptPdf = (
 
   const balance = receiptData.totalAmount - receiptData.amountPaid;
   if (balance !== 0) {
+    const balanceStyle = balance > 0 ? 'tableCellBoldRed' : 'tableCellBoldBlue';
     feeTableBody.push([
-      { text: balance > 0 ? 'Balance Due' : 'Excess Paid', style: 'tableCellBold', color: balance > 0 ? 'red' : 'blue' },
-      { text: Math.abs(balance).toFixed(2), style: 'tableCellBold', alignment: 'right', color: balance > 0 ? 'red' : 'blue' },
+      { text: balance > 0 ? 'Balance Due' : 'Excess Paid', style: balanceStyle },
+      { text: Math.abs(balance).toFixed(2), style: balanceStyle, alignment: 'right' },
     ]);
   }
 
@@ -228,6 +229,23 @@ export const generateFeeReceiptPdf = (
       tableCellBoldLarge: {
         fontSize: 12,
         bold: true,
+        margin: [5, 5]
+      },
+      tableCellGreen: {
+        fontSize: 10,
+        color: 'green',
+        margin: [5, 5]
+      },
+      tableCellBoldRed: {
+        fontSize: 10,
+        bold: true,
+        color: 'red',
+        margin: [5, 5]
+      },
+      tableCellBoldBlue: {
+        fontSize: 10,
+        bold: true,
+        color: 'blue',
         margin: [5, 5]
       },
       sectionHeader: {
