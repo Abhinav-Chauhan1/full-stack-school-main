@@ -30,8 +30,8 @@ export const generateFeeReceiptPdf = (
 
   if (receiptData.previousDues > 0) {
     feeTableBody.push([
-      { text: 'Previous Dues', style: 'tableCell', bold: true },
-      { text: receiptData.previousDues.toFixed(2), style: 'tableCell', alignment: 'right', bold: true },
+      { text: 'Previous Dues', style: 'tableCellBold' },
+      { text: receiptData.previousDues.toFixed(2), style: 'tableCellBold', alignment: 'right' },
     ]);
   }
 
@@ -43,20 +43,20 @@ export const generateFeeReceiptPdf = (
   }
 
   feeTableBody.push([
-    { text: 'Total Amount', style: 'tableCell', bold: true, fontSize: 12, fillColor: '#f0f0f0' },
-    { text: receiptData.totalAmount.toFixed(2), style: 'tableCell', alignment: 'right', bold: true, fontSize: 12, fillColor: '#f0f0f0' },
+    { text: 'Total Amount', style: 'tableCellBoldLarge', fillColor: '#f0f0f0' },
+    { text: receiptData.totalAmount.toFixed(2), style: 'tableCellBoldLarge', alignment: 'right', fillColor: '#f0f0f0' },
   ]);
 
   feeTableBody.push([
-    { text: 'Amount Paid', style: 'tableCell', bold: true, fontSize: 12, fillColor: '#d4edda' },
-    { text: receiptData.amountPaid.toFixed(2), style: 'tableCell', alignment: 'right', bold: true, fontSize: 12, fillColor: '#d4edda' },
+    { text: 'Amount Paid', style: 'tableCellBoldLarge', fillColor: '#d4edda' },
+    { text: receiptData.amountPaid.toFixed(2), style: 'tableCellBoldLarge', alignment: 'right', fillColor: '#d4edda' },
   ]);
 
   const balance = receiptData.totalAmount - receiptData.amountPaid;
   if (balance !== 0) {
     feeTableBody.push([
-      { text: balance > 0 ? 'Balance Due' : 'Excess Paid', style: 'tableCell', bold: true, color: balance > 0 ? 'red' : 'blue' },
-      { text: Math.abs(balance).toFixed(2), style: 'tableCell', alignment: 'right', bold: true, color: balance > 0 ? 'red' : 'blue' },
+      { text: balance > 0 ? 'Balance Due' : 'Excess Paid', style: 'tableCellBold', color: balance > 0 ? 'red' : 'blue' },
+      { text: Math.abs(balance).toFixed(2), style: 'tableCellBold', alignment: 'right', color: balance > 0 ? 'red' : 'blue' },
     ]);
   }
 
@@ -92,7 +92,7 @@ export const generateFeeReceiptPdf = (
           {
             width: '50%',
             stack: [
-              { text: `Receipt No: ${receiptData.receiptNo}`, style: 'fieldLabel', bold: true },
+              { text: `Receipt No: ${receiptData.receiptNo}`, style: 'fieldLabelBold' },
               { text: `Date: ${new Date(receiptData.paymentDate).toLocaleDateString()}`, style: 'fieldLabel' },
               { text: `Session: ${receiptData.session.sessioncode}`, style: 'fieldLabel' },
               receiptData.month ? { text: `Month: ${receiptData.month}`, style: 'fieldLabel' } : {},
@@ -206,6 +206,11 @@ export const generateFeeReceiptPdf = (
         fontSize: 10,
         margin: [0, 2]
       },
+      fieldLabelBold: {
+        fontSize: 10,
+        bold: true,
+        margin: [0, 2]
+      },
       tableHeader: {
         fontSize: 11,
         bold: true,
@@ -213,6 +218,16 @@ export const generateFeeReceiptPdf = (
       },
       tableCell: {
         fontSize: 10,
+        margin: [5, 5]
+      },
+      tableCellBold: {
+        fontSize: 10,
+        bold: true,
+        margin: [5, 5]
+      },
+      tableCellBoldLarge: {
+        fontSize: 12,
+        bold: true,
         margin: [5, 5]
       },
       sectionHeader: {
