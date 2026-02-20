@@ -389,6 +389,10 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
       if (type === "print") {
         if (id) {
           // Single student result with complete data
+          const sessionFilter = data?.sessionId 
+            ? { sessionId: data.sessionId }
+            : { session: { isActive: true } };
+
           const studentData = await prisma.student.findUnique({
             where: { id: id as string },
             include: {
@@ -404,7 +408,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   },
                   halfYearly: true,
                   yearly: true,
-                  coScholastic: true,  // Add this line to fetch co-scholastic data
+                  coScholastic: true,
                   session: {
                     select: {
                       sessioncode: true,
@@ -413,33 +417,40 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     }
                   }
                 },
-                where: {
-                  session: {
-                    isActive: true
-                  }
-                }
+                where: sessionFilter
               }
             }
           });
 
           if (studentData) {
+            // Get the session info based on filter
+            let sessionInfo = studentData.Session;
+            if (data?.sessionId) {
+              const specificSession = await prisma.session.findUnique({
+                where: { id: data.sessionId }
+              });
+              if (specificSession) sessionInfo = specificSession;
+            }
+
             relatedData = {
               studentResult: {
                 student: studentData,
                 marksJunior: studentData.marksJunior,
-                session: studentData.Session
+                session: sessionInfo
               }
             };
           }
         } else if (data?.classId && data?.sectionId) {
           // Bulk print for entire section
+          const sessionFilter = data?.sessionId 
+            ? { sessionId: data.sessionId }
+            : { session: { isActive: true } };
+
           const studentsData = await prisma.student.findMany({
             where: {
               classId: parseInt(data.classId),
               sectionId: parseInt(data.sectionId),
-              Session: {
-                isActive: true
-              }
+              ...(data?.sessionId ? { sessionId: data.sessionId } : { Session: { isActive: true } })
             },
             include: {
               Class: true,
@@ -454,7 +465,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   },
                   halfYearly: true,
                   yearly: true,
-                  coScholastic: true,  // Add this line to fetch co-scholastic data
+                  coScholastic: true,
                   session: {
                     select: {
                       sessioncode: true,
@@ -463,11 +474,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     }
                   }
                 },
-                where: {
-                  session: {
-                    isActive: true
-                  }
-                }
+                where: sessionFilter
               }
             }
           });
@@ -486,6 +493,10 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
       case "result9":
   if (type === "print") {
     if (id) {
+      const sessionFilter = data?.sessionId 
+        ? { sessionId: data.sessionId }
+        : { session: { isActive: true } };
+
       const studentData = await prisma.student.findUnique({
         where: { id: id as string },
         include: {
@@ -500,13 +511,9 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 }
               },
               session: true,
-              coScholastic: true // Added this to include co-scholastic data
+              coScholastic: true
             },
-            where: {
-              session: {
-                isActive: true
-              }
-            },
+            where: sessionFilter,
             orderBy: {
               sectionSubject: {
                 subject: {
@@ -519,6 +526,15 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
       });
 
       if (studentData) {
+        // Get the session info based on filter
+        let sessionInfo = studentData.Session;
+        if (data?.sessionId) {
+          const specificSession = await prisma.session.findUnique({
+            where: { id: data.sessionId }
+          });
+          if (specificSession) sessionInfo = specificSession;
+        }
+
         relatedData = {
           studentResult: {
             student: {
@@ -527,18 +543,20 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
               Section: studentData.Section
             },
             marksSenior: studentData.marksSenior,
-            session: studentData.Session
+            session: sessionInfo
           }
         };
       }
     } else if (data?.classId && data?.sectionId) {
+      const sessionFilter = data?.sessionId 
+        ? { sessionId: data.sessionId }
+        : { session: { isActive: true } };
+
       const studentsData = await prisma.student.findMany({
         where: {
           classId: parseInt(data.classId),
           sectionId: parseInt(data.sectionId),
-          Session: {
-            isActive: true
-          }
+          ...(data?.sessionId ? { sessionId: data.sessionId } : { Session: { isActive: true } })
         },
         include: {
           Class: true,
@@ -552,13 +570,9 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 }
               },
               session: true,
-              coScholastic: true // Added this to include co-scholastic data
+              coScholastic: true
             },
-            where: {
-              session: {
-                isActive: true
-              }
-            }
+            where: sessionFilter
           }
         },
         orderBy: {
@@ -583,13 +597,17 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
 
       case "result11":
         if (type === "print" && id) {
+          const sessionFilter = data?.sessionId 
+            ? { sessionId: data.sessionId }
+            : { session: { isActive: true } };
+
           const studentData = await prisma.student.findUnique({
             where: { id: id as string },
             include: {
               Class: true,
               Section: true,
               Session: true,
-              markHigher: { // Note: This should be marksHigher to match the interface
+              markHigher: {
                 include: {
                   sectionSubject: {
                     include: {
@@ -597,13 +615,9 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     }
                   },
                   session: true,
-                  coScholastic: true // Added this to include co-scholastic data
+                  coScholastic: true
                 },
-                where: {
-                  session: {
-                    isActive: true
-                  }
-                },
+                where: sessionFilter,
                 orderBy: {
                   sectionSubject: {
                     subject: {
@@ -616,6 +630,15 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
           });
 
           if (studentData) {
+            // Get the session info based on filter
+            let sessionInfo = studentData.Session;
+            if (data?.sessionId) {
+              const specificSession = await prisma.session.findUnique({
+                where: { id: data.sessionId }
+              });
+              if (specificSession) sessionInfo = specificSession;
+            }
+
             relatedData = {
               studentResult: {
                 student: studentData,
@@ -626,14 +649,14 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                   unitTest2: mark.unitTest2,
                   theory: mark.theory,
                   practical: mark.practical,
-                  theory30: mark.theory30,       // Add this line
-                  practical70: mark.practical70, // Add this line
+                  theory30: mark.theory30,
+                  practical70: mark.practical70,
                   totalWithout: mark.totalWithout,
                   grandTotal: mark.grandTotal,
                   sectionSubject: mark.sectionSubject,
                   coScholastic: mark.coScholastic
                 })),
-                session: studentData.Session
+                session: sessionInfo
               }
             };
           }

@@ -88,6 +88,10 @@ const ResultsPage = async ({
     query.sectionId = parseInt(sectionId);
   }
 
+  if (sessionId) {
+    query.sessionId = parseInt(sessionId);
+  }
+
   // Update the students query to include all necessary relations
   const [students, count] = await prisma.$transaction([
     prisma.student.findMany({
@@ -223,6 +227,7 @@ const ResultsPage = async ({
                     table="result"
                     type="print"
                     id={student.id}
+                    data={{ sessionId: sessionId ? parseInt(sessionId) : undefined }}
                   />
                 </div>
               </td>
