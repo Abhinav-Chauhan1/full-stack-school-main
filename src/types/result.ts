@@ -131,6 +131,8 @@ export interface StudentResult11 {
     mothername?: string;
     fathername?: string;
     address?: string;
+    city?: string;
+    village?: string;
     img?: string;
     Class: {
       name: string;
