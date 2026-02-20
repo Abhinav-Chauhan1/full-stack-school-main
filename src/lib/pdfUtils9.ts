@@ -391,13 +391,13 @@ export const generatePdfDefinition9 = (
           {
             columns: [
               {
-                width: 80,
+                width: 55, // Changed from 80 to match Class 8
                 image: logoData || '',
                 alignment: 'center'
               },
               {
                 stack: [
-                  { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 8 },
+                  { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 7 }, // Changed from 8 to 7
                   { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
                   { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
                   { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
@@ -408,19 +408,19 @@ export const generatePdfDefinition9 = (
             ]
           }
         ],
-        margin: [0, 10, 0, 10]
+        margin: [0, 0, 0, 3] // Changed from [0, 10, 0, 10] to match Class 8
       },
       {
         text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
         style: 'reportCardHeader',
         alignment: 'center',
-        margin: [0, 10, 0, 5]
+        margin: [0, 5, 0, 2] // Changed from [0, 10, 0, 5] to match Class 8
       },
       {
         text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
         style: 'subHeader',
         alignment: 'center',
-        margin: [0, 0, 0, 15]
+        margin: [0, 0, 0, 5] // Changed from [0, 0, 0, 15] to match Class 8
       },
       {
         table: {
@@ -451,13 +451,13 @@ export const generatePdfDefinition9 = (
                     studentImageData ? {
                       width: '20%',
                       image: studentImageData,
-                      fit: [100, 100],
+                      fit: [80, 80], // Changed from [100, 100] to match Class 8
                       alignment: 'center'
                     } : {},
                   ]
                 }
               ],
-              margin: [0, 0, 0, 2]
+              margin: [0, 0, 0, 10] // Changed from [0, 0, 0, 2] to match Class 8
             }
           ]]
         },

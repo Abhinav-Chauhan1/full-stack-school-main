@@ -157,13 +157,13 @@ const generateHeader = (logoData: string | null, studentResult: StudentResult11)
   return {
     stack: [{
       columns: [{
-        width: 80,
+        width: 55,
         image: logoData || '',
         alignment: 'center'
       }, {
         width: '*',
         stack: [
-          { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 8 },
+          { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 7 },
           { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
           { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
           { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
@@ -171,47 +171,65 @@ const generateHeader = (logoData: string | null, studentResult: StudentResult11)
         alignment: 'center'
       }]
     }],
-    margin: [0, 10, 0, 10]
+    margin: [0, 0, 0, 3]
   } as import('pdfmake/interfaces').ContentStack;
 };
 
 const generateStudentInfo = (studentResult: StudentResult11, studentImageData: string | null) => {
   return {
-    table: {
-      widths: ['*'],
-      body: [[{
-        stack: [
-          {
-            columns: [
+    stack: [
+      {
+        text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
+        style: 'reportCardHeader',
+        alignment: 'center',
+        margin: [0, 5, 0, 2]
+      },
+      {
+        text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
+        style: 'subHeader',
+        alignment: 'center',
+        margin: [0, 0, 0, 5]
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [[{
+            stack: [
               {
-                width: '50%',
-                stack: [
-                  { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                  { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - ${studentResult?.student?.Section?.name ?? '-'}`, style: 'fieldLabel' },
-                  { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
-                  { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
+                columns: [
+                  {
+                    width: '50%',
+                    stack: [
+                      { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
+                      { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - (${studentResult?.student?.Section?.name ?? '-'})`, style: 'fieldLabel' },
+                      { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
+                      { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
+                      { text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
+                    ]
+                  },
+                  {
+                    width: '30%',
+                    stack: [
+                      { text: `Date of Birth: ${new Date(studentResult?.student?.birthday).toLocaleDateString()}`, style: 'fieldLabel' },
+                      { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
+                      { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
+                    ]
+                  },
+                  studentImageData ? {
+                    width: '20%',
+                    image: studentImageData,
+                    fit: [80, 80],
+                    alignment: 'center'
+                  } : {}
                 ]
-              },
-              {
-                width: '30%',
-                stack: [
-                  { text: `Date of Birth: ${new Date(studentResult?.student?.birthday).toLocaleDateString()}`, style: 'fieldLabel' },
-                  { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
-                  { text: `Address: ${studentResult?.student?.address ?? '-'}`, style: 'fieldLabel' },
-                ]
-              },
-              studentImageData ? {
-                width: '20%',
-                image: studentImageData,
-                fit: [100, 100],
-                alignment: 'center'
-              } : {}
-            ]
-          }
-        ]
-      }]]
-    },
-    layout: 'noBorders'
+              }
+            ],
+            margin: [0, 0, 0, 10]
+          }]]
+        },
+        layout: 'noBorders'
+      }
+    ]
   };
 };
 
@@ -436,6 +454,11 @@ export const generatePdfDefinition11 = (
       reportCardHeader: {
         fontSize: 14,
         bold: true,
+        alignment: 'center'
+      },
+      subHeader: {
+        fontSize: 10,
+        italics: true,
         alignment: 'center'
       },
       tableHeader: {
