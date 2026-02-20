@@ -74,15 +74,14 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
     { text: mark?.unitTest2 ?? '-', alignment: 'center' },
     { text: mark?.theory ?? '-', alignment: 'center' },
     { text: mark?.practical ?? '-', alignment: 'center' },
-    { text: mark?.totalWithout ?? '-', alignment: 'center' },
     { text: mark?.grandTotal ?? '-', alignment: 'center' }
   ]);
 
   // Create a custom header for painting subjects (PAI02)
   const additionalSubjectsHeader = additionalSubjects.length > 0 ? [
     [
-      { text: 'ADDITIONAL SUBJECTS', colSpan: 8, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
-      {}, {}, {}, {}, {}, {}, {}
+      { text: 'ADDITIONAL SUBJECTS', colSpan: 7, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
+      {}, {}, {}, {}, {}, {}
     ],
     [
       { text: 'SUBJECTS', rowSpan: 1, alignment: 'center', style: 'tableHeader' },
@@ -91,7 +90,6 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
       { text: '', alignment: 'center', style: 'tableHeader' },
       { text: 'Practical(70)', colSpan: 2, alignment: 'center', style: 'outHeader' },
       { text: '', alignment: 'center', style: 'tableHeader' },
-      { text: 'Total', alignment: 'center', style: 'outHeader' },
       { text: 'Grand Total', alignment: 'center', style: 'outHeader' }
     ]
   ] : [];
@@ -99,7 +97,6 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
   const additionalSubjectRows = additionalSubjects.map(mark => {
     const theory30 = mark?.theory30 || 0;
     const practical70 = mark?.practical70 || 0;
-    const calculatedTotalWithout = theory30;
     const calculatedGrandTotal = theory30 + practical70;
   
     return [
@@ -109,7 +106,6 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
       { text: '', alignment: 'center'},
       { text: practical70, colSpan: 2, alignment: 'center' },
       { text: '', alignment: 'center'},
-      { text: calculatedTotalWithout, alignment: 'center' },
       { text: calculatedGrandTotal, alignment: 'center' }
     ];
   });
@@ -122,37 +118,35 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
       { text: 'Unit Test 2', alignment: 'center', style: 'tableHeader' },
       { text: 'Annual', colSpan: 2, alignment: 'center', style: 'tableHeader' },
       { text: '', alignment: 'center', style: 'tableHeader' },
-      { text: 'Over All Total', colSpan: 2, alignment: 'center', style: 'tableHeader' },
-      { text: '', alignment: 'center', style: 'tableHeader' }
+      { text: 'Grand Total', alignment: 'center', style: 'tableHeader' }
     ],
     [
       {},
       { text: '(10)', alignment: 'center', style: 'outHeader' },
       { text: '(30)', alignment: 'center', style: 'outHeader' },
       { text: '(10)', alignment: 'center', style: 'outHeader' },
-      { text: 'Theory(35)', alignment: 'center', style: 'outHeader' },
-      { text: 'Practical(15)', alignment: 'center', style: 'outHeader' },
-      { text: 'Total Without\nPractical\n(85)', alignment: 'center', style: 'outHeader' },
-      { text: 'Grand Total\n(100)', alignment: 'center', style: 'outHeader' }
+      { text: 'Theory(30)', alignment: 'center', style: 'outHeader' },
+      { text: 'Practical(20)', alignment: 'center', style: 'outHeader' },
+      { text: '(100)', alignment: 'center', style: 'outHeader' }
     ],
     ...regularSubjectRows,
     ...additionalSubjectsHeader,
     ...additionalSubjectRows,
     [
-      { text: 'Total', colSpan: 6, alignment: 'right', style: 'totalsRow' },
-      {}, {}, {}, {}, {},
+      { text: 'Total', colSpan: 5, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {},
       { text:`${totalObtained.toString()} / ${totalMarks.toString()}`, alignment: 'center', style: 'totalsRow', colSpan: 2},
       {}
     ],
     [
-      { text: 'Percentage', colSpan: 6, alignment: 'right', style: 'totalsRow' },
-      {}, {}, {}, {}, {},
+      { text: 'Percentage', colSpan: 5, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {},
       { text: overallPercentage.toString(), alignment: 'center', style: 'totalsRow', colSpan: 2},
       {}
     ],
     [
-      { text: 'Grade', colSpan: 6, alignment: 'right', style: 'totalsRow' },
-      {}, {}, {}, {}, {},
+      { text: 'Grade', colSpan: 5, alignment: 'right', style: 'totalsRow' },
+      {}, {}, {}, {},
       { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'totalsRow', colSpan: 2},
       {}
     ]
@@ -272,7 +266,7 @@ export const generatePdfDefinition11 = (
       {
         table: {
           headerRows: 2,
-          widths: ['*', 40, 40, 40, 50, 50, 60, 50],
+          widths: ['*', 50, 50, 50, 60, 60, 60],
           body: tableBody
         },
         layout: {

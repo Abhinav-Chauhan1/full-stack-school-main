@@ -16,13 +16,21 @@ export const calculateHigherMarksAndGrade = (mark: any) => {
     grandTotal = theory30 + practical70;
   } else {
     // For regular subjects
+    // Unit Test 1: 10 marks
+    // Half Yearly: 30 marks
+    // Unit Test 2: 10 marks
+    // Theory: 30 marks (updated from 35)
+    // Practical: 20 marks (updated from 15)
+    // Total: 100 marks
     const unitTest1 = mark.unitTest1 || 0;
     const halfYearly = mark.halfYearly || 0;
     const unitTest2 = mark.unitTest2 || 0;
     const theory = mark.theory || 0;
     const practical = mark.practical || 0;
     
+    // Total without practical = 80 marks (10+30+10+30)
     totalWithout = unitTest1 + halfYearly + unitTest2 + theory;
+    // Grand total = 100 marks (80+20)
     grandTotal = totalWithout + practical;
   }
 

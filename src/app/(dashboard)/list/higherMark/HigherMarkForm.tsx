@@ -387,8 +387,8 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                   <th className="p-2 border">Unit Test 1 (10)</th>
                   <th className="p-2 border">Half Yearly (30)</th>
                   <th className="p-2 border">Unit Test 2 (10)</th>
-                  <th className="p-2 border">Theory (35)</th>
-                  <th className="p-2 border">Practical (15)</th>
+                  <th className="p-2 border">Theory (30)</th>
+                  <th className="p-2 border">Practical (20)</th>
                 </>
               )}
               <th className="p-2 border">Remarks</th>
