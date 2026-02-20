@@ -20,6 +20,7 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
 
   const selectedClassId = watch("fromClassId");
   const selectedToClassId = watch("toClassId");
+  const promoteToAlumni = watch("promoteToAlumni");
   const filteredSections = sections.filter(
     section => section.classId === Number(selectedClassId)
   );
@@ -67,31 +68,60 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
       return;
     }
 
-    if (!data.toClassId || !data.toSessionId) {
-      toast.error("Please select target class and session");
-      return;
-    }
+    if (data.promoteToAlumni === "true") {
+      // Promoting to alumni
+      setIsPromoting(true);
+      try {
+        const result = await promoteStudents(
+          selectedStudents,
+          null,
+          null,
+          null,
+          true,
+          new Date().getFullYear()
+        );
 
-    setIsPromoting(true);
-    try {
-      const result = await promoteStudents(
-        selectedStudents,
-        Number(data.toClassId),
-        data.toSectionId ? Number(data.toSectionId) : null,
-        Number(data.toSessionId)
-      );
-
-      if (result.success) {
-        toast.success(result.message);
-        setSelectedStudents([]);
-        setStudents([]);
-      } else {
-        toast.error(result.message);
+        if (result.success) {
+          toast.success(result.message);
+          setSelectedStudents([]);
+          setStudents([]);
+        } else {
+          toast.error(result.message);
+        }
+      } catch (error) {
+        toast.error("An error occurred while promoting students to alumni");
+      } finally {
+        setIsPromoting(false);
       }
-    } catch (error) {
-      toast.error("An error occurred while promoting students");
-    } finally {
-      setIsPromoting(false);
+    } else {
+      // Regular promotion
+      if (!data.toClassId || !data.toSessionId) {
+        toast.error("Please select target class and session");
+        return;
+      }
+
+      setIsPromoting(true);
+      try {
+        const result = await promoteStudents(
+          selectedStudents,
+          Number(data.toClassId),
+          data.toSectionId ? Number(data.toSectionId) : null,
+          Number(data.toSessionId),
+          false
+        );
+
+        if (result.success) {
+          toast.success(result.message);
+          setSelectedStudents([]);
+          setStudents([]);
+        } else {
+          toast.error(result.message);
+        }
+      } catch (error) {
+        toast.error("An error occurred while promoting students");
+      } finally {
+        setIsPromoting(false);
+      }
     }
   };
 
@@ -167,55 +197,72 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
 
       {students.length > 0 && (
         <form onSubmit={handleSubmit(handlePromote)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">To Session *</label>
-              <select 
-                {...register("toSessionId")} 
-                className="mt-1 block w-full rounded-md border p-2"
+          <div className="mb-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                {...register("promoteToAlumni")}
+                value="true"
+                className="rounded border-gray-300"
                 disabled={isPromoting}
-              >
-                <option value="">Select Session</option>
-                {sessions.map(session => (
-                  <option key={session.id} value={session.id}>
-                    {session.sessioncode}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">To Class *</label>
-              <select 
-                {...register("toClassId")} 
-                className="mt-1 block w-full rounded-md border p-2"
-                disabled={isPromoting}
-              >
-                <option value="">Select Class</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">To Section (Optional)</label>
-              <select 
-                {...register("toSectionId")} 
-                className="mt-1 block w-full rounded-md border p-2"
-                disabled={isPromoting || !selectedToClassId}
-              >
-                <option value="">Select Section</option>
-                {filteredToSections.map(section => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Mark as Alumni (Students will be moved to alumni list)
+              </span>
+            </label>
           </div>
+
+          {promoteToAlumni !== "true" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">To Session *</label>
+                <select 
+                  {...register("toSessionId")} 
+                  className="mt-1 block w-full rounded-md border p-2"
+                  disabled={isPromoting}
+                >
+                  <option value="">Select Session</option>
+                  {sessions.map(session => (
+                    <option key={session.id} value={session.id}>
+                      {session.sessioncode}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">To Class *</label>
+                <select 
+                  {...register("toClassId")} 
+                  className="mt-1 block w-full rounded-md border p-2"
+                  disabled={isPromoting}
+                >
+                  <option value="">Select Class</option>
+                  {classes.map(cls => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">To Section (Optional)</label>
+                <select 
+                  {...register("toSectionId")} 
+                  className="mt-1 block w-full rounded-md border p-2"
+                  disabled={isPromoting || !selectedToClassId}
+                >
+                  <option value="">Select Section</option>
+                  {filteredToSections.map(section => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
@@ -278,7 +325,12 @@ export default function PromoteStudentForm({ classes, sections, sessions }: Prom
             disabled={isPromoting || selectedStudents.length === 0}
             className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isPromoting ? "Promoting..." : `Promote ${selectedStudents.length} Selected Student${selectedStudents.length !== 1 ? 's' : ''}`}
+            {isPromoting 
+              ? "Processing..." 
+              : promoteToAlumni === "true"
+              ? `Mark ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''} as Alumni`
+              : `Promote ${selectedStudents.length} Selected Student${selectedStudents.length !== 1 ? 's' : ''}`
+            }
           </button>
         </form>
       )}

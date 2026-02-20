@@ -76,6 +76,8 @@ model Student {
   tc            Boolean?      @default(true)
   tcdate        DateTime?
   tcNo          Int?
+  isAlumni      Boolean?      @default(false)
+  alumniYear    Int?
   Class         Class?       @relation(fields: [classId], references: [id])
   classId       Int?
   Section       Section?     @relation(fields: [sectionId], references: [id])

@@ -14,7 +14,8 @@ export const getStudentsByClassAndSection = async (
       where: {
         classId,
         ...(sectionId ? { sectionId } : {}),
-        sessionId
+        sessionId,
+        isAlumni: false // Exclude alumni from promotion list
       },
       include: {
         Class: true,
@@ -35,11 +36,49 @@ export const getStudentsByClassAndSection = async (
 
 export const promoteStudents = async (
   studentIds: string[],
-  newClassId: number,
+  newClassId: number | null,
   newSectionId: number | null,
-  newSessionId: number
+  newSessionId: number | null,
+  isAlumni: boolean = false,
+  alumniYear?: number
 ) => {
   try {
+    if (isAlumni) {
+      // Mark students as alumni
+      const updates = await prisma.$transaction(
+        studentIds.map((id) =>
+          prisma.student.update({
+            where: { id },
+            data: {
+              isAlumni: true,
+              alumniYear: alumniYear || new Date().getFullYear(),
+              classId: null,
+              sectionId: null,
+              sessionId: null
+            }
+          })
+        )
+      );
+
+      revalidatePath('/list/students');
+      revalidatePath('/list/promoteStudent');
+      revalidatePath('/list/alumni');
+      
+      return {
+        success: true,
+        message: `Successfully marked ${updates.length} student${updates.length !== 1 ? 's' : ''} as alumni`
+      };
+    }
+
+    // Regular promotion logic
+    if (!newClassId || !newSessionId) {
+      return {
+        success: false,
+        error: true,
+        message: "Class and session are required for promotion"
+      };
+    }
+
     // Validate that the new section belongs to the new class
     if (newSectionId) {
       const section = await prisma.section.findUnique({

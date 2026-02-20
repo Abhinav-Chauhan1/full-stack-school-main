@@ -130,7 +130,9 @@ const StudentListPage = async ({
   const p = page ? parseInt(page) : 1;
 
   // Build the query based on search parameters
-  const query: Prisma.StudentWhereInput = {};
+  const query: Prisma.StudentWhereInput = {
+    isAlumni: false // Exclude alumni from student list
+  };
   
   // Add teacher class and section restrictions
   if (role === "teacher") {
