@@ -176,61 +176,59 @@ const generateHeader = (logoData: string | null, studentResult: StudentResult11)
 };
 
 const generateStudentInfo = (studentResult: StudentResult11, studentImageData: string | null) => {
-  return {
-    stack: [
-      {
-        text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
-        style: 'reportCardHeader',
-        alignment: 'center',
-        margin: [0, 5, 0, 2]
+  return [
+    {
+      text: `REPORT CARD (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
+      style: 'reportCardHeader',
+      alignment: 'center',
+      margin: [0, 5, 0, 2]
+    },
+    {
+      text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
+      style: 'subHeader',
+      alignment: 'center',
+      margin: [0, 0, 0, 5]
+    },
+    {
+      table: {
+        widths: ['*'],
+        body: [[{
+          stack: [
+            {
+              columns: [
+                {
+                  width: '50%',
+                  stack: [
+                    { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
+                    { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - (${studentResult?.student?.Section?.name ?? '-'})`, style: 'fieldLabel' },
+                    { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
+                    { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
+                    { text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
+                  ]
+                },
+                {
+                  width: '30%',
+                  stack: [
+                    { text: `Date of Birth: ${new Date(studentResult?.student?.birthday).toLocaleDateString()}`, style: 'fieldLabel' },
+                    { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
+                    { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
+                  ]
+                },
+                studentImageData ? {
+                  width: '20%',
+                  image: studentImageData,
+                  fit: [80, 80],
+                  alignment: 'center'
+                } : {}
+              ]
+            }
+          ],
+          margin: [0, 0, 0, 10]
+        }]]
       },
-      {
-        text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
-        style: 'subHeader',
-        alignment: 'center',
-        margin: [0, 0, 0, 5]
-      },
-      {
-        table: {
-          widths: ['*'],
-          body: [[{
-            stack: [
-              {
-                columns: [
-                  {
-                    width: '50%',
-                    stack: [
-                      { text: `Student's Name: ${studentResult?.student?.name ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Class: ${studentResult?.student?.Class?.name?.replace('Class ', '')} - (${studentResult?.student?.Section?.name ?? '-'})`, style: 'fieldLabel' },
-                      { text: `Mother's Name: ${studentResult?.student?.mothername ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Father's Name: ${studentResult?.student?.fathername ?? '-'}`, style: 'fieldLabel' },
-                      { text: `School Address: 3K.M, Milestone, Near Garhi, Kanth (Moradabad)`, style: 'fieldLabel' },
-                    ]
-                  },
-                  {
-                    width: '30%',
-                    stack: [
-                      { text: `Date of Birth: ${new Date(studentResult?.student?.birthday).toLocaleDateString()}`, style: 'fieldLabel' },
-                      { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
-                      { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
-                    ]
-                  },
-                  studentImageData ? {
-                    width: '20%',
-                    image: studentImageData,
-                    fit: [80, 80],
-                    alignment: 'center'
-                  } : {}
-                ]
-              }
-            ],
-            margin: [0, 0, 0, 10]
-          }]]
-        },
-        layout: 'noBorders'
-      }
-    ]
-  };
+      layout: 'noBorders'
+    }
+  ] as import('pdfmake/interfaces').Content[];
 };
 
 // Add this function to extract co-scholastic data from student marks
@@ -280,7 +278,7 @@ export const generatePdfDefinition11 = (
     pageMargins: [40, 20, 40, 20],
     content: [
       generateHeader(logoData, studentResult),
-      generateStudentInfo(studentResult, studentImageData),
+      ...generateStudentInfo(studentResult, studentImageData),
       {
         table: {
           headerRows: 2,
