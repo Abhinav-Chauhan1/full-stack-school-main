@@ -79,12 +79,12 @@ export const generateFeeReceiptPdf = (
               { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
               { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
               { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' },
-              { text: 'FEE RECEIPT', style: 'receiptTitle', margin: [0, 10, 0, 0] },
+              { text: 'FEE RECEIPT', style: 'receiptTitle', margin: [0, 10, 0, 0] as [number, number, number, number] },
             ],
             alignment: 'center'
           }
         ],
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 20] as [number, number, number, number]
       },
 
       // Receipt Details
@@ -96,7 +96,7 @@ export const generateFeeReceiptPdf = (
               { text: `Receipt No: ${receiptData.receiptNo}`, style: 'fieldLabelBold' },
               { text: `Date: ${new Date(receiptData.paymentDate).toLocaleDateString()}`, style: 'fieldLabel' },
               { text: `Session: ${receiptData.session.sessioncode}`, style: 'fieldLabel' },
-              receiptData.month ? { text: `Month: ${receiptData.month}`, style: 'fieldLabel' } : {},
+              ...(receiptData.month ? [{ text: `Month: ${receiptData.month}`, style: 'fieldLabel' }] : []),
             ]
           },
           {
@@ -109,7 +109,7 @@ export const generateFeeReceiptPdf = (
             ]
           }
         ],
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 20] as [number, number, number, number]
       },
 
       // Fee Table
@@ -124,7 +124,7 @@ export const generateFeeReceiptPdf = (
           hLineColor: () => '#cccccc',
           vLineColor: () => '#cccccc'
         },
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 20] as [number, number, number, number]
       },
 
       // Payment Details
@@ -143,15 +143,15 @@ export const generateFeeReceiptPdf = (
           ]
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 20]
+        margin: [0, 0, 0, 20] as [number, number, number, number]
       },
 
       // Remarks
-      receiptData.remarks ? {
+      ...(receiptData.remarks ? [{
         text: `Remarks: ${receiptData.remarks}`,
         style: 'fieldLabel',
-        margin: [0, 0, 0, 20]
-      } : {},
+        margin: [0, 0, 0, 20] as [number, number, number, number]
+      }] : []),
 
       // Footer
       {
@@ -159,19 +159,19 @@ export const generateFeeReceiptPdf = (
           {
             width: '*',
             stack: [
-              { text: '_____________________', alignment: 'left', margin: [0, 40, 0, 0] },
+              { text: '_____________________', alignment: 'left', margin: [0, 40, 0, 0] as [number, number, number, number] },
               { text: 'Received By', style: 'footerLabel', alignment: 'left' }
             ]
           },
           {
             width: '*',
             stack: [
-              { text: '_____________________', alignment: 'right', margin: [0, 40, 0, 0] },
+              { text: '_____________________', alignment: 'right', margin: [0, 40, 0, 0] as [number, number, number, number] },
               { text: 'Authorized Signature', style: 'footerLabel', alignment: 'right' }
             ]
           }
         ],
-        margin: [0, 30, 0, 0]
+        margin: [0, 30, 0, 0] as [number, number, number, number]
       },
 
       // Note
@@ -179,7 +179,7 @@ export const generateFeeReceiptPdf = (
         text: 'Note: This is a computer-generated receipt and does not require a signature.',
         style: 'note',
         alignment: 'center',
-        margin: [0, 20, 0, 0]
+        margin: [0, 20, 0, 0] as [number, number, number, number]
       }
     ],
     styles: {
