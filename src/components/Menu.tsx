@@ -68,6 +68,12 @@ const menuItems = [
         visible: ["admin"],
       },
       {
+        icon: "/finance.png",
+        label: "Fee Receipts",
+        href: "/list/feeReceipts",
+        visible: ["admin"],
+      },
+      {
         icon: "/exam.png",
         label: "Up to 8th",
         href: "",

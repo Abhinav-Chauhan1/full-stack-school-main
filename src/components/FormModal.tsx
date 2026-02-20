@@ -77,6 +77,9 @@ const SeniorCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/sen
 const HigherCoScholasticForm = dynamic(() => import("../app/(dashboard)/list/higherCoScholastic/HigherCoScholasticForm"), {
   loading: () => <h1>Loading...</h1>,
 });
+const FeeReceiptForm = dynamic(() => import("../app/(dashboard)/list/feeReceipts/FeeReceiptForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
 // TODO: OTHER FORMS
 
 const forms: {
@@ -185,6 +188,14 @@ const forms: {
       relatedData={relatedData}
     />
   ),
+  feeReceipt: (setOpen, type, data, relatedData) => (
+    <FeeReceiptForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
   // TODO OTHER LIST ITEMS
 };
 
@@ -197,6 +208,10 @@ const PdfGenerator9 = dynamic(() => import("./PdfGenerator9"), {
 });
 
 const PdfGenerator11 = dynamic(() => import("./PdfGenerator11"), {
+  ssr: false
+});
+
+const FeeReceiptPdfGenerator = dynamic(() => import("./FeeReceiptPdfGenerator"), {
   ssr: false
 });
 
@@ -322,6 +337,17 @@ const FormModal = ({
             onClose={() => setOpen(false)}
           />
         );
+
+      case "feeReceipt":
+        if (type === "print" && relatedData?.studentResult) {
+          return (
+            <FeeReceiptPdfGenerator
+              receiptData={relatedData.studentResult}
+              onClose={() => setOpen(false)}
+            />
+          );
+        }
+        return <Form />;
 
       default:
         return <Form />;

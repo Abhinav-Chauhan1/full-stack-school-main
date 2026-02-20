@@ -87,8 +87,68 @@ model Student {
   marksJunior   JuniorMark[]
   marksSenior   SeniorMark[]
   markHigher    HigherMark[]
+  feeReceipts   FeeReceipt[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+}
+
+// Fee Management Models
+model FeeStructure {
+  id              Int      @id @default(autoincrement())
+  class           Class    @relation(fields: [classId], references: [id])
+  classId         Int
+  session         Session  @relation(fields: [sessionId], references: [id])
+  sessionId       Int
+  tuitionFee      Float
+  idCard          Float    @default(0)
+  annualFee       Float    @default(0)
+  diaryCalendar   Float    @default(0)
+  smartClasses    Float    @default(0)
+  examFee         Float    @default(0)
+  transportFee    Float    @default(0)
+  otherFees       Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([classId, sessionId])
+}
+
+model FeeReceipt {
+  id              Int      @id @default(autoincrement())
+  receiptNo       String   @unique
+  student         Student  @relation(fields: [studentId], references: [id])
+  studentId       String
+  session         Session  @relation(fields: [sessionId], references: [id])
+  sessionId       Int
+  paymentDate     DateTime @default(now())
+  month           String?
+  tuitionFee      Float    @default(0)
+  idCard          Float    @default(0)
+  annualFee       Float    @default(0)
+  diaryCalendar   Float    @default(0)
+  smartClasses    Float    @default(0)
+  examFee         Float    @default(0)
+  transportFee    Float    @default(0)
+  otherFees       Float    @default(0)
+  otherFeesDesc   String?
+  totalAmount     Float
+  amountPaid      Float
+  discount        Float    @default(0)
+  previousDues    Float    @default(0)
+  paymentMode     PaymentMode @default(CASH)
+  transactionId   String?
+  remarks         String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum PaymentMode {
+  CASH
+  ONLINE
+  CHEQUE
+  UPI
+  CARD
 }
 
 // Academic Structure Models
@@ -101,6 +161,7 @@ model Class {
   students      Student[]
   classSubjects ClassSubject[]
   classTeacher   Teacher?  @relation
+  feeStructures FeeStructure[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -352,6 +413,8 @@ model Session {
   marksJunior JuniorMark[]
   marksSenior SeniorMark[]
   markHigher  HigherMark[]
+  feeStructures FeeStructure[]
+  feeReceipts FeeReceipt[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }

@@ -14,13 +14,14 @@ export type FormContainerProps = {
     | "juniorMark"
     | "session"
     | "seniorMark"
-    | "higherMark"  // Add this new type
-    | "juniorCoScholastic"  // Add this new type
-    | "seniorCoScholastic"  // Add Senior Co-Scholastic type
-    | "higherCoScholastic"  // Add this new type
+    | "higherMark"
+    | "juniorCoScholastic"
+    | "seniorCoScholastic"
+    | "higherCoScholastic"
     | "result"
-    | "result9"  // Add this new type
-    | "result11";  // Add this new type
+    | "result9"
+    | "result11"
+    | "feeReceipt";
   type: "create" | "update" | "delete" | "print"; 
   data?: any;
   id?: number | string;
@@ -34,6 +35,7 @@ export type FormContainerProps = {
     currentStudent?: any;
     existingMarks?: any[];
     studentResult?: any;
+    students?: any[];
   };
 };
 
@@ -984,6 +986,77 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
           classes: classesForHigherCoScholastic,
           sessions: sessionsForHigherCoScholastic,
         };
+        break;
+
+      case "feeReceipt":
+        // Fetch sessions, classes, and students for fee receipt
+        const feeReceiptSessions = await prisma.session.findMany({
+          orderBy: { sessionfrom: 'desc' },
+        });
+
+        const feeReceiptClasses = await prisma.class.findMany({
+          orderBy: { classNumber: 'asc' },
+        });
+
+        const feeReceiptStudents = await prisma.student.findMany({
+          where: {
+            isAlumni: false,
+          },
+          select: {
+            id: true,
+            name: true,
+            admissionno: true,
+            classId: true,
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        });
+
+        if (type === "update" && id) {
+          const currentReceipt = await prisma.feeReceipt.findUnique({
+            where: { id: Number(id) },
+            include: {
+              student: {
+                include: {
+                  Class: true,
+                  Section: true,
+                },
+              },
+              session: true,
+            },
+          });
+
+          relatedData = {
+            sessions: feeReceiptSessions,
+            classes: feeReceiptClasses,
+            students: feeReceiptStudents,
+          };
+          data = currentReceipt;
+        } else if (type === "print" && id) {
+          const receiptData = await prisma.feeReceipt.findUnique({
+            where: { id: Number(id) },
+            include: {
+              student: {
+                include: {
+                  Class: true,
+                  Section: true,
+                },
+              },
+              session: true,
+            },
+          });
+
+          relatedData = {
+            studentResult: receiptData,
+          };
+        } else {
+          relatedData = {
+            sessions: feeReceiptSessions,
+            classes: feeReceiptClasses,
+            students: feeReceiptStudents,
+          };
+        }
         break;
 
       default:
