@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { createFeeReceipt, updateFeeReceipt } from "./actions";
 
 type FeeReceiptFormProps = {
   type: "create" | "update";
@@ -30,10 +31,6 @@ export default function FeeReceiptForm({
   const [selectedClass, setSelectedClass] = useState<number | null>(
     data?.student?.classId || null
   );
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(
-    data?.studentId || null
-  );
-  const [feeStructure, setFeeStructure] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const watchedFees = watch([
@@ -67,57 +64,31 @@ export default function FeeReceiptForm({
     setValue("amountPaid", total);
   }, [watchedFees, setValue]);
 
-  // Load fee structure when class and session are selected
-  const loadFeeStructure = async (classId: number, sessionId: number) => {
-    try {
-      const response = await fetch(
-        `/api/feeStructure?classId=${classId}&sessionId=${sessionId}`
-      );
-      if (response.ok) {
-        const structure = await response.json();
-        setFeeStructure(structure);
-        if (structure) {
-          setValue("tuitionFee", structure.tuitionFee);
-          setValue("idCard", structure.idCard);
-          setValue("annualFee", structure.annualFee);
-          setValue("diaryCalendar", structure.diaryCalendar);
-          setValue("smartClasses", structure.smartClasses);
-          setValue("examFee", structure.examFee);
-          setValue("transportFee", structure.transportFee);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading fee structure:", error);
-    }
-  };
-
   const onSubmit = async (formData: any) => {
     setIsLoading(true);
+    console.log("Form data being submitted:", formData);
+    
     try {
-      const url =
-        type === "create"
-          ? "/api/feeReceipts"
-          : `/api/feeReceipts/${data.id}`;
-      const method = type === "create" ? "POST" : "PUT";
+      const result = type === "create"
+        ? await createFeeReceipt(formData)
+        : await updateFeeReceipt(data.id, formData);
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      console.log("Server action result:", result);
 
-      if (response.ok) {
+      if (result.success) {
         toast.success(
           `Fee receipt ${type === "create" ? "created" : "updated"} successfully`
         );
         setOpen(false);
         router.refresh();
       } else {
-        const error = await response.json();
-        toast.error(error.message || "Failed to save fee receipt");
+        const errorMsg = result.message || "Failed to save fee receipt";
+        console.error("Server action error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
-      toast.error("An error occurred");
+      console.error("Form submission error:", error);
+      toast.error("An error occurred: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setIsLoading(false);
     }
@@ -139,14 +110,8 @@ export default function FeeReceiptForm({
         <div>
           <label className="block text-sm font-medium mb-1">Session *</label>
           <select
-            {...register("sessionId", { required: true })}
+            {...register("sessionId", { required: true, valueAsNumber: true })}
             className="w-full p-2 border rounded"
-            onChange={(e) => {
-              const sessionId = Number(e.target.value);
-              if (selectedClass) {
-                loadFeeStructure(selectedClass, sessionId);
-              }
-            }}
           >
             <option value="">Select Session</option>
             {relatedData?.sessions.map((session) => (
@@ -165,11 +130,6 @@ export default function FeeReceiptForm({
             onChange={(e) => {
               const classId = Number(e.target.value);
               setSelectedClass(classId);
-              setSelectedStudent(null);
-              const sessionId = watch("sessionId");
-              if (sessionId) {
-                loadFeeStructure(classId, Number(sessionId));
-              }
             }}
             className="w-full p-2 border rounded"
           >
@@ -237,7 +197,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("tuitionFee")}
+              defaultValue={0}
+              {...register("tuitionFee", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -247,7 +208,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("idCard")}
+              defaultValue={0}
+              {...register("idCard", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -259,7 +221,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("annualFee")}
+              defaultValue={0}
+              {...register("annualFee", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -271,7 +234,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("diaryCalendar")}
+              defaultValue={0}
+              {...register("diaryCalendar", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -283,7 +247,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("smartClasses")}
+              defaultValue={0}
+              {...register("smartClasses", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -293,7 +258,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("examFee")}
+              defaultValue={0}
+              {...register("examFee", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -305,7 +271,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("transportFee")}
+              defaultValue={0}
+              {...register("transportFee", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -317,7 +284,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("otherFees")}
+              defaultValue={0}
+              {...register("otherFees", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -344,7 +312,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("discount")}
+              defaultValue={0}
+              {...register("discount", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -356,7 +325,8 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("previousDues")}
+              defaultValue={0}
+              {...register("previousDues", { valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -368,7 +338,7 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("totalAmount")}
+              {...register("totalAmount", { valueAsNumber: true })}
               className="w-full p-2 border rounded bg-gray-100"
               readOnly
             />
@@ -381,7 +351,7 @@ export default function FeeReceiptForm({
             <input
               type="number"
               step="0.01"
-              {...register("amountPaid", { required: true })}
+              {...register("amountPaid", { required: true, valueAsNumber: true })}
               className="w-full p-2 border rounded"
             />
           </div>

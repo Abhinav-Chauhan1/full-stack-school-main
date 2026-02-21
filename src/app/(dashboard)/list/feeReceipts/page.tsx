@@ -46,6 +46,8 @@ const FeeReceiptsPage = async ({
   }
 
   // Fetch fee receipts
+  console.log("Fetching receipts with query:", query);
+  
   const [receipts, count] = await prisma.$transaction([
     prisma.feeReceipt.findMany({
       where: query,
@@ -64,6 +66,8 @@ const FeeReceiptsPage = async ({
     }),
     prisma.feeReceipt.count({ where: query }),
   ]);
+
+  console.log(`Found ${count} receipts, showing ${receipts.length} on page ${p}`);
 
   const columns = [
     {
@@ -151,58 +155,69 @@ const FeeReceiptsPage = async ({
 
       {/* Receipts List */}
       <div className="mt-6">
-        <Table
-          columns={columns}
-          data={receipts}
-          renderRow={(receipt) => (
-            <tr
-              key={receipt.id}
-              className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-            >
-              <td className="p-4">{receipt.receiptNo}</td>
-              <td>
-                <div className="flex flex-col">
-                  <span className="font-semibold">{receipt.student.name}</span>
-                  <span className="text-xs text-gray-500">
-                    Adm: {receipt.student.admissionno}
-                  </span>
-                </div>
-              </td>
-              <td className="hidden md:table-cell">
-                {receipt.student.Class?.name} - {receipt.student.Section?.name}
-              </td>
-              <td className="hidden lg:table-cell">₹{receipt.totalAmount}</td>
-              <td className="hidden lg:table-cell">
-                {new Date(receipt.paymentDate).toLocaleDateString()}
-              </td>
-              <td>
-                <div className="flex items-center gap-2">
-                  <FormContainer
-                    table="feeReceipt"
-                    type="print"
-                    id={receipt.id}
-                  />
-                  {role === "admin" && (
-                    <>
+        {receipts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <p>No fee receipts found.</p>
+            {(sessionId || classId || month) && (
+              <p className="text-sm mt-2">Try adjusting your filters or create a new receipt.</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              data={receipts}
+              renderRow={(receipt) => (
+                <tr
+                  key={receipt.id}
+                  className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+                >
+                  <td className="p-4">{receipt.receiptNo}</td>
+                  <td>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{receipt.student.name}</span>
+                      <span className="text-xs text-gray-500">
+                        Adm: {receipt.student.admissionno}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell">
+                    {receipt.student.Class?.name} - {receipt.student.Section?.name}
+                  </td>
+                  <td className="hidden lg:table-cell">₹{receipt.totalAmount}</td>
+                  <td className="hidden lg:table-cell">
+                    {new Date(receipt.paymentDate).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
                       <FormContainer
                         table="feeReceipt"
-                        type="update"
-                        id={receipt.id}
-                        data={receipt}
-                      />
-                      <FormContainer
-                        table="feeReceipt"
-                        type="delete"
+                        type="print"
                         id={receipt.id}
                       />
-                    </>
-                  )}
-                </div>
-              </td>
-            </tr>
-          )}
-        />
-        <Pagination page={p} count={count} />
+                      {role === "admin" && (
+                        <>
+                          <FormContainer
+                            table="feeReceipt"
+                            type="update"
+                            id={receipt.id}
+                            data={receipt}
+                          />
+                          <FormContainer
+                            table="feeReceipt"
+                            type="delete"
+                            id={receipt.id}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            />
+            <Pagination page={p} count={count} />
+          </>
+        )}
       </div>
     </div>
   );

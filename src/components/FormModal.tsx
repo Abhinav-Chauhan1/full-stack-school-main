@@ -13,7 +13,8 @@ import { deleteJuniorMark } from "@/app/(dashboard)/list/juniorMark/actions";
 import { deleteSeniorMark } from "@/app/(dashboard)/list/seniorMark/actions";
 import { deleteJuniorCoScholastic } from "@/app/(dashboard)/list/juniorCoScholastic/actions";
 import { deleteSeniorCoScholastic } from "@/app/(dashboard)/list/seniorCoScholastic/actions";
-import { deleteHigherCoScholastic } from "@/app/(dashboard)/list/higherCoScholastic/actions"; // Add this import
+import { deleteHigherCoScholastic } from "@/app/(dashboard)/list/higherCoScholastic/actions";
+import { deleteFeeReceipt } from "@/app/(dashboard)/list/feeReceipts/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,8 @@ const deleteActionMap: { [key: string]: (currentState: any, data: any) => Promis
   seniorMark: deleteSeniorMark,
   juniorCoScholastic: deleteJuniorCoScholastic,
   seniorCoScholastic: deleteSeniorCoScholastic,
-  higherCoScholastic: deleteHigherCoScholastic, // Add this line
+  higherCoScholastic: deleteHigherCoScholastic,
+  feeReceipt: deleteFeeReceipt,
 };
 
 const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
