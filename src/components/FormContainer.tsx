@@ -995,6 +995,17 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         });
 
         const feeReceiptClasses = await prisma.class.findMany({
+          include: {
+            sections: {
+              select: {
+                id: true,
+                name: true,
+              },
+              orderBy: {
+                name: 'asc',
+              },
+            },
+          },
           orderBy: { classNumber: 'asc' },
         });
 
@@ -1007,6 +1018,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
             name: true,
             admissionno: true,
             classId: true,
+            sectionId: true,
           },
           orderBy: {
             name: 'asc',

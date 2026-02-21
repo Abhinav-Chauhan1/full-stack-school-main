@@ -31,6 +31,9 @@ export default function FeeReceiptForm({
   const [selectedClass, setSelectedClass] = useState<number | null>(
     data?.student?.classId || null
   );
+  const [selectedSection, setSelectedSection] = useState<number | null>(
+    data?.student?.sectionId || null
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const watchedFees = watch([
@@ -96,8 +99,15 @@ export default function FeeReceiptForm({
 
   const filteredStudents =
     relatedData?.students.filter(
-      (s: any) => !selectedClass || s.classId === selectedClass
+      (s: any) => 
+        (!selectedClass || s.classId === selectedClass) &&
+        (!selectedSection || s.sectionId === selectedSection)
     ) || [];
+
+  // Get sections for selected class
+  const availableSections = selectedClass
+    ? relatedData?.classes.find((c: any) => c.id === selectedClass)?.sections || []
+    : [];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-4 space-y-4">
@@ -130,6 +140,7 @@ export default function FeeReceiptForm({
             onChange={(e) => {
               const classId = Number(e.target.value);
               setSelectedClass(classId);
+              setSelectedSection(null); // Reset section when class changes
             }}
             className="w-full p-2 border rounded"
           >
@@ -137,6 +148,27 @@ export default function FeeReceiptForm({
             {relatedData?.classes.map((cls) => (
               <option key={cls.id} value={cls.id}>
                 {cls.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Section */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Section</label>
+          <select
+            value={selectedSection || ""}
+            onChange={(e) => {
+              const sectionId = e.target.value ? Number(e.target.value) : null;
+              setSelectedSection(sectionId);
+            }}
+            className="w-full p-2 border rounded"
+            disabled={!selectedClass}
+          >
+            <option value="">All Sections</option>
+            {availableSections.map((section: any) => (
+              <option key={section.id} value={section.id}>
+                {section.name}
               </option>
             ))}
           </select>
