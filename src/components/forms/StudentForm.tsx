@@ -44,6 +44,13 @@ const StudentForm = ({
 
   const onSubmit = handleSubmit((data) => {
     formAction({ ...data, img: img?.secure_url });
+  }, (errors) => {
+    // Show toast for validation errors
+    const errorFields = Object.keys(errors);
+    if (errorFields.length > 0) {
+      const firstError = errors[errorFields[0] as keyof typeof errors];
+      toast.error(firstError?.message?.toString() || "Please fill in all required fields");
+    }
   });
 
   const router = useRouter();
@@ -101,6 +108,8 @@ const StudentForm = ({
       toast(`Student has been ${type === "create" ? "created" : "updated"}!`);
       setOpen(false);
       router.refresh();
+    } else if (state.error) {
+      toast.error("Failed to save student. Please check all required fields.");
     }
   }, [state, router, type, setOpen]);
 
@@ -178,7 +187,7 @@ const StudentForm = ({
 
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Full Name"
+          label="Full Name *"
           name="name"
           defaultValue={data?.name}
           register={register}
@@ -206,7 +215,7 @@ const StudentForm = ({
           error={errors.village}
         />
         <InputField
-          label="Birthday"
+          label="Birthday *"
           name="birthday"
           type="date"
           defaultValue={data?.birthday?.toISOString().split("T")[0]}
@@ -214,7 +223,7 @@ const StudentForm = ({
           error={errors.birthday}
         />
         <InputField
-          label="Nationality"
+          label="Nationality *"
           name="nationality"
           defaultValue={data?.nationality}
           register={register}
@@ -222,7 +231,7 @@ const StudentForm = ({
         />
         
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Sex</label>
+          <label className="text-xs text-gray-500">Sex *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("Sex")}
@@ -238,7 +247,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Religion</label>
+          <label className="text-xs text-gray-500">Religion *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("Religion")}
@@ -258,7 +267,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Mother Tongue</label>
+          <label className="text-xs text-gray-500">Mother Tongue *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("tongue")}
@@ -277,7 +286,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Category</label>
+          <label className="text-xs text-gray-500">Category *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("category")}
@@ -295,7 +304,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
+          <label className="text-xs text-gray-500">Class *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("classId")}
@@ -318,7 +327,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Section</label>
+          <label className="text-xs text-gray-500">Section *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sectionId")}
@@ -338,7 +347,7 @@ const StudentForm = ({
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Session</label>
+          <label className="text-xs text-gray-500">Session *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sessionId")}
@@ -371,7 +380,7 @@ const StudentForm = ({
         />
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Blood Group</label>
+          <label className="text-xs text-gray-500">Blood Group *</label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("bloodgroup")}

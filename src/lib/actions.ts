@@ -795,7 +795,7 @@ export const createStudent = async (
     // Create student record
     await prisma.student.create({
       data: {
-        admissiondate: new Date(data.admissiondate),
+        admissiondate: data.admissiondate ? new Date(data.admissiondate) : undefined,
         admissionno: data.admissionno,
         name: data.name,
         address: data.address,
@@ -807,7 +807,7 @@ export const createStudent = async (
         Religion: data.Religion,
         tongue: data.tongue,
         category: data.category,
-        mothername: data.mothername || '',
+        mothername: data.mothername,
         mphone: data.mphone,
         moccupation: data.moccupation,
         fathername: data.fathername,
@@ -825,9 +825,6 @@ export const createStudent = async (
         classId: data.classId,
         sectionId: data.sectionId,
         sessionId: data.sessionId,
-        document: "", // Add proper document handling
-        tcdate: new Date(), // Add proper TC date handling
-        tcNo: 0, // Add proper TC number handling
       },
     });
 
@@ -852,7 +849,7 @@ export const updateStudent = async (
         id: data.id,
       },
       data: {
-        admissiondate: new Date(data.admissiondate),
+        admissiondate: data.admissiondate ? new Date(data.admissiondate) : undefined,
         admissionno: data.admissionno,
         name: data.name,
         address: data.address,

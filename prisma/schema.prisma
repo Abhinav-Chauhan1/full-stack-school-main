@@ -1,13 +1,12 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Base User Models
 model Admin {
   id        String   @id @default(uuid())
   username  String   @unique
@@ -16,52 +15,51 @@ model Admin {
 }
 
 model Teacher {
-  id            String        @id @default(uuid())
-  name          String
-  password      String
-  Sex           UserSex
-  FatherHusband FatherHusband
-  birthday      DateTime
-  email         String?        @unique
-  phone         String?        @unique
-  address       String?
-  city          String?
-  state         String?
-  bloodgroup    BloodGroup
-  joiningdate   DateTime
-  designation   String?
-  qualification String?
-  EmployeeType  EmployeeType
-  img           String?
-  assignedClass   Class?    @relation(fields: [assignedClassId], references: [id])
-  assignedClassId Int?      @unique
-  assignedSection Section?  @relation(fields: [assignedSectionId], references: [id])
-  assignedSectionId Int?    @unique
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                String        @id @default(uuid())
+  name              String
+  password          String
+  Sex               UserSex
+  FatherHusband     FatherHusband
+  birthday          DateTime
+  email             String?       @unique
+  phone             String?       @unique
+  address           String?
+  city              String?
+  state             String?
+  bloodgroup        BloodGroup
+  joiningdate       DateTime
+  designation       String?
+  qualification     String?
+  EmployeeType      EmployeeType
+  img               String?
+  assignedClassId   Int?          @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  assignedSectionId Int?          @unique
+  assignedClass     Class?        @relation(fields: [assignedClassId], references: [id])
+  assignedSection   Section?      @relation(fields: [assignedSectionId], references: [id])
 }
 
 model Student {
   id            String       @id @default(uuid())
-  admissiondate DateTime
-  admissionno   Int          @unique
+  admissiondate DateTime?
+  admissionno   Int?         @unique
   name          String
-  address       String
-  city          String
-  village       String
+  address       String?
+  city          String?
+  village       String?
   Sex           UserSex
   birthday      DateTime
   nationality   String       @default("Indian")
   Religion      Religion
   tongue        MotherTongue
   category      Category
-  SubCategory   SubCategory? @relation(fields: [subcategoryId], references: [id])
   subcategoryId Int?
   mothername    String?
-  mphone        String?       
+  mphone        String?
   moccupation   String?
   fathername    String?
-  fphone        String?       
+  fphone        String?
   foccupation   String?
   aadharcard    String?
   house         String?
@@ -73,74 +71,320 @@ model Student {
   school        String?
   grade         String?
   document      String?
-  tc            Boolean?      @default(true)
+  tc            Boolean?     @default(true)
   tcdate        DateTime?
   tcNo          Int?
-  isAlumni      Boolean?      @default(false)
-  alumniYear    Int?
-  Class         Class?       @relation(fields: [classId], references: [id])
   classId       Int?
-  Section       Section?     @relation(fields: [sectionId], references: [id])
   sectionId     Int?
-  Session       Session?     @relation(fields: [sessionId], references: [id])
   sessionId     Int?
-  marksJunior   JuniorMark[]
-  marksSenior   SeniorMark[]
-  markHigher    HigherMark[]
-  feeReceipts   FeeReceipt[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  alumniYear    Int?
+  isAlumni      Boolean?     @default(false)
+  feeReceipts   FeeReceipt[]
+  markHigher    HigherMark[]
+  marksJunior   JuniorMark[]
+  marksSenior   SeniorMark[]
+  Class         Class?       @relation(fields: [classId], references: [id])
+  Section       Section?     @relation(fields: [sectionId], references: [id])
+  Session       Session?     @relation(fields: [sessionId], references: [id])
+  SubCategory   SubCategory? @relation(fields: [subcategoryId], references: [id])
 }
 
-// Fee Management Models
 model FeeStructure {
-  id              Int      @id @default(autoincrement())
-  class           Class    @relation(fields: [classId], references: [id])
-  classId         Int
-  session         Session  @relation(fields: [sessionId], references: [id])
-  sessionId       Int
-  tuitionFee      Float
-  idCard          Float    @default(0)
-  annualFee       Float    @default(0)
-  diaryCalendar   Float    @default(0)
-  smartClasses    Float    @default(0)
-  examFee         Float    @default(0)
-  transportFee    Float    @default(0)
-  otherFees       Float    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  classId       Int
+  sessionId     Int
+  tuitionFee    Float
+  idCard        Float    @default(0)
+  annualFee     Float    @default(0)
+  diaryCalendar Float    @default(0)
+  smartClasses  Float    @default(0)
+  examFee       Float    @default(0)
+  transportFee  Float    @default(0)
+  otherFees     Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  class         Class    @relation(fields: [classId], references: [id])
+  session       Session  @relation(fields: [sessionId], references: [id])
 
   @@unique([classId, sessionId])
 }
 
 model FeeReceipt {
-  id              Int      @id @default(autoincrement())
-  receiptNo       String   @unique
-  student         Student  @relation(fields: [studentId], references: [id])
-  studentId       String
-  session         Session  @relation(fields: [sessionId], references: [id])
-  sessionId       Int
-  paymentDate     DateTime @default(now())
-  month           String?
-  tuitionFee      Float    @default(0)
-  idCard          Float    @default(0)
-  annualFee       Float    @default(0)
-  diaryCalendar   Float    @default(0)
-  smartClasses    Float    @default(0)
-  examFee         Float    @default(0)
-  transportFee    Float    @default(0)
-  otherFees       Float    @default(0)
-  otherFeesDesc   String?
-  totalAmount     Float
-  amountPaid      Float
-  discount        Float    @default(0)
-  previousDues    Float    @default(0)
-  paymentMode     PaymentMode @default(CASH)
-  transactionId   String?
-  remarks         String?
-  createdBy       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            Int         @id @default(autoincrement())
+  receiptNo     String      @unique
+  studentId     String
+  sessionId     Int
+  paymentDate   DateTime    @default(now())
+  month         String?
+  tuitionFee    Float       @default(0)
+  idCard        Float       @default(0)
+  annualFee     Float       @default(0)
+  diaryCalendar Float       @default(0)
+  smartClasses  Float       @default(0)
+  examFee       Float       @default(0)
+  transportFee  Float       @default(0)
+  otherFees     Float       @default(0)
+  otherFeesDesc String?
+  totalAmount   Float
+  amountPaid    Float
+  discount      Float       @default(0)
+  previousDues  Float       @default(0)
+  paymentMode   PaymentMode @default(CASH)
+  transactionId String?
+  remarks       String?
+  createdBy     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  session       Session     @relation(fields: [sessionId], references: [id])
+  student       Student     @relation(fields: [studentId], references: [id])
+}
+
+model Class {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  classNumber   Int
+  capacity      Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  classSubjects ClassSubject[]
+  feeStructures FeeStructure[]
+  sections      Section[]
+  students      Student[]
+  classTeacher  Teacher?
+}
+
+model Section {
+  id              Int              @id @default(autoincrement())
+  name            String
+  classId         Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  class           Class            @relation(fields: [classId], references: [id])
+  sectionSubjects SectionSubject[]
+  students        Student[]
+  sectionTeacher  Teacher?
+
+  @@unique([name, classId])
+}
+
+model ClassSubject {
+  id         Int          @id @default(autoincrement())
+  classId    Int
+  subjectId  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  class      Class        @relation(fields: [classId], references: [id])
+  subject    Subject      @relation(fields: [subjectId], references: [id])
+  JuniorMark JuniorMark[]
+
+  @@unique([classId, subjectId])
+}
+
+model SectionSubject {
+  id         Int          @id @default(autoincrement())
+  sectionId  Int
+  subjectId  Int
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  HigherMark HigherMark[]
+  section    Section      @relation(fields: [sectionId], references: [id])
+  subject    Subject      @relation(fields: [subjectId], references: [id])
+  SeniorMark SeniorMark[]
+
+  @@unique([sectionId, subjectId])
+}
+
+model Subject {
+  id              Int              @id @default(autoincrement())
+  name            String
+  code            String           @unique
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  classSubjects   ClassSubject[]
+  sectionSubjects SectionSubject[]
+}
+
+model JuniorMark {
+  id                String              @id @default(uuid())
+  studentId         String
+  classSubjectId    Int
+  sessionId         Int
+  grandTotalMarks   Float?
+  grandTotalGrade   String?
+  overallPercentage Float?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  halfYearly        HalfYearlyMarks?
+  coScholastic      JuniorCoScholastic?
+  classSubject      ClassSubject        @relation(fields: [classSubjectId], references: [id])
+  session           Session             @relation(fields: [sessionId], references: [id])
+  student           Student             @relation(fields: [studentId], references: [id])
+  yearly            YearlyMarks?
+
+  @@unique([studentId, classSubjectId, sessionId])
+}
+
+model HalfYearlyMarks {
+  id            String     @id @default(uuid())
+  juniorMarkId  String     @unique
+  ut1           Float?
+  ut2           Float?
+  noteBook      Float?
+  subEnrichment Float?
+  examMarks     Float?
+  totalMarks    Float?
+  grade         String?
+  remarks       String?
+  examMarks30   Float?
+  examMarks40   Float?
+  juniorMark    JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+}
+
+model YearlyMarks {
+  id                  String     @id @default(uuid())
+  juniorMarkId        String     @unique
+  ut3                 Float?
+  yearlynoteBook      Float?
+  yearlysubEnrichment Float?
+  yearlyexamMarks     Float?
+  yearlytotalMarks    Float?
+  yearlygrade         String?
+  yearlyremarks       String?
+  yearlyexamMarks30   Float?
+  yearlyexamMarks40   Float?
+  juniorMark          JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+}
+
+model JuniorCoScholastic {
+  id                     String     @id @default(uuid())
+  juniorMarkId           String     @unique
+  term1ValueEducation    String?
+  term1PhysicalEducation String?
+  term1ArtCraft          String?
+  term1Discipline        String?
+  term2ValueEducation    String?
+  term2PhysicalEducation String?
+  term2ArtCraft          String?
+  term2Discipline        String?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  juniorMark             JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
+}
+
+model SeniorMark {
+  id                 Int                 @id @default(autoincrement())
+  pt1                Float?
+  pt2                Float?
+  pt3                Float?
+  bestTwoPTAvg       Float?
+  multipleAssessment Float?
+  portfolio          Float?
+  subEnrichment      Float?
+  bestScore          Float?
+  finalExam          Float?
+  grandTotal         Float?
+  grade              String?
+  overallTotal       Float?
+  overallMarks       Float?
+  overallGrade       String?
+  remarks            String?
+  studentId          String
+  sectionSubjectId   Int
+  sessionId          Int
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  practical          Float?
+  theory             Float?
+  total              Float?
+  coScholastic       SeniorCoScholastic?
+  sectionSubject     SectionSubject      @relation(fields: [sectionSubjectId], references: [id])
+  session            Session             @relation(fields: [sessionId], references: [id])
+  student            Student             @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+model SeniorCoScholastic {
+  id                     Int        @id @default(autoincrement())
+  seniorMarkId           Int        @unique
+  term1ValueEducation    String?
+  term1PhysicalEducation String?
+  term1ArtCraft          String?
+  term1Discipline        String?
+  term2ValueEducation    String?
+  term2PhysicalEducation String?
+  term2ArtCraft          String?
+  term2Discipline        String?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  seniorMark             SeniorMark @relation(fields: [seniorMarkId], references: [id], onDelete: Cascade)
+}
+
+model HigherMark {
+  id               Int                 @id @default(autoincrement())
+  studentId        String
+  sectionSubjectId Int
+  sessionId        Int
+  unitTest1        Float?
+  halfYearly       Float?
+  unitTest2        Float?
+  theory           Float?
+  practical        Float?
+  totalWithout     Float?
+  grandTotal       Float?
+  overallGrade     String?
+  total            Float?
+  percentage       Float?
+  grade            String?
+  remarks          String?
+  practical70      Float?
+  theory30         Float?
+  coScholastic     HigherCoScholastic?
+  sectionSubject   SectionSubject      @relation(fields: [sectionSubjectId], references: [id])
+  session          Session             @relation(fields: [sessionId], references: [id])
+  student          Student             @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, sectionSubjectId, sessionId])
+}
+
+model HigherCoScholastic {
+  id                Int        @id @default(autoincrement())
+  higherMarkId      Int        @unique
+  physicalEducation String?
+  workExperience    String?
+  discipline        String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  higherMark        HigherMark @relation(fields: [higherMarkId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id            Int            @id @default(autoincrement())
+  sessionfrom   DateTime
+  sessionto     DateTime
+  sessioncode   String         @unique
+  description   String?
+  isActive      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  feeReceipts   FeeReceipt[]
+  feeStructures FeeStructure[]
+  markHigher    HigherMark[]
+  marksJunior   JuniorMark[]
+  marksSenior   SeniorMark[]
+  students      Student[]
+}
+
+model SubCategory {
+  id        Int       @id @default(autoincrement())
+  category  Category
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  students  Student[]
 }
 
 enum PaymentMode {
@@ -151,285 +395,6 @@ enum PaymentMode {
   CARD
 }
 
-// Academic Structure Models
-model Class {
-  id            Int            @id @default(autoincrement())
-  name          String         @unique
-  classNumber Int
-  sections      Section[]
-  capacity      Int
-  students      Student[]
-  classSubjects ClassSubject[]
-  classTeacher   Teacher?  @relation
-  feeStructures FeeStructure[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-}
-
-model Section {
-  id              Int              @id @default(autoincrement())
-  name            String
-  class           Class            @relation(fields: [classId], references: [id])
-  classId         Int
-  students        Student[]
-  sectionSubjects SectionSubject[]
-  sectionTeacher  Teacher?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-
-  @@unique([name, classId])
-}
-
-model ClassSubject {
-  id         Int          @id @default(autoincrement())
-  class      Class        @relation(fields: [classId], references: [id])
-  subject    Subject      @relation(fields: [subjectId], references: [id])
-  classId    Int
-  subjectId  Int
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  JuniorMark JuniorMark[]
-
-  @@unique([classId, subjectId])
-}
-
-model SectionSubject {
-  id         Int          @id @default(autoincrement())
-  section    Section      @relation(fields: [sectionId], references: [id])
-  subject    Subject      @relation(fields: [subjectId], references: [id])
-  sectionId  Int
-  subjectId  Int
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  SeniorMark SeniorMark[]
-  HigherMark HigherMark[]
-
-  @@unique([sectionId, subjectId])
-}
-
-model Subject {
-  id              Int              @id @default(autoincrement())
-  name            String
-  code            String           @unique
-  description     String?
-  classSubjects         ClassSubject[]
-  sectionSubjects SectionSubject[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-}
-
-// Marking System Models
-model JuniorMark {
-  id             String    @id @default(uuid())
-  student        Student   @relation(fields: [studentId], references: [id])
-  classSubject   ClassSubject @relation(fields: [classSubjectId], references: [id])
-  session        Session   @relation(fields: [sessionId], references: [id])
-  studentId      String
-  classSubjectId Int
-  sessionId      Int
-
-  // Half Yearly Specific Marks
-  halfYearly     HalfYearlyMarks?
-  
-  // Yearly Specific Marks
-  yearly         YearlyMarks?
-
-  // Overall Performance
-  grandTotalMarks Float?
-  grandTotalGrade String?
-  overallPercentage Float?
-  
-  // Co-scholastic activities
-  coScholastic   JuniorCoScholastic?
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  @@unique([studentId, classSubjectId, sessionId])
-}
-
-// Embedded model for Half Yearly Marks
-model HalfYearlyMarks {
-  id             String     @id @default(uuid())
-  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
-  juniorMarkId   String     @unique
-
-  ut1            Float?
-  ut2            Float?
-  noteBook       Float?
-  subEnrichment  Float?
-  examMarks      Float?     // For 80 marks subjects
-  examMarks40    Float?     // For 40 marks subjects (ENG01, HINDI, MATHS)
-  examMarks30    Float?     // For 30 marks subject (SST01)
-  totalMarks     Float?
-  grade          String?
-  remarks        String?
-}
-
-// Embedded model for Yearly Marks
-model YearlyMarks {
-  id             String     @id @default(uuid())
-  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
-  juniorMarkId   String     @unique
-
-  ut3            Float?
-  yearlynoteBook       Float?
-  yearlysubEnrichment  Float?
-  yearlyexamMarks      Float?     // For 80 marks subjects
-  yearlyexamMarks40    Float?     // For 40 marks subjects (ENG01, HINDI, MATHS)
-  yearlyexamMarks30    Float?     // For 30 marks subject (SST01)
-  yearlytotalMarks     Float?
-  yearlygrade          String?
-  yearlyremarks        String?
-}
-
-// Co-scholastic model for Junior Marks
-model JuniorCoScholastic {
-  id             String     @id @default(uuid())
-  juniorMark     JuniorMark @relation(fields: [juniorMarkId], references: [id], onDelete: Cascade)
-  juniorMarkId   String     @unique
-  
-  // Term I
-  term1ValueEducation     String?  // A, B, C grade
-  term1PhysicalEducation  String?  // A, B, C grade
-  term1ArtCraft           String?  // A, B, C grade
-  term1Discipline         String?  // A, B, C grade
-  
-  // Term II
-  term2ValueEducation     String?  // A, B, C grade
-  term2PhysicalEducation  String?  // A, B, C grade
-  term2ArtCraft           String?  // A, B, C grade
-  term2Discipline         String?  // A, B, C grade
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-model SeniorMark {
-  id                 Int            @id @default(autoincrement())
-  student            Student        @relation(fields: [studentId], references: [id])
-  sectionSubject     SectionSubject @relation(fields: [sectionSubjectId], references: [id])
-  session            Session        @relation(fields: [sessionId], references: [id])
-  pt1                Float?
-  pt2                Float?
-  pt3                Float?
-  bestTwoPTAvg       Float?
-  multipleAssessment Float?
-  portfolio          Float?
-  subEnrichment      Float?
-  bestScore          Float?
-  finalExam          Float?
-  practical          Float?         // New field
-  theory             Float?         // New field
-  total              Float?         // New field
-  grandTotal         Float?
-  grade              String?
-  overallTotal       Float?
-  overallMarks       Float?
-  overallGrade       String?
-  remarks            String?
-  studentId          String
-  sectionSubjectId   Int
-  sessionId          Int
-  coScholastic       SeniorCoScholastic?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-
-  @@unique([studentId, sectionSubjectId, sessionId])
-}
-
-// Co-scholastic model for Senior Marks
-model SeniorCoScholastic {
-  id               Int        @id @default(autoincrement())
-  seniorMark       SeniorMark @relation(fields: [seniorMarkId], references: [id], onDelete: Cascade)
-  seniorMarkId     Int        @unique
-  
-  // Term I
-  term1ValueEducation     String?  // A, B, C grade
-  term1PhysicalEducation  String?  // A, B, C grade
-  term1ArtCraft           String?  // A, B, C grade
-  term1Discipline         String?  // A, B, C grade
-  
-  // Term II
-  term2ValueEducation     String?  // A, B, C grade
-  term2PhysicalEducation  String?  // A, B, C grade
-  term2ArtCraft           String?  // A, B, C grade
-  term2Discipline         String?  // A, B, C grade
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-model HigherMark {
-  id                 Int            @id @default(autoincrement())
-  student            Student        @relation(fields: [studentId], references: [id])
-  sectionSubject     SectionSubject @relation(fields: [sectionSubjectId], references: [id])
-  session            Session        @relation(fields: [sessionId], references: [id])
-  studentId          String
-  sectionSubjectId   Int
-  sessionId          Int
-  unitTest1          Float?
-  halfYearly         Float?
-  unitTest2          Float?
-  theory             Float?
-  practical          Float?
-  theory30           Float?         // New field for 30-point theory component
-  practical70        Float?         // New field for 70-point practical component
-  totalWithout       Float?
-  grandTotal         Float?
-  overallGrade       String?        // Changed from Float? to String?
-  total              Float?
-  percentage         Float?
-  grade              String?
-  remarks            String?
-  coScholastic       HigherCoScholastic?
-
-  @@unique([studentId, sectionSubjectId, sessionId])
-}
-
-// Co-scholastic model for Higher Marks
-model HigherCoScholastic {
-  id               Int        @id @default(autoincrement())
-  higherMark       HigherMark @relation(fields: [higherMarkId], references: [id], onDelete: Cascade)
-  higherMarkId     Int        @unique
-  
-  // Single term for higher classes
-  physicalEducation  String?  // A, B, C grade
-  workExperience     String?  // A, B, C grade
-  discipline         String?  // A, B, C grade
-  
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-}
-
-model Session {
-  id          Int          @id @default(autoincrement())
-  sessionfrom DateTime
-  sessionto   DateTime
-  sessioncode String       @unique
-  description String?
-  isActive    Boolean      @default(false)
-  students    Student[]
-  marksJunior JuniorMark[]
-  marksSenior SeniorMark[]
-  markHigher  HigherMark[]
-  feeStructures FeeStructure[]
-  feeReceipts FeeReceipt[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-// Category Management
-model SubCategory {
-  id        Int       @id @default(autoincrement())
-  category  Category
-  name      String
-  students  Student[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-// Enums
 enum ExamType {
   HALF_YEARLY
   YEARLY

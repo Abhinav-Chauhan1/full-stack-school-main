@@ -494,12 +494,12 @@ export type SectionSchema = z.infer<typeof sectionSchema>;
 
 export const studentSchema = z.object({
   id: z.string().optional(),
-  admissiondate: z.string().transform(str => new Date(str)),
-  admissionno: z.string().transform(str => parseInt(str, 10)),
+  admissiondate: z.string().optional().transform(str => str ? new Date(str) : undefined),
+  admissionno: z.string().optional().transform(str => str ? parseInt(str, 10) : undefined),
   name: z.string().min(1, "Name is required"),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  village: z.string().min(1, "Village is required"),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  village: z.string().optional(),
   Sex: z.enum(["Male", "Female", "Other"]),
   birthday: z.string().transform(str => new Date(str)),
   nationality: z.string().default("Indian"),
