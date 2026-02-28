@@ -1,4 +1,5 @@
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { formatDate } from './utils';
 
 export { loadImage } from './pdfUtils';
 
@@ -94,7 +95,7 @@ export const generateFeeReceiptPdf = (
             width: '50%',
             stack: [
               { text: `Receipt No: ${receiptData.receiptNo}`, style: 'fieldLabelBold' },
-              { text: `Date: ${new Date(receiptData.paymentDate).toLocaleDateString()}`, style: 'fieldLabel' },
+              { text: `Date: ${formatDate(receiptData.paymentDate)}`, style: 'fieldLabel' },
               { text: `Session: ${receiptData.session.sessioncode}`, style: 'fieldLabel' },
               ...(receiptData.month ? [{ text: `Month: ${receiptData.month}`, style: 'fieldLabel' }] : []),
             ]

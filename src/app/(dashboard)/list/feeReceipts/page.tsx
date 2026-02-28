@@ -7,6 +7,7 @@ import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import Select from "@/components/Select";
 import Image from "next/image";
+import { formatDate } from "@/lib/utils";
 
 const FeeReceiptsPage = async ({
   searchParams,
@@ -186,7 +187,7 @@ const FeeReceiptsPage = async ({
                   </td>
                   <td className="hidden lg:table-cell">₹{receipt.totalAmount}</td>
                   <td className="hidden lg:table-cell">
-                    {new Date(receipt.paymentDate).toLocaleDateString()}
+                    {formatDate(receipt.paymentDate)}
                   </td>
                   <td>
                     <div className="flex items-center gap-2">

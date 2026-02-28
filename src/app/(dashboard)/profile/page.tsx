@@ -1,6 +1,7 @@
 import { UserProfile } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { formatDate } from "@/lib/utils";
 
 export default async function ProfilePage() {
   const user = await currentUser();
@@ -33,8 +34,8 @@ export default async function ProfilePage() {
         </div>
 
         <div className="mt-6 text-sm text-gray-500 text-center">
-          <p>Last signed in: {new Date(user.lastSignInAt || '').toLocaleDateString()}</p>
-          <p>Member since: {new Date(user.createdAt).toLocaleDateString()}</p>
+          <p>Last signed in: {formatDate(user.lastSignInAt ? new Date(user.lastSignInAt) : null)}</p>
+          <p>Member since: {formatDate(new Date(user.createdAt))}</p>
         </div>
       </div>
     </div>

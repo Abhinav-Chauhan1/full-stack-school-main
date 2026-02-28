@@ -1,8 +1,8 @@
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { StudentResult11 } from '@/types/result';
+import { formatDate } from './utils';
 
 export { loadImage } from './pdfUtils';
-
 export const getOverallGrade = (percentage: number) => {
   if (percentage >= 91) return 'A1';
   if (percentage >= 81) return 'A2';
@@ -209,7 +209,7 @@ const generateStudentInfo = (studentResult: StudentResult11, studentImageData: s
                 {
                   width: '30%',
                   stack: [
-                    { text: `Date of Birth: ${new Date(studentResult?.student?.birthday).toLocaleDateString()}`, style: 'fieldLabel' },
+                    { text: `Date of Birth: ${formatDate(studentResult?.student?.birthday)}`, style: 'fieldLabel' },
                     { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
                     { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
                   ]

@@ -1,4 +1,5 @@
 import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import { formatDate } from './utils';
 
 interface StudentResult {
   student: {
@@ -443,7 +444,7 @@ export const generatePdfDefinition9 = (
                     {
                       width: '30%',
                       stack: [
-                        { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
+                        { text: `Date of Birth: ${studentResult?.student?.birthday ? formatDate(studentResult.student.birthday) : '-'}`, style: 'fieldLabel' },
                         { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
                         { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
                       ]

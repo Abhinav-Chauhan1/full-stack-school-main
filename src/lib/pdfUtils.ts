@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { StudentResult, CoScholasticData } from '@/types/result';
-
+import { formatDate } from './utils';
 
 export const loadImage = async (url: string) => {
   try {
@@ -525,7 +525,7 @@ export const generatePdfDefinition = (
                     {
                       width: '30%',
                       stack: [
-                        { text: `Date of Birth: ${studentResult?.student?.birthday ? new Date(studentResult.student.birthday).toLocaleDateString() : '-'}`, style: 'fieldLabel' },
+                        { text: `Date of Birth: ${studentResult?.student?.birthday ? formatDate(studentResult.student.birthday) : '-'}`, style: 'fieldLabel' },
                         { text: `Admission No: ${studentResult?.student?.admissionno ?? '-'}`, style: 'fieldLabel' },
                         { text: `Address: ${studentResult?.student?.address ?? '-'}, ${studentResult?.student?.city ?? '-'}, ${studentResult?.student?.village ?? '-'}`, style: 'fieldLabel' },
                       ]

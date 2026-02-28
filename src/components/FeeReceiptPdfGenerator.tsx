@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { loadImage, generateAndDownloadFeeReceiptPdf } from '@/lib/feeReceiptPdfUtils';
+import { formatDate } from '@/lib/utils';
 
 interface FeeReceiptPdfGeneratorProps {
   receiptData: any;
@@ -41,7 +42,7 @@ export default function FeeReceiptPdfGenerator({ receiptData, onClose }: FeeRece
         <p><strong>Class:</strong> {receiptData.student.Class?.name} - {receiptData.student.Section?.name}</p>
         <p><strong>Total Amount:</strong> ₹{receiptData.totalAmount}</p>
         <p><strong>Amount Paid:</strong> ₹{receiptData.amountPaid}</p>
-        <p><strong>Payment Date:</strong> {new Date(receiptData.paymentDate).toLocaleDateString()}</p>
+        <p><strong>Payment Date:</strong> {formatDate(receiptData.paymentDate)}</p>
       </div>
       <button
         onClick={handleGeneratePDF}

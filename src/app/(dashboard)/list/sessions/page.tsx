@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { auth } from "@clerk/nextjs/server";
+import { formatDate } from "@/lib/utils";
 
 const SessionListPage = async ({
   searchParams,
@@ -59,10 +60,10 @@ const SessionListPage = async ({
       className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
     >
       <td className="p-4">
-        {new Date(item.sessionfrom).toLocaleDateString()}
+        {formatDate(item.sessionfrom)}
       </td>
       <td className="hidden md:table-cell">
-        {new Date(item.sessionto).toLocaleDateString()}
+        {formatDate(item.sessionto)}
       </td>
       <td className="hidden lg:table-cell">{item.sessioncode}</td>
       <td className="hidden xl:table-cell">{item.description ? item.description : "-"}</td>
