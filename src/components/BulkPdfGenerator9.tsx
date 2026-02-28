@@ -55,7 +55,7 @@ export default function BulkPdfGenerator9({ studentsResults, onClose }: BulkPdfG
         );
         
         pdfMake.createPdf(pdfDefinition).download(
-          `Result_${studentResult.student.admissionno}_Class9.pdf`
+          `Result_${studentResult.student.admissionno || studentResult.student.name}_Class9.pdf`
         );
       }
 

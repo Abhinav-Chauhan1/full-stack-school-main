@@ -106,7 +106,7 @@ const HigherCoScholasticForm = ({ type = "create", relatedData, setOpen }: Highe
           // Convert admission numbers from number to string to match the state type
           const formattedStudents = studentsData.students.map(student => ({
             ...student,
-            admissionno: student.admissionno.toString()
+            admissionno: student.admissionno?.toString() || ""
           }));
           setStudents(formattedStudents);
           

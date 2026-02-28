@@ -112,7 +112,7 @@ const JuniorCoScholasticForm = ({ type = "create", relatedData, setOpen }: Junio
           // Convert admission numbers from number to string to match the state type
           const formattedStudents = studentsData.students.map(student => ({
             ...student,
-            admissionno: student.admissionno.toString()
+            admissionno: student.admissionno?.toString() || ""
           }));
           setStudents(formattedStudents);
           

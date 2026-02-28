@@ -52,7 +52,7 @@ export default function BulkPdfGenerator({ studentsResults, onClose }: BulkPdfGe
           logoData ?? null, 
           studentImage ?? null
         );
-        pdfMake.createPdf(docDefinition).download(`Result_${studentResult.student.admissionno}.pdf`);
+        pdfMake.createPdf(docDefinition).download(`Result_${studentResult.student.admissionno || studentResult.student.name}.pdf`);
       }
 
       onClose();

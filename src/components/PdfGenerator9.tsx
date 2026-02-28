@@ -90,7 +90,7 @@ export default function PdfGenerator9({ studentResult, onClose }: PdfGenerator9P
       pdfMake.vfs = pdfFonts.vfs;
       
       const docDefinition = generatePdfDefinition9(studentResult, logoData, studentImageData, getOverallGrade);
-      pdfMake.createPdf(docDefinition).download(`Result_${studentResult.student.admissionno}_Class9.pdf`);
+      pdfMake.createPdf(docDefinition).download(`Result_${studentResult.student.admissionno || studentResult.student.name}_Class9.pdf`);
       onClose();
     } catch (error) {
       console.error('Error generating PDF:', error);

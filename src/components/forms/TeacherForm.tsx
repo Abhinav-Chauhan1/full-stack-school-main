@@ -96,7 +96,7 @@ const TeacherForm = ({
     if (!selectedClassId) {
       register("assignedSectionId", { value: 0 });
     }
-  }, [selectedClassId]);
+  }, [selectedClassId, register]);
 
 
   return (

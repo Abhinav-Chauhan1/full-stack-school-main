@@ -112,7 +112,7 @@ const SeniorCoScholasticForm = ({ type = "create", relatedData, setOpen }: Senio
           // Convert admission numbers from number to string to match the state type
           const formattedStudents = studentsData.students.map(student => ({
             ...student,
-            admissionno: student.admissionno.toString()
+            admissionno: student.admissionno?.toString() || ""
           }));
           setStudents(formattedStudents);
           

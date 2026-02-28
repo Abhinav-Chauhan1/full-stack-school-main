@@ -15,14 +15,14 @@ export interface StudentResult {
     birthday: Date;
     Class: { name: string; classNumber: number };
     Section: { name: string };
-    admissionno: number;
-    mothername: string;
-    moccupation: string;
-    fathername: string;
-    foccupation: string;
-    address: string;
-    city: string;
-    village: string;
+    admissionno: number | null;
+    mothername: string | null;
+    moccupation: string | null;
+    fathername: string | null;
+    foccupation: string | null;
+    address: string | null;
+    city: string | null;
+    village: string | null;
     bloodgroup: string;
     img?: string;
   };
@@ -126,13 +126,13 @@ export interface StudentResult11 {
   student: {
     id: string;
     name: string;
-    admissionno: string | number;
+    admissionno: string | number | null;
     birthday: Date;
-    mothername?: string;
-    fathername?: string;
-    address?: string;
-    city?: string;
-    village?: string;
+    mothername?: string | null;
+    fathername?: string | null;
+    address?: string | null;
+    city?: string | null;
+    village?: string | null;
     img?: string;
     Class: {
       name: string;

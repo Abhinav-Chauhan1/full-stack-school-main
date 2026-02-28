@@ -271,7 +271,7 @@ export async function exportStudentsWithMarks(
       
       return {
         ...studentData,
-        admissiondate: student.admissiondate.toISOString().split('T')[0],
+        admissiondate: student.admissiondate ? student.admissiondate.toISOString().split('T')[0] : '',
         birthday: student.birthday.toISOString().split('T')[0],
         totalMarks: totalMarks,
         totalMaxMarks: totalMaxMarks,
@@ -413,7 +413,7 @@ export async function exportAllStudents(sessionId: number) {
       const { Class, Section, marksJunior, marksSenior, markHigher, admissiondate, birthday, ...rest } = student;
       acc[sheetName].push({
         ...rest,
-        admissiondate: admissiondate.toISOString().split('T')[0],
+        admissiondate: admissiondate ? admissiondate.toISOString().split('T')[0] : '',
         birthday: birthday.toISOString().split('T')[0],
         totalMarks: totalMarks,
         totalMaxMarks: totalMaxMarks,
