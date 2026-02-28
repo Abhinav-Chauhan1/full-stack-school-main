@@ -56,7 +56,7 @@ const TeacherForm = ({
 
   const formatDateForInput = (date: string | Date | undefined) => {
     if (!date) return '';
-    return format(new Date(date), 'yyyy-MM-dd');
+    return format(new Date(date), 'dd/MM/yyyy');
   };
 
   const onSubmit = handleSubmit((formData) => {
