@@ -32,7 +32,7 @@ const StudentListPage = async ({
   if (role === "teacher" && userId) {
     const teacher = await prisma.teacher.findUnique({
       where: { id: userId },
-      select: { 
+      select: {
         assignedClassId: true,
         assignedSectionId: true
       }
@@ -133,7 +133,7 @@ const StudentListPage = async ({
   const query: Prisma.StudentWhereInput = {
     isAlumni: false // Exclude alumni from student list
   };
-  
+
   // Add teacher class and section restrictions
   if (role === "teacher") {
     if (assignedClassId) {
@@ -149,12 +149,17 @@ const StudentListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.OR = [
+            const searchConditions: Prisma.StudentWhereInput[] = [
               { name: { contains: value, mode: Prisma.QueryMode.insensitive } },
-              { admissionno: !isNaN(parseInt(value)) ? parseInt(value) : undefined },
               { mphone: { contains: value } },
-              { fphone: { contains: value } }
-            ].filter(Boolean);
+              { fphone: { contains: value } },
+            ];
+            // Allow searching by admission number
+            const admNo = parseInt(value);
+            if (!isNaN(admNo)) {
+              searchConditions.push({ admissionno: admNo });
+            }
+            query.OR = searchConditions;
             break;
           case "classId":
             // Only allow admin to filter by class
@@ -229,24 +234,24 @@ const StudentListPage = async ({
           <div className="flex items-center gap-4 self-end">
             {role === "admin" && (
               <>
-                <ClassFilterSelect 
-                  classes={classes} 
-                  selectedClassId={queryParams.classId} 
+                <ClassFilterSelect
+                  classes={classes}
+                  selectedClassId={queryParams.classId}
                 />
-                <SectionFilterSelect 
+                <SectionFilterSelect
                   sections={sections}
                   selectedSectionId={queryParams.sectionId}
                   selectedClassId={queryParams.classId}
                 />
-                <SessionFilterSelect 
+                <SessionFilterSelect
                   sessions={sessions}
                   selectedSessionId={queryParams.sessionId}
                 />
                 <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-                  <Image 
-                    src="/sort.png" 
-                    alt="Sort" 
-                    width={14} 
+                  <Image
+                    src="/sort.png"
+                    alt="Sort"
+                    width={14}
                     height={14}
                     style={{ width: 'auto', height: 'auto' }}
                   />
