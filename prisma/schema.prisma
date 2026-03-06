@@ -43,7 +43,7 @@ model Teacher {
 model Student {
   id            String       @id @default(uuid())
   admissiondate DateTime?
-  admissionno   Int?         @unique
+  admissionno   Int?
   name          String
   address       String?
   city          String?

@@ -84,12 +84,16 @@ const AlumniListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.OR = [
+            const searchConditions: Prisma.StudentWhereInput[] = [
               { name: { contains: value, mode: Prisma.QueryMode.insensitive } },
-              { admissionno: !isNaN(parseInt(value)) ? parseInt(value) : undefined },
               { mphone: { contains: value } },
-              { fphone: { contains: value } }
-            ].filter(Boolean);
+              { fphone: { contains: value } },
+            ];
+            const admNo = parseInt(value);
+            if (!isNaN(admNo)) {
+              searchConditions.push({ admissionno: admNo });
+            }
+            query.OR = searchConditions;
             break;
           case "alumniYear":
             query.alumniYear = parseInt(value);
@@ -121,10 +125,10 @@ const AlumniListPage = async ({
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image 
-                src="/sort.png" 
-                alt="Sort" 
-                width={14} 
+              <Image
+                src="/sort.png"
+                alt="Sort"
+                width={14}
                 height={14}
                 style={{ width: 'auto', height: 'auto' }}
               />
