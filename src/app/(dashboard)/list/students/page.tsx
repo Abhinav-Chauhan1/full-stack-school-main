@@ -107,6 +107,13 @@ const StudentListPage = async ({
       </td>
       <td>
         <div className="flex items-center gap-2">
+          <Link
+            href={`/list/students/${item.id}`}
+            className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky"
+            title="View Student"
+          >
+            <Image src="/view.png" alt="View" width={16} height={16} />
+          </Link>
           {role === "admin" && (
             <>
               <FormContainer
