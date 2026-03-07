@@ -407,10 +407,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.theory30`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.theory30`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                     <td className="p-2 border">
@@ -418,10 +415,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.practical70`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.practical70`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                   </>
@@ -432,10 +426,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.unitTest1`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.unitTest1`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                     <td className="p-2 border">
@@ -443,10 +434,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.halfYearly`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.halfYearly`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                     <td className="p-2 border">
@@ -454,10 +442,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.unitTest2`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.unitTest2`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                     <td className="p-2 border">
@@ -465,10 +450,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.theory`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.theory`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                     <td className="p-2 border">
@@ -476,10 +458,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
                         type="number" 
                         step="0.1" 
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.practical`, { 
-                          valueAsNumber: true,
-                          setValueAs: v => v === "" ? null : parseFloat(v)
-                        })} 
+                        {...register(`marks.${index}.practical`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })} 
                       />
                     </td>
                   </>

@@ -29,7 +29,7 @@ type SeniorMarkFormProps = {
     classes: Array<{
       id: number;
       name: string;
-      classNumber: number;  
+      classNumber: number;
       sections: Array<{
         id: number;
         name: string;
@@ -250,9 +250,27 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     }
 
     try {
-      const result = await (formType === "create" 
-        ? createSeniorMarks({ marks: formData.marks })
-        : updateSeniorMarks({ marks: formData.marks })
+      // Filter out empty marks
+      const validMarks = formData.marks.filter(mark => {
+        const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
+        const hasRegularMarks = mark.pt1 !== null ||
+          mark.pt2 !== null ||
+          mark.pt3 !== null ||
+          mark.multipleAssessment !== null ||
+          mark.portfolio !== null ||
+          mark.subEnrichment !== null ||
+          mark.finalExam !== null;
+        return hasTheoryPractical || hasRegularMarks;
+      });
+
+      if (validMarks.length === 0) {
+        toast.error("Please enter marks for at least one student");
+        return;
+      }
+
+      const result = await (formType === "create"
+        ? createSeniorMarks({ marks: validMarks })
+        : updateSeniorMarks({ marks: validMarks })
       );
 
       if (result.success) {
@@ -385,7 +403,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
               onChange={(e) => {
                 const subjectId = Number(e.target.value);
                 setSelectedSubject(subjectId);
-                
+
                 // Check if selected subject has code IT001
                 const selectedSubjectData = selectedSectionSubjects.find(
                   ss => ss.id === subjectId
@@ -451,13 +469,9 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                         <input
                           type="number"
                           step="0.1"
-                          className={`w-full p-1 border rounded text-sm ${
-                            errors.marks?.[index]?.theory ? "border-red-500" : ""
-                          }`}
-                          {...register(`marks.${index}.theory`, { 
-                            valueAsNumber: true,
-                            setValueAs: v => v === "" ? null : parseFloat(v)
-                          })}
+                          className={`w-full p-1 border rounded text-sm ${errors.marks?.[index]?.theory ? "border-red-500" : ""
+                            }`}
+                          {...register(`marks.${index}.theory`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                         {errors.marks?.[index]?.theory && (
                           <span className="text-red-500 text-xs">
@@ -470,7 +484,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.practical`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.practical`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -478,7 +492,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.total`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.total`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           disabled
                         />
                       </td>
@@ -490,7 +504,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt1`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.pt1`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -498,7 +512,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt2`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.pt2`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -506,7 +520,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt3`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.pt3`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -514,7 +528,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.multipleAssessment`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.multipleAssessment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -522,7 +536,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.portfolio`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.portfolio`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -530,7 +544,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.subEnrichment`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.subEnrichment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -538,7 +552,7 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                           type="number"
                           step="0.1"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.finalExam`, { valueAsNumber: true })}
+                          {...register(`marks.${index}.finalExam`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                         />
                       </td>
                     </>
@@ -562,17 +576,16 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
         <button
           type="submit"
           disabled={isSubmitting || isLoading}
-          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-            isSubmitting || isLoading ? "opacity-50" : ""
-          }`}
+          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${isSubmitting || isLoading ? "opacity-50" : ""
+            }`}
         >
           {isLoading
             ? "Checking Existing Marks..."
             : isSubmitting
-            ? "Submitting..."
-            : formType === "create"
-            ? "Create Marks"
-            : "Update Marks"}
+              ? "Submitting..."
+              : formType === "create"
+                ? "Create Marks"
+                : "Update Marks"}
         </button>
       </div>
     </form>

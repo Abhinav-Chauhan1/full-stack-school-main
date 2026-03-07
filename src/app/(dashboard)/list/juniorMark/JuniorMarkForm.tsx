@@ -129,7 +129,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
       if (!selectedSession || !selectedClass || !selectedSection || !selectedSubject) {
         return;
       }
-  
+
       setIsLoading(true);
       try {
         const result = await checkExistingJuniorMarks({
@@ -138,15 +138,15 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           sectionId: selectedSection, // Pass sectionId
           examType: examType,
         });
-  
+
         if (result.success && result.data && result.data.length > 0) {
           // Only consider marks that match the current exam type
           const hasExamTypeData = result.data.some((mark) =>
             examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly
           );
-  
+
           setExistingMarksData(result.data);
-          
+
           if (hasExamTypeData) {
             setFormType("update");
             toast.info(`Existing ${examType.toLowerCase().replace('_', ' ')} marks found. Switching to update mode.`);
@@ -166,7 +166,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         setIsLoading(false);
       }
     };
-  
+
     checkExistingMarks();
   }, [selectedSession, selectedClass, selectedSection, selectedSubject, examType]);
 
@@ -303,14 +303,14 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
       });
 
       reset({ marks: updatedMarks });
-      
+
       // Check if we are updating or creating based on whether all students have existing marks
       const allStudentsHaveMarks = selectedSectionStudents.every(
         student => existingMarksData.some(mark => mark.studentId === student.id)
       );
-      
+
       setFormType(allStudentsHaveMarks ? "update" : "create");
-      
+
       if (!allStudentsHaveMarks) {
         toast.info("Some students don't have existing marks. All marks will be saved as new records.");
       }
@@ -332,10 +332,30 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
       toast.error("Please select all required fields");
       return;
     }
-  
+
     try {
+      // Filter out empty marks first
+      const validMarks = formData.marks.filter(mark => {
+        const type = mark.examType;
+        const marksData: any = type === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+        if (!marksData) return false;
+        if (type === "HALF_YEARLY") {
+          return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
+            marksData.subEnrichment !== null || marksData.examMarks !== null ||
+            marksData.examMarks40 !== null || marksData.examMarks30 !== null;
+        } else {
+          return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
+            marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
+        }
+      });
+
+      if (validMarks.length === 0) {
+        toast.error("Please enter marks for at least one student");
+        return;
+      }
+
       // Process marks and calculate grades
-      const processedMarks = formData.marks.map(async (mark) => {
+      const processedMarks = validMarks.map(async (mark) => {
         // First, get existing marks if we're in yearly exam
         let existingHalfYearlyMarks = null;
         if (mark.examType === "YEARLY") {
@@ -344,7 +364,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           );
           existingHalfYearlyMarks = existingMarks?.halfYearly || null;
         }
-  
+
         // Clean up mark data to ensure null values are properly handled
         const cleanedMark = {
           ...mark,
@@ -376,7 +396,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             yearlyremarks: mark.yearly.yearlyremarks || null
           } : null,
         };
-  
+
         // Calculate grades and marks
         const calculatedResults = calculateMarksAndGrade({
           ...cleanedMark,
@@ -392,13 +412,13 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
           overallPercentage: calculatedResults.overallPercentage
         };
       });
-  
+
       const resolvedMarks = await Promise.all(processedMarks);
-      
+
       const result = formType === "create"
         ? await createJuniorMarks({ marks: resolvedMarks })
         : await updateJuniorMarks({ marks: resolvedMarks });
-  
+
       if (result.success) {
         toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
         setOpen(false);
@@ -632,7 +652,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut1`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.halfYearly.ut1`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -640,7 +660,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut2`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.halfYearly.ut2`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -648,7 +668,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.noteBook`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.halfYearly.noteBook`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -656,7 +676,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.subEnrichment`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.halfYearly.subEnrichment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -669,17 +689,14 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                 ? isFortyMarksSubject
                                   ? `marks.${index}.halfYearly.examMarks40`
                                   : isThirtyMarksSubject
-                                  ? `marks.${index}.halfYearly.examMarks30`
-                                  : `marks.${index}.halfYearly.examMarks`
+                                    ? `marks.${index}.halfYearly.examMarks30`
+                                    : `marks.${index}.halfYearly.examMarks`
                                 : isFortyMarksSubject
-                                ? `marks.${index}.yearly.yearlyexamMarks40`
-                                : isThirtyMarksSubject
-                                ? `marks.${index}.yearly.yearlyexamMarks30`
-                                : `marks.${index}.yearly.yearlyexamMarks`,
-                              { 
-                                valueAsNumber: true,
-                                setValueAs: (value) => value === "" ? null : parseFloat(value)
-                              }
+                                  ? `marks.${index}.yearly.yearlyexamMarks40`
+                                  : isThirtyMarksSubject
+                                    ? `marks.${index}.yearly.yearlyexamMarks30`
+                                    : `marks.${index}.yearly.yearlyexamMarks`,
+                              { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />
@@ -699,14 +716,14 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.ut3`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.yearly.ut3`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
                             type="number"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlynoteBook`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.yearly.yearlynoteBook`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -714,7 +731,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { valueAsNumber: true })}
+                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -727,17 +744,14 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                 ? isFortyMarksSubject
                                   ? `marks.${index}.halfYearly.examMarks40`
                                   : isThirtyMarksSubject
-                                  ? `marks.${index}.halfYearly.examMarks30`
-                                  : `marks.${index}.halfYearly.examMarks`
+                                    ? `marks.${index}.halfYearly.examMarks30`
+                                    : `marks.${index}.halfYearly.examMarks`
                                 : isFortyMarksSubject
-                                ? `marks.${index}.yearly.yearlyexamMarks40`
-                                : isThirtyMarksSubject
-                                ? `marks.${index}.yearly.yearlyexamMarks30`
-                                : `marks.${index}.yearly.yearlyexamMarks`,
-                              { 
-                                valueAsNumber: true,
-                                setValueAs: (value) => value === "" ? null : parseFloat(value)
-                              }
+                                  ? `marks.${index}.yearly.yearlyexamMarks40`
+                                  : isThirtyMarksSubject
+                                    ? `marks.${index}.yearly.yearlyexamMarks30`
+                                    : `marks.${index}.yearly.yearlyexamMarks`,
+                              { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />
@@ -763,17 +777,16 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
         <button
           type="submit"
           disabled={isSubmitting || isLoading}
-          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-            isSubmitting || isLoading ? "opacity-50" : ""
-          }`}
+          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${isSubmitting || isLoading ? "opacity-50" : ""
+            }`}
         >
           {isLoading
             ? "Checking Existing Marks..."
             : isSubmitting
-            ? "Submitting..."
-            : formType === "create"
-            ? "Create Marks"
-            : "Update Marks"}
+              ? "Submitting..."
+              : formType === "create"
+                ? "Create Marks"
+                : "Update Marks"}
         </button>
       </div>
     </form>

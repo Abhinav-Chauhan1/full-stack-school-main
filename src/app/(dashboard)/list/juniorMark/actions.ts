@@ -7,17 +7,17 @@ import { calculateMarksAndGrade } from '@/lib/formValidationSchemas';
 const prisma = new PrismaClient();
 
 export const checkExistingJuniorMarks = async (
-  data: { 
-    classSubjectId: number, 
-    sessionId: number, 
+  data: {
+    classSubjectId: number,
+    sessionId: number,
     examType: "HALF_YEARLY" | "YEARLY",
     sectionId: number // Add sectionId to the data parameter
   }
 ) => {
   try {
     if (!data.classSubjectId || !data.sessionId || !data.examType || !data.sectionId) { // Add sectionId check
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: true,
         message: "Missing required fields"
       };
@@ -68,15 +68,15 @@ export const checkExistingJuniorMarks = async (
       }))
     });
 
-    return { 
-      success: true, 
-      error: false, 
-      data: existingMarks 
+    return {
+      success: true,
+      error: false,
+      data: existingMarks
     };
   } catch (err) {
     console.error("Check Existing Junior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -85,52 +85,67 @@ export const checkExistingJuniorMarks = async (
 
 export const createJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => {
   try {
-    const createPromises = data.marks.map(async (mark) => {
-      const examType = mark.examType;
-      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+    const createPromises = data.marks
+      .filter(mark => {
+        if (mark.examType === "HALF_YEARLY") {
+          const marksData: any = mark.halfYearly;
+          if (!marksData) return false;
+          return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
+            marksData.subEnrichment !== null || marksData.examMarks !== null ||
+            marksData.examMarks40 !== null || marksData.examMarks30 !== null;
+        } else {
+          const marksData = mark.yearly;
+          if (!marksData) return false;
+          return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
+            marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
+        }
+      })
+      .map(async (mark) => {
+        const examType = mark.examType;
+        const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
 
-      if (!marksData) return null;
+        if (!marksData) return null;
 
-      // Use upsert instead of create
-      return prisma.juniorMark.upsert({
-        where: {
-          studentId_classSubjectId_sessionId: {
-            studentId: mark.studentId,
-            classSubjectId: mark.classSubjectId,
-            sessionId: mark.sessionId
-          }
-        },
-        create: {
-          student: { connect: { id: mark.studentId }},
-          classSubject: { connect: { id: mark.classSubjectId }},
-          session: { connect: { id: mark.sessionId }},
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            create: marksData
-          },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        },
-        update: {
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            upsert: {
-              create: marksData,
-              update: marksData
+        // Use upsert instead of create
+        return prisma.juniorMark.upsert({
+          where: {
+            studentId_classSubjectId_sessionId: {
+              studentId: mark.studentId,
+              classSubjectId: mark.classSubjectId,
+              sessionId: mark.sessionId
             }
           },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        }
+          create: {
+            student: { connect: { id: mark.studentId } },
+            classSubject: { connect: { id: mark.classSubjectId } },
+            session: { connect: { id: mark.sessionId } },
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              create: marksData
+            },
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
+          },
+          update: {
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              upsert: {
+                create: marksData,
+                update: marksData
+              }
+            },
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
+          }
+        });
       });
-    });
 
     await Promise.all(createPromises);
     return { success: true, error: false };
   } catch (err) {
     console.error("Create Junior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -141,68 +156,83 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
   try {
     console.log('Update function called with data:', JSON.stringify(data, null, 2));
 
-    const updatePromises = data.marks.map(async (mark) => {
-      console.log('Processing mark for student:', mark.studentId);
-      
-      const examType = mark.examType;
-      const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
-
-      if (!marksData) {
-        console.log('No marks data found for student:', mark.studentId);
-        return null;
-      }
-
-      // Always use upsert to handle both create and update scenarios
-      return prisma.juniorMark.upsert({
-        where: {
-          studentId_classSubjectId_sessionId: {
-            studentId: mark.studentId,
-            classSubjectId: mark.classSubjectId,
-            sessionId: mark.sessionId
-          }
-        },
-        create: {
-          student: { connect: { id: mark.studentId }},
-          classSubject: { connect: { id: mark.classSubjectId }},
-          session: { connect: { id: mark.sessionId }},
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            create: marksData
-          },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        },
-        update: {
-          [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
-            upsert: {
-              create: marksData,
-              update: marksData
-            }
-          },
-          grandTotalMarks: mark.grandTotalMarks || 0,
-          grandTotalGrade: mark.grandTotalGrade || '',
-          overallPercentage: mark.overallPercentage || 0
-        },
-        include: {
-          student: {
-            select: {
-              name: true
-            }
-          }
+    const updatePromises = data.marks
+      .filter(mark => {
+        if (mark.examType === "HALF_YEARLY") {
+          const marksData = mark.halfYearly;
+          if (!marksData) return false;
+          return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
+            marksData.subEnrichment !== null || marksData.examMarks !== null ||
+            marksData.examMarks40 !== null || marksData.examMarks30 !== null;
+        } else {
+          const marksData = mark.yearly;
+          if (!marksData) return false;
+          return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
+            marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
         }
+      })
+      .map(async (mark) => {
+        console.log('Processing mark for student:', mark.studentId);
+
+        const examType = mark.examType;
+        const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+
+        if (!marksData) {
+          console.log('No marks data found for student:', mark.studentId);
+          return null;
+        }
+
+        // Always use upsert to handle both create and update scenarios
+        return prisma.juniorMark.upsert({
+          where: {
+            studentId_classSubjectId_sessionId: {
+              studentId: mark.studentId,
+              classSubjectId: mark.classSubjectId,
+              sessionId: mark.sessionId
+            }
+          },
+          create: {
+            student: { connect: { id: mark.studentId } },
+            classSubject: { connect: { id: mark.classSubjectId } },
+            session: { connect: { id: mark.sessionId } },
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              create: marksData
+            },
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
+          },
+          update: {
+            [examType === "HALF_YEARLY" ? "halfYearly" : "yearly"]: {
+              upsert: {
+                create: marksData,
+                update: marksData
+              }
+            },
+            grandTotalMarks: mark.grandTotalMarks || 0,
+            grandTotalGrade: mark.grandTotalGrade || '',
+            overallPercentage: mark.overallPercentage || 0
+          },
+          include: {
+            student: {
+              select: {
+                name: true
+              }
+            }
+          }
+        });
       });
-    });
 
     const results = await Promise.all(updatePromises);
-    console.log('Update operation completed. Updated marks for students:', 
+    console.log('Update operation completed. Updated marks for students:',
       results.filter(Boolean).map(r => r?.student?.name).join(', '));
-      
+
     return { success: true, error: false, results };
   } catch (err) {
     console.error("Update Junior Marks Error:", err);
     console.error("Error stack:", err instanceof Error ? err.stack : 'No stack trace');
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -210,19 +240,19 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
 };
 
 export const deleteJuniorMark = async (
-  data: { 
-    studentId: string, 
-    classSubjectId: number, 
-    sessionId: number, 
-    examType: "HALF_YEARLY" | "YEARLY" 
+  data: {
+    studentId: string,
+    classSubjectId: number,
+    sessionId: number,
+    examType: "HALF_YEARLY" | "YEARLY"
   }
 ) => {
   try {
     if (!data.studentId || !data.classSubjectId || !data.sessionId || !data.examType) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: true,
-        message: "Missing required fields" 
+        message: "Missing required fields"
       };
     }
 
@@ -241,10 +271,10 @@ export const deleteJuniorMark = async (
     });
 
     if (!juniorMark) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: true,
-        message: "Mark record not found" 
+        message: "Mark record not found"
       };
     }
 
@@ -259,7 +289,7 @@ export const deleteJuniorMark = async (
         });
       }
 
-      const shouldDeleteParent = data.examType === "HALF_YEARLY" ? 
+      const shouldDeleteParent = data.examType === "HALF_YEARLY" ?
         !juniorMark.yearly : !juniorMark.halfYearly;
 
       if (shouldDeleteParent) {
@@ -269,16 +299,16 @@ export const deleteJuniorMark = async (
       }
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       error: false,
-      message: "Marks deleted successfully" 
+      message: "Marks deleted successfully"
     };
 
   } catch (err) {
     console.error("Delete Junior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };

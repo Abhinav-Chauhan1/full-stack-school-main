@@ -7,8 +7,8 @@ import { calculateSeniorMarksAndGrade } from '@/lib/formValidationSchemas';
 const prisma = new PrismaClient();
 
 export const checkExistingSeniorMarks = async (
-  data: { 
-    sectionSubjectId: number, 
+  data: {
+    sectionSubjectId: number,
     sessionId: number
   }
 ) => {
@@ -20,15 +20,15 @@ export const checkExistingSeniorMarks = async (
       }
     });
 
-    return { 
-      success: true, 
-      error: false, 
-      data: existingMarks 
+    return {
+      success: true,
+      error: false,
+      data: existingMarks
     };
   } catch (err) {
     console.error("Check Existing Senior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -37,120 +37,132 @@ export const checkExistingSeniorMarks = async (
 
 export const createSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
   try {
-    const createPromises = data.marks.map(async (mark) => {
-      // Check if it's IT001 subject
-      const subject = await prisma.sectionSubject.findUnique({
-        where: { id: mark.sectionSubjectId },
-        include: { subject: true }
-      });
+    const createPromises = data.marks
+      .filter(mark => {
+        const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
+        const hasRegularMarks = mark.pt1 !== null ||
+          mark.pt2 !== null ||
+          mark.pt3 !== null ||
+          mark.multipleAssessment !== null ||
+          mark.portfolio !== null ||
+          mark.subEnrichment !== null ||
+          mark.finalExam !== null;
+        return hasTheoryPractical || hasRegularMarks;
+      })
+      .map(async (mark) => {
+        // Check if it's IT001 subject
+        const subject = await prisma.sectionSubject.findUnique({
+          where: { id: mark.sectionSubjectId },
+          include: { subject: true }
+        });
 
-      if (subject?.subject.code === "IT001") {
-        const total = mark.theory && mark.practical ? 
-          Number(mark.theory) + Number(mark.practical) : null;
+        if (subject?.subject.code === "IT001") {
+          const total = mark.theory && mark.practical ?
+            Number(mark.theory) + Number(mark.practical) : null;
 
-        let grade = null;
-        if (total !== null) {
-          if (total >= 91) grade = 'A1';
-          else if (total >= 81) grade = 'A2';
-          else if (total >= 71) grade = 'B1';
-          else if (total >= 61) grade = 'B2';
-          else if (total >= 51) grade = 'C1';
-          else if (total >= 41) grade = 'C2';
-          else if (total >= 33) grade = 'D';
-          else grade = 'E';
+          let grade = null;
+          if (total !== null) {
+            if (total >= 91) grade = 'A1';
+            else if (total >= 81) grade = 'A2';
+            else if (total >= 71) grade = 'B1';
+            else if (total >= 61) grade = 'B2';
+            else if (total >= 51) grade = 'C1';
+            else if (total >= 41) grade = 'C2';
+            else if (total >= 33) grade = 'D';
+            else grade = 'E';
+          }
+
+          return prisma.seniorMark.create({
+            data: {
+              studentId: mark.studentId,
+              sectionSubjectId: mark.sectionSubjectId,
+              sessionId: mark.sessionId,
+              theory: mark.theory,
+              practical: mark.practical,
+              total,
+              grade,
+              overallTotal: total,
+              overallMarks: total,
+              overallGrade: grade,
+              remarks: mark.remarks
+            }
+          });
         }
 
-        return prisma.seniorMark.create({
-          data: {
-            studentId: mark.studentId,
-            sectionSubjectId: mark.sectionSubjectId,
-            sessionId: mark.sessionId,
+        const isVocationalIT = subject?.subject.code === "IT001";
+
+        let markData: {
+          studentId: string;
+          sectionSubjectId: number;
+          sessionId: number;
+          remarks: string | null | undefined;
+          theory?: number | null;
+          practical?: number | null;
+          total?: number | null;
+          pt1?: number | null;
+          pt2?: number | null;
+          pt3?: number | null;
+          multipleAssessment?: number | null;
+          portfolio?: number | null;
+          subEnrichment?: number | null;
+          finalExam?: number | null;
+          bestTwoPTAvg?: number | null;
+          bestScore?: number | null;
+          grandTotal?: number | null;
+          grade?: string | null;
+          overallTotal?: number | null;
+          overallMarks?: number | null;
+          overallGrade?: string | null;
+        } = {
+          studentId: mark.studentId,
+          sectionSubjectId: mark.sectionSubjectId,
+          sessionId: mark.sessionId,
+          remarks: mark.remarks
+        };
+
+        if (isVocationalIT) {
+          // For IT001
+          markData = {
+            ...markData,
             theory: mark.theory,
             practical: mark.practical,
-            total,
-            grade,
-            overallTotal: total,
-            overallMarks: total,
-            overallGrade: grade,
-            remarks: mark.remarks
-          }
+            total: mark.theory && mark.practical ? Number(mark.theory) + Number(mark.practical) : null
+          };
+        } else {
+          // For regular subjects
+          const calculations = calculateSeniorMarksAndGrade(mark);
+          markData = {
+            ...markData,
+            ...calculations,
+            pt1: mark.pt1,
+            pt2: mark.pt2,
+            pt3: mark.pt3,
+            multipleAssessment: mark.multipleAssessment,
+            portfolio: mark.portfolio,
+            subEnrichment: mark.subEnrichment,
+            finalExam: mark.finalExam
+          };
+        }
+
+        return prisma.seniorMark.upsert({
+          where: {
+            studentId_sectionSubjectId_sessionId: {
+              studentId: mark.studentId,
+              sectionSubjectId: mark.sectionSubjectId,
+              sessionId: mark.sessionId
+            }
+          },
+          create: markData,
+          update: markData
         });
-      }
-
-      const isVocationalIT = subject?.subject.code === "IT001";
-      
-      let markData: {
-        studentId: string;
-        sectionSubjectId: number;
-        sessionId: number;
-        remarks: string | null | undefined;
-        theory?: number | null;
-        practical?: number | null;
-        total?: number | null;
-        pt1?: number | null;
-        pt2?: number | null;
-        pt3?: number | null;
-        multipleAssessment?: number | null;
-        portfolio?: number | null;
-        subEnrichment?: number | null;
-        finalExam?: number | null;
-        bestTwoPTAvg?: number | null;
-        bestScore?: number | null;
-        grandTotal?: number | null;
-        grade?: string | null;
-        overallTotal?: number | null;
-        overallMarks?: number | null;
-        overallGrade?: string | null;
-      } = {
-        studentId: mark.studentId,
-        sectionSubjectId: mark.sectionSubjectId,
-        sessionId: mark.sessionId,
-        remarks: mark.remarks
-      };
-
-      if (isVocationalIT) {
-        // For IT001
-        markData = {
-          ...markData,
-          theory: mark.theory,
-          practical: mark.practical,
-          total: mark.theory && mark.practical ? Number(mark.theory) + Number(mark.practical) : null
-        };
-      } else {
-        // For regular subjects
-        const calculations = calculateSeniorMarksAndGrade(mark);
-        markData = {
-          ...markData,
-          ...calculations,
-          pt1: mark.pt1,
-          pt2: mark.pt2,
-          pt3: mark.pt3,
-          multipleAssessment: mark.multipleAssessment,
-          portfolio: mark.portfolio,
-          subEnrichment: mark.subEnrichment,
-          finalExam: mark.finalExam
-        };
-      }
-
-      return prisma.seniorMark.upsert({
-        where: {
-          studentId_sectionSubjectId_sessionId: {
-            studentId: mark.studentId,
-            sectionSubjectId: mark.sectionSubjectId,
-            sessionId: mark.sessionId
-          }
-        },
-        create: markData,
-        update: markData
       });
-    });
 
     await Promise.all(createPromises);
     return { success: true, error: false };
   } catch (err) {
     console.error("Create Senior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -163,13 +175,13 @@ export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => 
       .filter(mark => {
         // Filter out empty entries
         const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
-        const hasRegularMarks = mark.pt1 !== null || 
-                               mark.pt2 !== null || 
-                               mark.pt3 !== null || 
-                               mark.multipleAssessment !== null ||
-                               mark.portfolio !== null ||
-                               mark.subEnrichment !== null ||
-                               mark.finalExam !== null;
+        const hasRegularMarks = mark.pt1 !== null ||
+          mark.pt2 !== null ||
+          mark.pt3 !== null ||
+          mark.multipleAssessment !== null ||
+          mark.portfolio !== null ||
+          mark.subEnrichment !== null ||
+          mark.finalExam !== null;
         return hasTheoryPractical || hasRegularMarks;
       })
       .map(async (mark) => {
@@ -247,8 +259,8 @@ export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => 
     return { success: true, error: false, results };
   } catch (err) {
     console.error("Update Senior Marks Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
@@ -256,9 +268,9 @@ export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => 
 };
 
 export const deleteSeniorMark = async (
-  data: { 
-    studentId: string, 
-    sectionSubjectId: number, 
+  data: {
+    studentId: string,
+    sectionSubjectId: number,
     sessionId: number
   }
 ) => {
@@ -273,15 +285,15 @@ export const deleteSeniorMark = async (
       }
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       error: false,
-      message: "Mark deleted successfully" 
+      message: "Mark deleted successfully"
     };
   } catch (err) {
     console.error("Delete Senior Mark Error:", err);
-    return { 
-      success: false, 
+    return {
+      success: false,
       error: true,
       message: err instanceof Error ? err.message : "Unknown error occurred"
     };
