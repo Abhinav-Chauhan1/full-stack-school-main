@@ -1,0 +1,63 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { loadImage } from '@/lib/resultExportPdfUtils';
+import { generateAndDownloadResultExportPdf } from '@/lib/resultExportPdfUtils';
+import type { StudentResult } from '@/types/result';
+
+interface ResultExportPdfProps {
+    studentResult: StudentResult;
+    onClose: () => void;
+}
+
+export default function ResultExportPdf({ studentResult, onClose }: ResultExportPdfProps) {
+    const [loading, setLoading] = useState(true);
+    const [logoData, setLogoData] = useState<string | null>(null);
+    const [studentImageData, setStudentImageData] = useState<string | null>(null);
+
+    useEffect(() => {
+        const init = async () => {
+            const [logo, studentImg] = await Promise.all([
+                loadImage('/logo.png'),
+                studentResult.student.img ? loadImage(studentResult.student.img) : null
+            ]);
+
+            setLogoData(logo);
+            setStudentImageData(studentImg);
+            setLoading(false);
+        };
+        init();
+    }, [studentResult.student.img]);
+
+    const handleGeneratePDF = async () => {
+        try {
+            await generateAndDownloadResultExportPdf(studentResult, logoData, studentImageData, onClose);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+        }
+    };
+
+    if (loading) return <div>Loading...</div>;
+
+    return (
+        <div className="p-4 flex flex-col gap-4">
+            <h2 className="text-xl font-semibold">Export Student Result</h2>
+            <div className="flex flex-col gap-2">
+                <p><strong>Student Name:</strong> {studentResult.student.name}</p>
+                <p><strong>Admission No:</strong> {studentResult.student.admissionno}</p>
+                <p><strong>Class:</strong> {studentResult.student.Class.name}</p>
+                <p><strong>Section:</strong> {studentResult.student.Section.name}</p>
+                <p><strong>Session:</strong> {studentResult.session.sessioncode}</p>
+            </div>
+            <p className="text-sm text-gray-500 italic">
+                This export includes student details and marks only (no co-scholastic, remarks, or signatures).
+            </p>
+            <button
+                onClick={handleGeneratePDF}
+                className="bg-green-600 text-white py-2 px-4 rounded-md border-none w-max self-center hover:bg-green-700"
+            >
+                Download Result
+            </button>
+        </div>
+    );
+}

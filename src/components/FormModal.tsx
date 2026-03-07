@@ -225,6 +225,10 @@ const BulkPdfGenerator9 = dynamic(() => import("./BulkPdfGenerator9"), {
   ssr: false
 });
 
+const ResultExportPdf = dynamic(() => import("./ResultExportPdf"), {
+  ssr: false
+});
+
 const FormModal = ({
   table,
   type,
@@ -266,9 +270,9 @@ const FormModal = ({
     if (type === "print" && relatedData?.studentResult) {
       return (
         <div className="w-full max-w-4xl mx-auto">
-          <PdfGenerator 
-            studentResult={relatedData.studentResult} 
-            onClose={() => setOpen(false)} 
+          <PdfGenerator
+            studentResult={relatedData.studentResult}
+            onClose={() => setOpen(false)}
           />
         </div>
       );
@@ -351,6 +355,17 @@ const FormModal = ({
         }
         return <Form />;
 
+      case "resultExport":
+        if (relatedData?.studentResult) {
+          return (
+            <ResultExportPdf
+              studentResult={relatedData.studentResult}
+              onClose={() => setOpen(false)}
+            />
+          );
+        }
+        return null;
+
       default:
         return <Form />;
     }
@@ -362,11 +377,11 @@ const FormModal = ({
         className={`${size} flex items-center justify-center rounded-full ${bgColor}`}
         onClick={() => setOpen(true)}
       >
-        <Image 
-          src={type === "print" ? "/print.png" : `/${type}.png`} 
-          alt="" 
-          width={16} 
-          height={16} 
+        <Image
+          src={type === "print" ? "/print.png" : `/${type}.png`}
+          alt=""
+          width={16}
+          height={16}
         />
       </button>
       {open && (
@@ -374,8 +389,8 @@ const FormModal = ({
 
           <div
             className={`bg-white p-4 rounded-md relative ${table === "juniorMark" || table === "student" || table === "seniorMark" || table === "higherMark" || table === "juniorCoScholastic" || table === "seniorCoScholastic" || table === "higherCoScholastic"
-                ? "w-full"
-                : "w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]"
+              ? "w-full"
+              : "w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]"
               }`}
           >
             {renderContent()}

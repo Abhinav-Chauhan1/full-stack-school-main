@@ -78,7 +78,7 @@ const menuItems = [
         label: "Up to 8th",
         href: "",
         visible: ["admin", "teacher"],
-        visibilityCheck: (role: string, assignedClass?: number) => 
+        visibilityCheck: (role: string, assignedClass?: number) =>
           role === "admin" || (role === "teacher" && assignedClass && assignedClass <= 8),
         subItems: [
           { label: "Marks", href: "/list/juniorMark" },
@@ -91,7 +91,7 @@ const menuItems = [
         label: "9 Class",
         href: "",
         visible: ["admin", "teacher"],
-        visibilityCheck: (role: string, assignedClass?: number) => 
+        visibilityCheck: (role: string, assignedClass?: number) =>
           role === "admin" || (role === "teacher" && assignedClass === 9),
         subItems: [
           { label: "Marks", href: "/list/seniorMark" },
@@ -104,13 +104,19 @@ const menuItems = [
         label: "11 Class",
         href: "",
         visible: ["admin", "teacher"],
-        visibilityCheck: (role: string, assignedClass?: number) => 
+        visibilityCheck: (role: string, assignedClass?: number) =>
           role === "admin" || (role === "teacher" && assignedClass === 11),
         subItems: [
           { label: "Marks", href: "/list/higherMark" },
           { label: "Co-Scholastic", href: "/list/higherCoScholastic" },
           { label: "Results", href: "/list/results11" }
         ]
+      },
+      {
+        icon: "/exam.png",
+        label: "All Results",
+        href: "/list/resultsAll",
+        visible: ["admin"],
       },
       {
         icon: "/assignment.png",
@@ -143,23 +149,23 @@ type UserRole = "admin" | "teacher" | undefined;
 const Menu = async () => {
   const user = await currentUser();
   const role = (user?.publicMetadata?.role as UserRole) || undefined;
-  
+
   // Handle special class names (Nursery, KG, UKG) and numeric classes
   const assignedClassStr = (user?.publicMetadata?.assignedClass as string) || "";
-  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/) 
-    ? assignedClassStr 
+  const assignedClass = assignedClassStr.match(/^(Nursery|KG|UKG)$/)
+    ? assignedClassStr
     : parseInt(assignedClassStr.replace("Class ", "")) || undefined;
-  
+
   // Modified visibility check function for menu items
   const checkVisibility = (role: string, assignedClass?: string | number) => {
     if (role === "admin") return true;
     if (role !== "teacher" || !assignedClass) return false;
-    
+
     // For numeric classes
     if (typeof assignedClass === "number") {
       return assignedClass <= 8;
     }
-    
+
     // For special classes
     return ["Nursery", "KG", "UKG"].includes(assignedClass as string);
   };
@@ -169,7 +175,7 @@ const Menu = async () => {
     ...section,
     items: section.items.map(item => ({
       ...item,
-      visibilityCheck: item.label === "Up to 8th" 
+      visibilityCheck: item.label === "Up to 8th"
         ? checkVisibility
         : item.visibilityCheck
     }))
@@ -188,7 +194,7 @@ const Menu = async () => {
             {i.title}
           </span>
           {i.items.map((item) => {
-            const isVisible = item.visible.includes(role) && 
+            const isVisible = item.visible.includes(role) &&
               (!item.visibilityCheck || item.visibilityCheck(role, typeof assignedClass === 'number' ? assignedClass : undefined));
 
             if (isVisible) {
