@@ -652,7 +652,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut1`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.ut1`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -660,7 +660,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut2`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.ut2`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -668,7 +668,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.noteBook`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.noteBook`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -676,7 +676,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.subEnrichment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.subEnrichment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -696,7 +696,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                   : isThirtyMarksSubject
                                     ? `marks.${index}.yearly.yearlyexamMarks30`
                                     : `marks.${index}.yearly.yearlyexamMarks`,
-                              { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) }
+                              { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />
@@ -716,14 +716,14 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.ut3`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.ut3`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
                             type="number"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlynoteBook`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.yearlynoteBook`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -731,7 +731,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                             type="number"
                             step="0.1"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
                           />
                         </td>
                         <td className="p-2 border">
@@ -751,7 +751,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                   : isThirtyMarksSubject
                                     ? `marks.${index}.yearly.yearlyexamMarks30`
                                     : `marks.${index}.yearly.yearlyexamMarks`,
-                              { setValueAs: (v) => v === "" || v === undefined ? null : parseFloat(v) }
+                              { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />
