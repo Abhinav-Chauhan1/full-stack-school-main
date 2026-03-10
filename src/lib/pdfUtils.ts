@@ -101,8 +101,8 @@ export const filterLanguageSubjects = (marks: any[]) => {
 export const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
-    const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
+    const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
 
     // Calculate max marks per term based on subject type
     // Both 30-mark and 40-mark subjects have a maximum total of 50 points
@@ -157,19 +157,16 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
   // Separate subjects by category
   const regularSubjects = safeMarksJunior.filter(mark => {
     const subject = mark?.classSubject?.subject;
-    const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
+    const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
     return !isFortyMarksSubject && !isThirtyMarksSubject;
   });
 
-  const fortyMarkSubjects = safeMarksJunior.filter(mark => {
-    const subject = mark?.classSubject?.subject;
-    return subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-  });
+  const fortyMarkSubjects: any[] = []; // Comp01, GK01, DRAW02 moved to thirtyMarkSubjects
 
   const thirtyMarkSubjects = safeMarksJunior.filter(mark => {
     const subject = mark?.classSubject?.subject;
-    return subject?.code.match(/^(Urdu01|SAN01)$/);
+    return subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
   });
 
   // Helper to get exam marks based on subject type
@@ -269,16 +266,7 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
     ];
   });
 
-  // Create section headers - removing regularSubjectsHeader
-  const fortyMarkSubjectsHeader = fortyMarkSubjects.length > 0 ? [
-    { text: 'ADDITIONAL SUBJECTS (40 MARKS THEORY | 10 MARKS PRACTICAL)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
-    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-  ] : [];
-
-  const thirtyMarkSubjectsHeader = thirtyMarkSubjects.length > 0 ? [
-    { text: 'ADDITIONAL SUBJECTS (30 MARKS THEORY | 20 MARKS PRACTICAL)', colSpan: 13, alignment: 'center', style: 'sectionHeader', fillColor: '#f0f0f0' },
-    {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
-  ] : [];
+  // Section headers removed as per requirement
 
   // Build the complete table
   return [
@@ -324,47 +312,10 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
     // First include regular subjects if any - removing the header
     ...(regularSubjects.length > 0 ? regularSubjectRows : []),
 
-    // Include forty mark subjects with their header
-    ...(fortyMarkSubjects.length > 0 ? [
-      fortyMarkSubjectsHeader,
-      [
-        {},
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(40)', alignment: 'center', style: 'columnHeader' },
-        { text: '(50)', alignment: 'center', style: 'columnHeader' },
-        {},
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(40)', alignment: 'center', style: 'columnHeader' },
-        { text: '(50)', alignment: 'center', style: 'columnHeader' },
-        {},
-        { text: '(100)', alignment: 'center', style: 'columnHeader' },
-        {}
-      ],
-      ...fortyMarkSubjectRows
-    ] : []),
+    // Forty mark subjects section removed (moved to thirty mark subjects)
 
-    // Include thirty mark subjects with their header
-    ...(thirtyMarkSubjects.length > 0 ? [
-      thirtyMarkSubjectsHeader,
-      [
-        {},
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(30)', alignment: 'center', style: 'columnHeader' },
-        { text: '(50)', alignment: 'center', style: 'columnHeader' },
-        {},
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(10)', alignment: 'center', style: 'columnHeader' },
-        { text: '(30)', alignment: 'center', style: 'columnHeader' },
-        { text: '(50)', alignment: 'center', style: 'columnHeader' },
-        {},
-        { text: '(100)', alignment: 'center', style: 'columnHeader' },
-        {}
-      ],
-      ...thirtyMarkSubjectRows
-    ] : []),
+    // Include thirty mark subjects (no section header)
+    ...(thirtyMarkSubjects.length > 0 ? thirtyMarkSubjectRows : []),
 
     totalRow,
     percentageRow

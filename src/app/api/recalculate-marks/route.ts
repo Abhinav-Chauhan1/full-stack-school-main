@@ -84,27 +84,27 @@ export async function POST(request: NextRequest) {
         let yearlyTotal = 0;
         let maxMarks = 100;
 
-        const is40MarksSubject = ['Comp01', 'GK01', 'DRAW02'].includes(subjectCode);
-        const is30MarksSubject = ['Urdu01', 'SAN01'].includes(subjectCode);
+        const is40MarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
+        const is30MarksSubject = ['Urdu01', 'SAN01', 'Comp01', 'GK01', 'DRAW02'].includes(subjectCode);
 
         if (is40MarksSubject) {
           maxMarks = 50;
           const roundedHalfUT = Math.round(overallBestUT / 2);
-          const noteBookAndSubEnrichment = 
-            Math.min(5, yearly.yearlynoteBook || 0) + 
+          const noteBookAndSubEnrichment =
+            Math.min(5, yearly.yearlynoteBook || 0) +
             Math.min(5, yearly.yearlysubEnrichment || 0);
           const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2);
           yearlyTotal = roundedHalfUT + roundedHalfNBSE + Math.min(40, yearly.yearlyexamMarks40 || 0);
         } else if (is30MarksSubject) {
           maxMarks = 50;
-          yearlyTotal = 
+          yearlyTotal =
             overallBestUT +
             Math.min(5, yearly.yearlynoteBook || 0) +
             Math.min(5, yearly.yearlysubEnrichment || 0) +
             Math.min(30, yearly.yearlyexamMarks30 || 0);
         } else {
           maxMarks = 100;
-          yearlyTotal = 
+          yearlyTotal =
             overallBestUT +
             Math.min(5, yearly.yearlynoteBook || 0) +
             Math.min(5, yearly.yearlysubEnrichment || 0) +
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         const halfYearlyMaxMarks = is40MarksSubject ? 50 : is30MarksSubject ? 50 : 100;
         const yearlyMaxMarks = maxMarks;
         const totalPossibleMarks = halfYearlyMaxMarks + yearlyMaxMarks;
-        
+
         const grandTotalMarks = (halfYearly.totalMarks || 0) + yearlyTotal;
         const overallPercentage = (grandTotalMarks / totalPossibleMarks) * 100;
         const grandTotalGrade = calculateGrade(overallPercentage);
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Recalculation error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Recalculation failed',
         message: error instanceof Error ? error.message : 'Unknown error'
       },

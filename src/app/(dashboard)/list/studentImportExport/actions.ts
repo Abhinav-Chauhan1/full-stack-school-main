@@ -14,7 +14,7 @@ const calculateJuniorTotals = (marksJunior: any[]) => {
   // Filter out language subjects to keep only the ones with marks
   const filteredMarks = marksJunior.filter(mark => {
     const hasMarks = (
-      mark?.halfYearly?.totalMarks > 0 || 
+      mark?.halfYearly?.totalMarks > 0 ||
       mark?.yearly?.yearlytotalMarks > 0
     );
     return hasMarks;
@@ -22,12 +22,12 @@ const calculateJuniorTotals = (marksJunior: any[]) => {
 
   const totals = filteredMarks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
-    const isFortyMarksSubject = subject?.code?.match(/^(Comp01|GK01|DRAW02)$/);
-    const isThirtyMarksSubject = subject?.code?.match(/^(Urdu01|SAN01)$/);
-    
+    const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
+    const isThirtyMarksSubject = subject?.code?.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+
     // Calculate max marks per term based on subject type
     let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 50 : 100;
-    
+
     const halfYearlyMarks = mark.halfYearly?.totalMarks || 0;
     const yearlyMarks = mark.yearly?.yearlytotalMarks || 0;
     acc.totalMarks += (halfYearlyMarks + yearlyMarks);
@@ -35,7 +35,7 @@ const calculateJuniorTotals = (marksJunior: any[]) => {
     return acc;
   }, { totalMarks: 0, maxPossibleMarks: 0 });
 
-  const overallPercentage = totals.maxPossibleMarks > 0 
+  const overallPercentage = totals.maxPossibleMarks > 0
     ? Number((totals.totalMarks / totals.maxPossibleMarks * 100).toFixed(2))
     : 0;
 
@@ -55,7 +55,7 @@ const calculateSeniorTotals = (marksSenior: any[]) => {
   // Calculate totals for regular subjects
   let totalObtained = 0;
   let totalMarks = 0;
-  
+
   regularMarks.forEach(mark => {
     if (mark.grandTotal) {
       totalObtained += mark.grandTotal;
@@ -68,8 +68,8 @@ const calculateSeniorTotals = (marksSenior: any[]) => {
     totalObtained += itMarks.total;
     totalMarks += 100;
   }
-  
-  const overallPercentage = totalMarks > 0 
+
+  const overallPercentage = totalMarks > 0
     ? Number((totalObtained / totalMarks * 100).toFixed(2))
     : 0;
 
@@ -88,7 +88,7 @@ const calculateHigherTotals = (marksHigher: any[]) => {
   marksHigher.forEach(mark => {
     // Check if we have a PAI02 subject (Painting)
     const isPaintingSubject = mark?.sectionSubject?.subject?.code === 'PAI02';
-    
+
     if (isPaintingSubject) {
       if (mark.grandTotal) {
         totalObtained += mark.grandTotal;
@@ -105,20 +105,20 @@ const calculateHigherTotals = (marksHigher: any[]) => {
     }
   });
 
-  const overallPercentage = totalMarks > 0 ? 
+  const overallPercentage = totalMarks > 0 ?
     Number((totalObtained / totalMarks * 100).toFixed(2)) : 0;
 
   return { totalObtained, totalMarks, overallPercentage };
 };
 
-export async function importStudentsWithMarks({ 
-  students, 
-  classId, 
+export async function importStudentsWithMarks({
+  students,
+  classId,
   sectionId,
   sessionId
-}: { 
-  students: any[], 
-  classId: number, 
+}: {
+  students: any[],
+  classId: number,
   sectionId: number,
   sessionId: number
 }) {
@@ -126,7 +126,7 @@ export async function importStudentsWithMarks({
     return await prisma.$transaction(async (tx) => {
       const createdStudents = await Promise.all(students.map(async (student) => {
         const convertedStudent = convertStudentData(student);
-        
+
         const studentCreateInput: Prisma.StudentCreateInput = {
           ...convertedStudent,
           Class: {
@@ -150,16 +150,16 @@ export async function importStudentsWithMarks({
     });
   } catch (error) {
     console.error('Import error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error importing students' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error importing students'
     };
   }
 }
 
 export async function exportStudentsWithMarks(
-  classId: number, 
-  sectionId: number, 
+  classId: number,
+  sectionId: number,
   sessionId: number
 ) {
   try {
@@ -240,26 +240,26 @@ export async function exportStudentsWithMarks(
       let totalMarks = 0;
       let totalMaxMarks = 0;
       let overallPercentage = 0;
-      
+
       const classNumber = student.Class?.classNumber || 0;
-      
+
       if (classNumber <= 8) {
         // Junior marks (Classes 1-8)
-        const { totalMarks: juniorTotal, maxPossibleMarks, overallPercentage: juniorPercentage } = 
+        const { totalMarks: juniorTotal, maxPossibleMarks, overallPercentage: juniorPercentage } =
           calculateJuniorTotals(student.marksJunior);
         totalMarks = juniorTotal;
         totalMaxMarks = maxPossibleMarks;
         overallPercentage = juniorPercentage;
       } else if (classNumber <= 10) {
         // Senior marks (Classes 9-10)
-        const { totalObtained, totalMarks: seniorMaxMarks, overallPercentage: seniorPercentage } = 
+        const { totalObtained, totalMarks: seniorMaxMarks, overallPercentage: seniorPercentage } =
           calculateSeniorTotals(student.marksSenior);
         totalMarks = totalObtained;
         totalMaxMarks = seniorMaxMarks;
         overallPercentage = seniorPercentage;
       } else {
         // Higher marks (Classes 11-12)
-        const { totalObtained, totalMarks: higherMaxMarks, overallPercentage: higherPercentage } = 
+        const { totalObtained, totalMarks: higherMaxMarks, overallPercentage: higherPercentage } =
           calculateHigherTotals(student.markHigher);
         totalMarks = totalObtained;
         totalMaxMarks = higherMaxMarks;
@@ -268,7 +268,7 @@ export async function exportStudentsWithMarks(
 
       // Exclude marks arrays from export but add calculated totals
       const { marksJunior, marksSenior, markHigher, ...studentData } = student;
-      
+
       return {
         ...studentData,
         admissiondate: student.admissiondate ? student.admissiondate.toISOString().split('T')[0] : '',
@@ -283,9 +283,9 @@ export async function exportStudentsWithMarks(
     return { success: true, data: formattedStudents };
   } catch (error) {
     console.error('Export error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error exporting students' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error exporting students'
     };
   }
 }
@@ -383,26 +383,26 @@ export async function exportAllStudents(sessionId: number) {
       let totalMarks = 0;
       let totalMaxMarks = 0;
       let overallPercentage = 0;
-      
+
       const classNumber = student.Class?.classNumber || 0;
-      
+
       if (classNumber <= 8) {
         // Junior marks (Classes 1-8)
-        const { totalMarks: juniorTotal, maxPossibleMarks, overallPercentage: juniorPercentage } = 
+        const { totalMarks: juniorTotal, maxPossibleMarks, overallPercentage: juniorPercentage } =
           calculateJuniorTotals(student.marksJunior);
         totalMarks = juniorTotal;
         totalMaxMarks = maxPossibleMarks;
         overallPercentage = juniorPercentage;
       } else if (classNumber <= 10) {
         // Senior marks (Classes 9-10)
-        const { totalObtained, totalMarks: seniorMaxMarks, overallPercentage: seniorPercentage } = 
+        const { totalObtained, totalMarks: seniorMaxMarks, overallPercentage: seniorPercentage } =
           calculateSeniorTotals(student.marksSenior);
         totalMarks = totalObtained;
         totalMaxMarks = seniorMaxMarks;
         overallPercentage = seniorPercentage;
       } else {
         // Higher marks (Classes 11-12)
-        const { totalObtained, totalMarks: higherMaxMarks, overallPercentage: higherPercentage } = 
+        const { totalObtained, totalMarks: higherMaxMarks, overallPercentage: higherPercentage } =
           calculateHigherTotals(student.markHigher);
         totalMarks = totalObtained;
         totalMaxMarks = higherMaxMarks;
@@ -427,9 +427,9 @@ export async function exportAllStudents(sessionId: number) {
     return { success: true, data: grouped };
   } catch (error) {
     console.error('Export error:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error exporting students' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error exporting students'
     };
   }
 }

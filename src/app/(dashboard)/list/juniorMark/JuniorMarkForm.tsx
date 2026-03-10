@@ -617,9 +617,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                 <th className="p-2 border">
                   {(() => {
                     const subject = selectedClassSubjects.find(cs => cs.id === selectedSubject)?.subject;
-                    if (subject?.code.match(/^(Comp01|GK01|DRAW02)$/)) {
-                      return "Exam Marks (40)";
-                    } else if (subject?.code.match(/^(Urdu01|SAN01)$/)) {
+                    if (subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/)) {
                       return "Exam Marks (30)";
                     } else {
                       return "Exam Marks (80)";
@@ -632,8 +630,8 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             <tbody>
               {selectedSectionStudents.map((student, index) => {
                 const subject = selectedClassSubjects.find(cs => cs.id === selectedSubject)?.subject;
-                const isFortyMarksSubject = subject?.code.match(/^(Comp01|GK01|DRAW02)$/);
-                const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01)$/);
+                const isFortyMarksSubject = false;
+                const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
 
                 return (
                   <tr key={student.id} className="even:bg-gray-50">

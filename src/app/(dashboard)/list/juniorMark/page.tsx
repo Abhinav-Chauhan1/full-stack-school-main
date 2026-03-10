@@ -22,15 +22,15 @@ const JuniorMarkListPage = async ({
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const assignedClassStr = (sessionClaims?.metadata as { assignedClass?: string })?.assignedClass || "";
   const assignedSectionStr = (sessionClaims?.metadata as { assignedSection?: string })?.assignedSection || "";
-  
+
   // Get the assigned class id and section id for the teacher
   let assignedClassId: number | null = null;
   let assignedSectionId: number | null = null;
-  
+
   if (role === "teacher" && userId) {
     const teacher = await prisma.teacher.findUnique({
       where: { id: userId },
-      select: { 
+      select: {
         assignedClassId: true,
         assignedSectionId: true
       }
@@ -41,8 +41,8 @@ const JuniorMarkListPage = async ({
 
   // Check access permission
   const hasAccess = role === "admin" || (
-    role === "teacher" && 
-    assignedClassId && 
+    role === "teacher" &&
+    assignedClassId &&
     assignedSectionId
   );
 
@@ -74,7 +74,7 @@ const JuniorMarkListPage = async ({
           : {}
       ]
     },
-    orderBy: { 
+    orderBy: {
       classNumber: "asc"
     },
     include: {
@@ -122,7 +122,7 @@ const JuniorMarkListPage = async ({
         className: "hidden md:table-cell",
       },
     ];
-  
+
     const examSpecificColumns = examType === 'HALF_YEARLY' ? [
       {
         header: "UT1",
@@ -187,7 +187,7 @@ const JuniorMarkListPage = async ({
         accessor: "yearly.yearlygrade",
       },
     ];
-  
+
     return [...baseColumns, ...examSpecificColumns];
   };
 
@@ -295,11 +295,11 @@ const JuniorMarkListPage = async ({
                 options={
                   classId
                     ? classes
-                        .find((c) => c.id === parseInt(classId))
-                        ?.sections.map((section) => ({
-                          value: section.id.toString(),
-                          label: section.name,
-                        })) ?? []
+                      .find((c) => c.id === parseInt(classId))
+                      ?.sections.map((section) => ({
+                        value: section.id.toString(),
+                        label: section.name,
+                      })) ?? []
                     : []
                 }
                 disabled={!classId}
@@ -353,20 +353,16 @@ const JuniorMarkListPage = async ({
 const renderRow = (item: any, examType?: string, role?: string) => {
   const examData = examType === 'HALF_YEARLY' ? item.halfYearly : item.yearly;
   const subjectCode = item.classSubject?.subject?.code;
-  
+
   // Function to get the correct exam marks based on subject
   const getExamMarks = () => {
     if (examType === 'HALF_YEARLY') {
-      if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
-        return examData?.examMarks40 || '-';
-      } else if (['Urdu01', 'SAN01'].includes(subjectCode)) {
+      if (['Comp01', 'GK01', 'DRAW02', 'Urdu01', 'SAN01'].includes(subjectCode)) {
         return examData?.examMarks30 || '-';
       }
       return examData?.examMarks || '-';
     } else {
-      if (['Comp01', 'GK01', 'DRAW02'].includes(subjectCode)) {
-        return examData?.yearlyexamMarks40 || '-';
-      } else if (['Urdu01', 'SAN01'].includes(subjectCode)) {
+      if (['Comp01', 'GK01', 'DRAW02', 'Urdu01', 'SAN01'].includes(subjectCode)) {
         return examData?.yearlyexamMarks30 || '-';
       }
       return examData?.yearlyexamMarks || '-';

@@ -140,8 +140,8 @@ const ViewStudentPage = async ({
     // Helper for exam marks based on subject type
     const getExamMarks = (examData: any, isYearly: boolean, subjectCode: string) => {
         if (!examData) return '-';
-        const isFortyMarks = subjectCode.match(/^(Comp01|GK01|DRAW02)$/);
-        const isThirtyMarks = subjectCode.match(/^(Urdu01|SAN01)$/);
+        const isFortyMarks = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
+        const isThirtyMarks = subjectCode.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
         if (isFortyMarks) return isYearly ? examData.yearlyexamMarks40 ?? '-' : examData.examMarks40 ?? '-';
         if (isThirtyMarks) return isYearly ? examData.yearlyexamMarks30 ?? '-' : examData.examMarks30 ?? '-';
         return isYearly ? examData.yearlyexamMarks ?? '-' : examData.examMarks ?? '-';
