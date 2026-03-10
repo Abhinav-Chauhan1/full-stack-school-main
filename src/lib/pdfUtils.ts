@@ -268,6 +268,22 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
 
   // Section headers removed as per requirement
 
+  const thirtyMarksSubHeaderRow = [
+    {},
+    { text: '(10)', alignment: 'center', style: 'columnHeader' },
+    { text: '(10)', alignment: 'center', style: 'columnHeader' },
+    { text: '(30)', alignment: 'center', style: 'columnHeader' },
+    { text: '(50)', alignment: 'center', style: 'columnHeader' },
+    {},
+    { text: '(10)', alignment: 'center', style: 'columnHeader' },
+    { text: '(10)', alignment: 'center', style: 'columnHeader' },
+    { text: '(30)', alignment: 'center', style: 'columnHeader' },
+    { text: '(50)', alignment: 'center', style: 'columnHeader' },
+    {},
+    { text: '(100)', alignment: 'center', style: 'columnHeader' },
+    {}
+  ];
+
   // Build the complete table
   return [
     [
@@ -314,8 +330,8 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
 
     // Forty mark subjects section removed (moved to thirty mark subjects)
 
-    // Include thirty mark subjects (no section header)
-    ...(thirtyMarkSubjects.length > 0 ? thirtyMarkSubjectRows : []),
+    // Include thirty mark subjects with their specific marking heading
+    ...(thirtyMarkSubjects.length > 0 ? [thirtyMarksSubHeaderRow, ...thirtyMarkSubjectRows] : []),
 
     totalRow,
     percentageRow
