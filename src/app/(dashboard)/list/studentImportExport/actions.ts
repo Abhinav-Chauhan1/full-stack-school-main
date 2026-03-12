@@ -23,7 +23,7 @@ const calculateJuniorTotals = (marksJunior: any[]) => {
   const totals = filteredMarks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
     const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-    const isThirtyMarksSubject = subject?.code?.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+    const isThirtyMarksSubject = subject?.code?.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
 
     // Calculate max marks per term based on subject type
     let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 50 : 100;

@@ -40,13 +40,13 @@ export const generateClassResultPdfDefinition = (
         const regularSubjects = safeMarksJunior.filter(mark => {
             const subject = mark?.classSubject?.subject;
             const isFortyMarksSubject = false;
-            const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+            const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
             return !isFortyMarksSubject && !isThirtyMarksSubject;
         });
 
         const thirtyMarkSubjects = safeMarksJunior.filter(mark => {
             const subject = mark?.classSubject?.subject;
-            return subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+            return subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
         });
 
         // Map over all subjects
@@ -121,7 +121,25 @@ export const generateClassResultPdfDefinition = (
                 { text: 'Grade', style: 'subTableHeader', bold: true, fillColor: '#f9fafb' }
             ],
             ...generateRows(regularSubjects, false),
-            ...generateRows(thirtyMarkSubjects, true),
+            ...(thirtyMarkSubjects.length > 0 ? [
+                [
+                    { text: '', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(10)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(10)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(5)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(5)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(30)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(50)', style: 'subTableHeader', fillColor: '#f9fafb', bold: true },
+                    { text: '(10)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(5)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(5)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(30)', style: 'subTableHeader', fillColor: '#f9fafb' },
+                    { text: '(50)', style: 'subTableHeader', fillColor: '#f9fafb', bold: true },
+                    { text: '(100)', style: 'subTableHeader', fillColor: '#f9fafb', bold: true },
+                    { text: '', style: 'subTableHeader', fillColor: '#f9fafb' }
+                ],
+                ...generateRows(thirtyMarkSubjects, true)
+            ] : []),
         ];
 
         // Break every 3 students (0, 1, 2 => break at 3, 6, 9)
@@ -251,11 +269,11 @@ export const generateAndDownloadClassResultPdf = async (
 
         const docDefinition = generateClassResultPdfDefinition(sessionCode, className, sectionName, students);
         const pdfDoc = pdfMake.createPdf(docDefinition);
-        
+
         const safeClassName = className.replace(/[^a-zA-Z0-9]/g, '_');
         const safeSectionName = sectionName.replace(/[^a-zA-Z0-9]/g, '_');
         pdfDoc.download(`Class_${safeClassName}_${safeSectionName}_Detailed_Results_${sessionCode}.pdf`);
-        
+
     } catch (error) {
         console.error('Error generating PDF:', error);
         throw error;

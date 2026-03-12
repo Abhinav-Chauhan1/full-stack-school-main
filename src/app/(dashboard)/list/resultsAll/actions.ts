@@ -100,7 +100,7 @@ export async function exportResultsToExcel(sessionId: number, classId: number, s
 
             if (mark) {
                 const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-                const isThirtyMarksSubject = subject.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+                const isThirtyMarksSubject = subject.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
 
                 // Determine which exam marks field to use
                 let halfYearlyExamMarks = mark.halfYearly?.examMarks;

@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         let maxMarks = 100;
 
         const is40MarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-        const is30MarksSubject = ['Urdu01', 'SAN01', 'Comp01', 'GK01', 'DRAW02'].includes(subjectCode);
+        const is30MarksSubject = ['Urdu01', 'SAN01', 'Comp01', 'GK01', 'DRAW02', 'PAI01'].includes(subjectCode);
 
         if (is40MarksSubject) {
           maxMarks = 50;

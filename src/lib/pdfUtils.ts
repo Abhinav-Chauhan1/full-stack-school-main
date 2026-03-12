@@ -102,7 +102,7 @@ export const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
     const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
 
     // Calculate max marks per term based on subject type
     // Both 30-mark and 40-mark subjects have a maximum total of 50 points
@@ -158,7 +158,7 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
   const regularSubjects = safeMarksJunior.filter(mark => {
     const subject = mark?.classSubject?.subject;
     const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
     return !isFortyMarksSubject && !isThirtyMarksSubject;
   });
 
@@ -166,7 +166,7 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
 
   const thirtyMarkSubjects = safeMarksJunior.filter(mark => {
     const subject = mark?.classSubject?.subject;
-    return subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
+    return subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
   });
 
   // Helper to get exam marks based on subject type
