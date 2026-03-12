@@ -237,53 +237,29 @@ export async function fetchClassResultsForPdf(sessionId: number, classId: number
     const className = students[0]?.Class?.name ?? 'Class';
     const sectionName = students[0]?.Section?.name ?? 'Section';
 
-    const processedStudents = students.map((student, index) => {
-        let totalMarks = 0;
-        let maxPossibleMarks = 0;
-        let hasFailed = false;
-
-        for (const mark of student.marksJunior) {
-            const subject = mark.classSubject.subject;
-            const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
-            const isThirtyMarksSubject = subject.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02)$/);
-
-            const halfYearlyTotal = mark.halfYearly?.totalMarks ?? 0;
-            const yearlyTotal = mark.yearly?.yearlytotalMarks ?? 0;
-            totalMarks += halfYearlyTotal + yearlyTotal;
-
-            const maxPerTerm = isFortyMarksSubject || isThirtyMarksSubject ? 50 : 100;
-            maxPossibleMarks += maxPerTerm * 2;
-
-            if (mark.grandTotalGrade === 'E' || mark.grandTotalGrade === 'F') {
-                hasFailed = true;
-            }
-        }
-
-        const percentage = maxPossibleMarks > 0
-            ? Number((totalMarks / maxPossibleMarks * 100).toFixed(2))
-            : 0;
-
-        const getGrade = (pct: number) => {
-            if (pct >= 91) return 'A1';
-            if (pct >= 81) return 'A2';
-            if (pct >= 71) return 'B1';
-            if (pct >= 61) return 'B2';
-            if (pct >= 51) return 'C1';
-            if (pct >= 41) return 'C2';
-            if (pct >= 33) return 'D';
-            return 'E';
-        };
-
-        return {
-            sno: index + 1,
+    const processedStudents = students.map((student) => ({
+        student: {
             name: student.name,
-            admNo: student.admissionno?.toString() || '-',
-            totalMarks,
-            percentage,
-            grade: getGrade(percentage),
-            status: hasFailed ? 'FAILED' : 'PASSED'
-        };
-    });
+            birthday: student.birthday,
+            Class: student.Class || { name: '', classNumber: 0 },
+            Section: student.Section || { name: '' },
+            admissionno: student.admissionno,
+            mothername: student.mothername,
+            moccupation: student.moccupation,
+            fathername: student.fathername,
+            foccupation: student.foccupation,
+            address: student.address,
+            city: student.city,
+            village: student.village,
+            bloodgroup: student.bloodgroup,
+        },
+        marksJunior: student.marksJunior,
+        session: student.Session || {
+            sessioncode: 'N/A',
+            sessionfrom: new Date(),
+            sessionto: new Date()
+        },
+    }));
 
     return {
         sessionCode,
