@@ -6,6 +6,7 @@ import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
 import ExcelExportButton from "./ExcelExportButton";
+import ClassPdfExportButton from "./ClassPdfExportButton";
 
 const ResultsAllPage = async ({
     searchParams,
@@ -148,6 +149,11 @@ const ResultsAllPage = async ({
                     <div className="flex items-center gap-2">
                         {filtersSelected && (
                             <>
+                                <ClassPdfExportButton
+                                    sessionId={parseInt(sessionId!)}
+                                    classId={parseInt(classId!)}
+                                    sectionId={parseInt(sectionId!)}
+                                />
                                 <ExcelExportButton
                                     sessionId={parseInt(sessionId!)}
                                     classId={parseInt(classId!)}

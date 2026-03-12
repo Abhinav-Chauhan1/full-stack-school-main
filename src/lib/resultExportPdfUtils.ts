@@ -39,43 +39,6 @@ export const generateResultExportPdfDefinition = (
         pageMargins: [15, 10, 15, 10],
         compress: true,
         content: [
-            // School header
-            {
-                stack: [
-                    {
-                        columns: [
-                            {
-                                width: 55,
-                                image: logoData || '',
-                                alignment: 'center'
-                            },
-                            {
-                                stack: [
-                                    { text: 'Affiliation No.: 2132869', alignment: 'center', color: 'red', fontSize: 7 },
-                                    { text: 'HOWARD CONVENT SCHOOL', style: 'schoolName', color: '#000080' },
-                                    { text: 'Affiliated To C.B.S.E. New Delhi', style: 'affiliation', color: 'red' },
-                                    { text: 'Near Garhi, Dhampur Road, Kanth (Moradabad)', style: 'address' }
-                                ],
-                                alignment: 'center',
-                                width: '*'
-                            }
-                        ]
-                    }
-                ],
-                margin: [0, 0, 0, 3]
-            },
-            {
-                text: `RESULT SHEET (SESSION: ${studentResult?.session?.sessioncode ?? '2023-2024'})`,
-                style: 'reportCardHeader',
-                alignment: 'center',
-                margin: [0, 5, 0, 2]
-            },
-            {
-                text: '(Issued by School as per Directives of Central Board of Secondary Education, Delhi)',
-                style: 'subHeader',
-                alignment: 'center',
-                margin: [0, 0, 0, 5]
-            },
             // Student details
             {
                 table: {
