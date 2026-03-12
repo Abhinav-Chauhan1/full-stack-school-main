@@ -54,20 +54,26 @@ export const generateClassResultPdfDefinition = (
             return marksArray.map(mark => {
                 const subjectName = mark?.classSubject?.subject?.name ?? '-';
 
+                // Format helper for marks
+                const formatMark = (markValue: any) => {
+                    if (markValue === -1) return 'AB';
+                    return markValue ?? '-';
+                };
+
                 // Term 1
-                const t1_ut1 = mark?.halfYearly?.ut1 ?? '-';
-                const t1_ut2 = mark?.halfYearly?.ut2 ?? '-';
-                const t1_nb = mark?.halfYearly?.noteBook ?? '-';
-                const t1_sub = mark?.halfYearly?.subEnrichment ?? '-';
-                const t1_hye = isThirty ? (mark?.halfYearly?.examMarks30 ?? '-') : (mark?.halfYearly?.examMarks ?? '-');
-                const t1_total = mark?.halfYearly?.totalMarks ?? '-';
+                const t1_ut1 = formatMark(mark?.halfYearly?.ut1);
+                const t1_ut2 = formatMark(mark?.halfYearly?.ut2);
+                const t1_nb = formatMark(mark?.halfYearly?.noteBook);
+                const t1_sub = formatMark(mark?.halfYearly?.subEnrichment);
+                const t1_hye = isThirty ? formatMark(mark?.halfYearly?.examMarks30) : formatMark(mark?.halfYearly?.examMarks);
+                const t1_total = formatMark(mark?.halfYearly?.totalMarks);
 
                 // Term 2
-                const t2_ut3 = mark?.yearly?.ut3 ?? '-';
-                const t2_nb = mark?.yearly?.yearlynoteBook ?? '-';
-                const t2_sub = mark?.yearly?.yearlysubEnrichment ?? '-';
-                const t2_ye = isThirty ? (mark?.yearly?.yearlyexamMarks30 ?? '-') : (mark?.yearly?.yearlyexamMarks ?? '-');
-                const t2_total = mark?.yearly?.yearlytotalMarks ?? '-';
+                const t2_ut3 = formatMark(mark?.yearly?.ut3);
+                const t2_nb = formatMark(mark?.yearly?.yearlynoteBook);
+                const t2_sub = formatMark(mark?.yearly?.yearlysubEnrichment);
+                const t2_ye = isThirty ? formatMark(mark?.yearly?.yearlyexamMarks30) : formatMark(mark?.yearly?.yearlyexamMarks);
+                const t2_total = formatMark(mark?.yearly?.yearlytotalMarks);
 
                 // Overall
                 const grandTotal = mark?.grandTotalMarks ?? '-';

@@ -113,7 +113,7 @@ interface StudentMark {
 const calculateOverallResults = (marks: StudentMark[]) => {
   let totalMarks = 0;
   let totalObtained = 0;
-  
+
   marks.forEach(mark => {
     if (mark.grandTotal) {
       totalObtained += mark.grandTotal;
@@ -154,15 +154,15 @@ const generateCoScholasticTable = (marksSenior: any[]) => {
       term2Discipline: "-"
     };
   }
-  
+
   return {
     headerRows: 2,
     widths: ['40%', '10%', '40%', '10%'],
     body: [
       [
         { text: 'TERM I', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' },
-        {}, 
-        { text: 'TERM II', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' }, 
+        {},
+        { text: 'TERM II', style: 'tableHeader', alignment: 'center', colSpan: 2, fillColor: '#e6e6e6' },
         {}
       ],
       [
@@ -206,35 +206,35 @@ export const generatePdfDefinition9 = (
   getOverallGrade: (percentage: number) => string
 ): TDocumentDefinitions => {
   const safeMarksSenior = studentResult?.marksSenior ?? [];
-  
+
   // Separate IT001 marks from other subjects
   const allRegularMarks = safeMarksSenior.filter(mark => mark.sectionSubject.subject.code !== 'IT001');
-  
+
   // Process marks: filter out invalid marks and handle duplicates by taking the entry with best scores
   const subjectMap = new Map<string, any>();
-  
+
   allRegularMarks.forEach(mark => {
     if (!mark?.sectionSubject?.subject?.code) return;
-    
+
     const subjectCode = mark.sectionSubject.subject.code;
     // Check if this mark has any meaningful data
-    const hasData = mark.pt1 !== null || 
-                    mark.pt2 !== null || 
-                    mark.pt3 !== null || 
-                    mark.bestTwoPTAvg !== null || 
-                    mark.multipleAssessment !== null || 
-                    mark.portfolio !== null || 
-                    mark.subEnrichment !== null || 
-                    mark.bestScore !== null || 
-                    mark.finalExam !== null || 
-                    mark.grandTotal !== null ||
-                    mark.theory !== null ||
-                    mark.practical !== null ||
-                    mark.total !== null ||
-                    mark.grade !== null;
-                    
+    const hasData = mark.pt1 !== null ||
+      mark.pt2 !== null ||
+      mark.pt3 !== null ||
+      mark.bestTwoPTAvg !== null ||
+      mark.multipleAssessment !== null ||
+      mark.portfolio !== null ||
+      mark.subEnrichment !== null ||
+      mark.bestScore !== null ||
+      mark.finalExam !== null ||
+      mark.grandTotal !== null ||
+      mark.theory !== null ||
+      mark.practical !== null ||
+      mark.total !== null ||
+      mark.grade !== null;
+
     if (!hasData) return;
-    
+
     // Calculate a score for this mark to compare with existing entries
     const calculateScore = (m: any): number => {
       let score = 0;
@@ -247,19 +247,19 @@ export const generatePdfDefinition9 = (
       score += (m.grandTotal || 0) * 2;
       return score;
     };
-    
+
     // Get the score for current mark
     const currentScore = calculateScore(mark);
-    
+
     // If we don't have this subject yet, or current mark has better scores, use it
     if (!subjectMap.has(subjectCode) || currentScore > calculateScore(subjectMap.get(subjectCode))) {
       subjectMap.set(subjectCode, mark);
     }
   });
-  
+
   // Convert map to array of unique marks
   const regularMarks = Array.from(subjectMap.values());
-  
+
   // Find IT marks separately (no duplicate handling needed)
   // If there are multiple IT entries, choose the one with highest total
   const itMarks = safeMarksSenior
@@ -268,116 +268,129 @@ export const generatePdfDefinition9 = (
 
   // Calculate results for regular subjects
   const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(regularMarks);
-  
+
   // Add IT marks to the total if available
   let finalTotalObtained = totalObtained;
   let finalTotalMarks = totalMarks;
-  
+
   if (itMarks && itMarks.total) {
     finalTotalObtained += itMarks.total;
     finalTotalMarks += 100; // IT subject is out of 100
   }
-  
+
   // Recalculate percentage with IT included
-  const finalOverallPercentage = finalTotalMarks > 0 
-    ? ((finalTotalObtained / finalTotalMarks) * 100).toFixed(2) 
+  const finalOverallPercentage = finalTotalMarks > 0
+    ? ((finalTotalObtained / finalTotalMarks) * 100).toFixed(2)
     : "0";
+
+  // Format helper for marks
+  const formatMark = (markValue: any) => {
+    if (markValue === -1) return 'AB';
+    return markValue ?? '-';
+  };
 
   // Regular subjects table body
   const tableBody = [
     [
-        { text: 'SUBJECTS', rowSpan: 3, alignment: 'center', style: 'tableHeader' },
-        { text: 'Periodic Test', colSpan: 4, alignment: 'center', style: 'tableHeader' },
-        {}, {}, {},
-        { text: 'Multiple\nAssessment', alignment: 'center', style: 'tableHeader' },
-        { text: 'Portfolio &\nSub. Enrichment', alignment: 'center', colSpan: 2, style: 'tableHeader' },
-        {},
-        { text: 'Best of\nPT+M.A.+\nPortfolio+S.E.\n[E=A+B+C+D]', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
-        { text: 'Final\nExam', alignment: 'center', style: 'tableHeader' },
-        { 
-          text: 'GRAND\nTOTAL\n[E+F]', 
-          alignment: 'center', 
-          style: 'tableHeader',
-          colSpan: 2,
-          rowSpan: 2,
-          margin: [0, 10, 0, 10] // Add margins to help with vertical centering
-        },
-        {}
-      ],
-      [
-        {},
-        { text: 'PT1', alignment: 'center', style: 'columnHeader' },
-        { text: 'PT2', alignment: 'center', style: 'columnHeader' },
-        { text: 'PT3', alignment: 'center', style: 'columnHeader' },
-        { text: 'Avg. of\nBest two\nPT[A]', alignment: 'center', style: 'columnHeader' },
-        { text: 'M.A.[B]', alignment: 'center', style: 'columnHeader' },
-        { text: 'Portfolio[C]', alignment: 'center', style: 'columnHeader' },
-        { text: 'S.E.[D]', alignment: 'center', style: 'columnHeader' },
-        { text: 'Total', alignment: 'center', style: 'columnHeader' },
-        { text: 'ANNUAL\nEXAM\n[F]', alignment: 'center', style: 'columnHeader' },
-        {},
-        {}
-      ],
-      [
-        {},
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 20', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 80', alignment: 'center', style: 'outHeader' },
-        { text: 'Out of 100', alignment: 'center', style: 'outHeader' },
-        { text: 'Grade', alignment: 'center', style: 'outHeader' }
-      ],
-      ...regularMarks.map(mark => [
+      { text: 'SUBJECTS', rowSpan: 3, alignment: 'center', style: 'tableHeader' },
+      { text: 'Periodic Test', colSpan: 4, alignment: 'center', style: 'tableHeader' },
+      {}, {}, {},
+      { text: 'Multiple\nAssessment', alignment: 'center', style: 'tableHeader' },
+      { text: 'Portfolio &\nSub. Enrichment', alignment: 'center', colSpan: 2, style: 'tableHeader' },
+      {},
+      { text: 'Best of\nPT+M.A.+\nPortfolio+S.E.\n[E=A+B+C+D]', rowSpan: 2, alignment: 'center', style: 'tableHeader' },
+      { text: 'Final\nExam', alignment: 'center', style: 'tableHeader' },
+      {
+        text: 'GRAND\nTOTAL\n[E+F]',
+        alignment: 'center',
+        style: 'tableHeader',
+        colSpan: 2,
+        rowSpan: 2,
+        margin: [0, 10, 0, 10] // Add margins to help with vertical centering
+      },
+      {}
+    ],
+    [
+      {},
+      { text: 'PT1', alignment: 'center', style: 'columnHeader' },
+      { text: 'PT2', alignment: 'center', style: 'columnHeader' },
+      { text: 'PT3', alignment: 'center', style: 'columnHeader' },
+      { text: 'Avg. of\nBest two\nPT[A]', alignment: 'center', style: 'columnHeader' },
+      { text: 'M.A.[B]', alignment: 'center', style: 'columnHeader' },
+      { text: 'Portfolio[C]', alignment: 'center', style: 'columnHeader' },
+      { text: 'S.E.[D]', alignment: 'center', style: 'columnHeader' },
+      { text: 'Total', alignment: 'center', style: 'columnHeader' },
+      { text: 'ANNUAL\nEXAM\n[F]', alignment: 'center', style: 'columnHeader' },
+      {},
+      {}
+    ],
+    [
+      {},
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 5', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 20', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 80', alignment: 'center', style: 'outHeader' },
+      { text: 'Out of 100', alignment: 'center', style: 'outHeader' },
+      { text: 'Grade', alignment: 'center', style: 'outHeader' }
+    ],
+    ...regularMarks.map(mark => {
+      const formatMark = (markValue: any) => {
+        if (markValue === -1) return 'AB';
+        return markValue ?? '-';
+      };
+
+      return [
         { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
-        { text: mark?.pt1 ?? '-', alignment: 'center' },
-        { text: mark?.pt2 ?? '-', alignment: 'center' },
-        { text: mark?.pt3 ?? '-', alignment: 'center' },
-        { text: mark?.bestTwoPTAvg ?? '-', alignment: 'center' },
-        { text: mark?.multipleAssessment ?? '-', alignment: 'center' },
-        { text: mark?.portfolio ?? '-', alignment: 'center' },
-        { text: mark?.subEnrichment ?? '-', alignment: 'center' },
-        { text: mark?.bestScore ?? '-', alignment: 'center' },
-        { text: mark?.finalExam ?? '-', alignment: 'center' },
-        { text: mark?.grandTotal ?? '-', alignment: 'center' },
+        { text: formatMark(mark?.pt1), alignment: 'center' },
+        { text: formatMark(mark?.pt2), alignment: 'center' },
+        { text: formatMark(mark?.pt3), alignment: 'center' },
+        { text: formatMark(mark?.bestTwoPTAvg), alignment: 'center' },
+        { text: formatMark(mark?.multipleAssessment), alignment: 'center' },
+        { text: formatMark(mark?.portfolio), alignment: 'center' },
+        { text: formatMark(mark?.subEnrichment), alignment: 'center' },
+        { text: formatMark(mark?.bestScore), alignment: 'center' },
+        { text: formatMark(mark?.finalExam), alignment: 'center' },
+        { text: formatMark(mark?.grandTotal), alignment: 'center' },
         { text: mark?.grade ?? '-', alignment: 'center' }
-      ]),
-      [
-        { text: 'Vocational(I.T.)', colSpan: 3 ,rowSpan: 2, alignment: 'center'},
-        {},
-        {},
-        { text: 'Theory\n(Out of 70)', colSpan:3, alignment: 'center', style: 'tableHeader' },
-        {},
-        {},
-        { text: 'Practical\n(Out of 30)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
-        {},
-        {},
-        { text: 'Total\n(Out of 100)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
-        {},
-        {},
-      ],
-      [
-        {},{},{},
-        { text: itMarks?.theory ?? '-', colSpan:3, alignment: 'center' },{},{},
-        { text: itMarks?.practical ?? '-', colSpan:3, alignment: 'center' },{},{},
-        { text: itMarks?.total ?? '-', colSpan:3, alignment: 'center' },{},{},
-      ],
-      [
-        { text: 'Over All Total Marks', colSpan: 2, alignment: 'right', style: 'tableHeader' },
-        {},
-        { text: `${finalTotalObtained}/${finalTotalMarks}`, colSpan: 2, alignment: 'center', style: 'overallValue' },
-        {},
-        { text: 'Over All Percentage', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {}, 
-        { text: `${finalOverallPercentage}%`, colSpan: 2, alignment: 'center', style: 'overallValue' }, {},
-        { text: 'Over All Grade', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {},
-        { text: getOverallGrade(Number(finalOverallPercentage)), colSpan: 2, alignment: 'center', style: 'overallValue' },
-        {}
-      ]
-    ];
+      ];
+    }),
+    [
+      { text: 'Vocational(I.T.)', colSpan: 3, rowSpan: 2, alignment: 'center' },
+      {},
+      {},
+      { text: 'Theory\n(Out of 70)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
+      {},
+      {},
+      { text: 'Practical\n(Out of 30)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
+      {},
+      {},
+      { text: 'Total\n(Out of 100)', colSpan: 3, alignment: 'center', style: 'tableHeader' },
+      {},
+      {},
+    ],
+    [
+      {}, {}, {},
+      { text: formatMark(itMarks?.theory), colSpan: 3, alignment: 'center' }, {}, {},
+      { text: formatMark(itMarks?.practical), colSpan: 3, alignment: 'center' }, {}, {},
+      { text: formatMark(itMarks?.total), colSpan: 3, alignment: 'center' }, {}, {},
+    ],
+    [
+      { text: 'Over All Total Marks', colSpan: 2, alignment: 'right', style: 'tableHeader' },
+      {},
+      { text: `${finalTotalObtained}/${finalTotalMarks}`, colSpan: 2, alignment: 'center', style: 'overallValue' },
+      {},
+      { text: 'Over All Percentage', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {},
+      { text: `${finalOverallPercentage}%`, colSpan: 2, alignment: 'center', style: 'overallValue' }, {},
+      { text: 'Over All Grade', colSpan: 2, alignment: 'right', style: 'tableHeader' }, {},
+      { text: getOverallGrade(Number(finalOverallPercentage)), colSpan: 2, alignment: 'center', style: 'overallValue' },
+      {}
+    ]
+  ];
 
   // Generate co-scholastic table data
   const coScholasticTable = generateCoScholasticTable(safeMarksSenior);
@@ -498,8 +511,8 @@ export const generatePdfDefinition9 = (
           widths: ['*', '*'],
           body: [[
             [{
-              text: `Result: ${safeMarksSenior.every(mark => 
-                (mark.grade !== 'F' )) ? 'PASSED' : 'FAILED'}`,
+              text: `Result: ${safeMarksSenior.every(mark =>
+                (mark.grade !== 'F')) ? 'PASSED' : 'FAILED'}`,
               style: 'tableHeader',
               alignment: 'center'
             }],
@@ -533,7 +546,7 @@ export const generatePdfDefinition9 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -543,7 +556,7 @@ export const generatePdfDefinition9 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -553,7 +566,7 @@ export const generatePdfDefinition9 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -563,7 +576,7 @@ export const generatePdfDefinition9 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }

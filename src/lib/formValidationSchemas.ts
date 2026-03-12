@@ -17,24 +17,24 @@ export const juniorMarkSchema = z.object({
   sessionId: z.number().int().positive("Invalid Session"),
   examType: z.enum(["HALF_YEARLY", "YEARLY"]),
   halfYearly: z.object({
-    ut1: z.number().min(0).max(10).nullable().optional(),
-    ut2: z.number().min(0).max(10).nullable().optional(),
-    noteBook: z.number().min(0).max(5).nullable().optional(),
-    subEnrichment: z.number().min(0).max(5).nullable().optional(),
-    examMarks: z.number().min(0).max(80).nullable().optional(),
-    examMarks40: z.number().min(0).max(40).nullable().optional(),
-    examMarks30: z.number().min(0).max(30).nullable().optional(),
+    ut1: z.number().min(-1).max(10).nullable().optional(),
+    ut2: z.number().min(-1).max(10).nullable().optional(),
+    noteBook: z.number().min(-1).max(5).nullable().optional(),
+    subEnrichment: z.number().min(-1).max(5).nullable().optional(),
+    examMarks: z.number().min(-1).max(80).nullable().optional(),
+    examMarks40: z.number().min(-1).max(40).nullable().optional(),
+    examMarks30: z.number().min(-1).max(30).nullable().optional(),
     totalMarks: z.number().nullable(),
     grade: z.string().nullable(),
     remarks: z.string().nullable()
   }).nullable(),
   yearly: z.object({
-    ut3: z.number().min(0).max(10).nullable().optional(),
-    yearlynoteBook: z.number().min(0).max(5).nullable().optional(),
-    yearlysubEnrichment: z.number().min(0).max(5).nullable().optional(),
-    yearlyexamMarks: z.number().min(0).max(80).nullable().optional(),
-    yearlyexamMarks40: z.number().min(0).max(40).nullable().optional(),
-    yearlyexamMarks30: z.number().min(0).max(30).nullable().optional(),
+    ut3: z.number().min(-1).max(10).nullable().optional(),
+    yearlynoteBook: z.number().min(-1).max(5).nullable().optional(),
+    yearlysubEnrichment: z.number().min(-1).max(5).nullable().optional(),
+    yearlyexamMarks: z.number().min(-1).max(80).nullable().optional(),
+    yearlyexamMarks40: z.number().min(-1).max(40).nullable().optional(),
+    yearlyexamMarks30: z.number().min(-1).max(30).nullable().optional(),
     yearlytotalMarks: z.number().nullable(),
     yearlygrade: z.string().nullable(),
     yearlyremarks: z.string().nullable()
@@ -50,10 +50,10 @@ export type JuniorMarkSchema = z.infer<typeof juniorMarkSchema>;
 // Add this helper function for grand total grade calculation
 const calculateGrandTotalGrade = (grandTotalMarks: number | null): string | null => {
   if (grandTotalMarks === null) return null;
-  
+
   // Calculate percentage based on total possible marks (200)
   const percentage = (grandTotalMarks / 200) * 100;
-  
+
   if (percentage >= 91) return 'A1';
   if (percentage >= 81) return 'A2';
   if (percentage >= 71) return 'B1';
@@ -68,7 +68,7 @@ export const calculateMarksAndGrade = (markData: any) => {
   const examType = markData.examType;
   const marks = markData[examType === "HALF_YEARLY" ? "halfYearly" : "yearly"];
   const existingHalfYearly = markData.halfYearly; // Get existing half yearly marks
-  
+
   if (!marks) return {
     totalMarks: null,
     grade: null,
@@ -89,26 +89,26 @@ export const calculateMarksAndGrade = (markData: any) => {
     const ut1 = Math.min(10, (Number(marks.ut1) || 0));
     const ut2 = Math.min(10, (Number(marks.ut2) || 0));
     const bestUT = Math.max(ut1, ut2);
-    
+
     // Calculate total based on exam mark type
     if (marks.examMarks40 !== null) {
       // Special case for examMarks40: bestUT/2 + (notebook+subenrichment)/2 + exammarks40
       const roundedHalfUT = Math.round(bestUT / 2); // Round off half of best UT
-      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.noteBook) || 0)) + 
-                                      Math.min(5, (Number(marks.subEnrichment) || 0));
+      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.noteBook) || 0)) +
+        Math.min(5, (Number(marks.subEnrichment) || 0));
       const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2); // Round off half of NB+SE
-      
-      totalMarks = roundedHalfUT + 
-                   roundedHalfNBSE +
-                   Math.min(40, (Number(marks.examMarks40) || 0));
+
+      totalMarks = roundedHalfUT +
+        roundedHalfNBSE +
+        Math.min(40, (Number(marks.examMarks40) || 0));
     } else if (marks.examMarks30 !== null) {
-      totalMarks = 
+      totalMarks =
         bestUT +
         Math.min(5, (Number(marks.noteBook) || 0)) +
         Math.min(5, (Number(marks.subEnrichment) || 0)) +
         Math.min(30, (Number(marks.examMarks30) || 0));
     } else {
-      totalMarks = 
+      totalMarks =
         bestUT +
         Math.min(5, (Number(marks.noteBook) || 0)) +
         Math.min(5, (Number(marks.subEnrichment) || 0)) +
@@ -119,25 +119,25 @@ export const calculateMarksAndGrade = (markData: any) => {
   } else {
     // Yearly exam calculations - only UT3, no UT4
     const ut3 = Math.min(10, (Number(marks.ut3) || 0));
-    
+
     if (marks.yearlyexamMarks40 !== null) {
       // Special case for yearlyexamMarks40
       const roundedHalfUT = Math.round(ut3 / 2); // Round off half of UT3
-      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.yearlynoteBook) || 0)) + 
-                                      Math.min(5, (Number(marks.yearlysubEnrichment) || 0));
+      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0));
       const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2); // Round off half of NB+SE
-      
-      totalMarks = roundedHalfUT + 
-                   roundedHalfNBSE +
-                   Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
+
+      totalMarks = roundedHalfUT +
+        roundedHalfNBSE +
+        Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
     } else if (marks.yearlyexamMarks30 !== null) {
-      totalMarks = 
+      totalMarks =
         ut3 +
         Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
         Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
         Math.min(30, (Number(marks.yearlyexamMarks30) || 0));
     } else {
-      totalMarks = 
+      totalMarks =
         ut3 +
         Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
         Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
@@ -148,10 +148,10 @@ export const calculateMarksAndGrade = (markData: any) => {
   }
 
   // Calculate grade based on percentage
-  const maxMarks = examType === "HALF_YEARLY" 
+  const maxMarks = examType === "HALF_YEARLY"
     ? (marks.examMarks40 !== null ? 50 : marks.examMarks30 !== null ? 50 : 100)
     : (marks.yearlyexamMarks40 !== null ? 50 : marks.yearlyexamMarks30 !== null ? 50 : 100);
-  
+
   const percentage = (totalMarks / maxMarks) * 100;
 
   // Use consistent grade boundaries regardless of max marks
@@ -179,13 +179,13 @@ export const calculateMarksAndGrade = (markData: any) => {
     const halfYearlyBestUT = Math.max(halfYearlyUT1, halfYearlyUT2);
     const yearlyUT3 = Math.min(10, (Number(marks.ut3) || 0));
     const overallBestUT = Math.max(halfYearlyBestUT, yearlyUT3);
-    
+
     // Recalculate yearly total with best UT from both terms
     let recalculatedYearlyTotal = 0;
     if (marks.yearlyexamMarks40 !== null) {
       const roundedHalfUT = Math.round(overallBestUT / 2);
-      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.yearlynoteBook) || 0)) + 
-                                      Math.min(5, (Number(marks.yearlysubEnrichment) || 0));
+      const noteBookAndSubEnrichment = Math.min(5, (Number(marks.yearlynoteBook) || 0)) +
+        Math.min(5, (Number(marks.yearlysubEnrichment) || 0));
       const roundedHalfNBSE = Math.round(noteBookAndSubEnrichment / 2);
       recalculatedYearlyTotal = roundedHalfUT + roundedHalfNBSE + Math.min(40, (Number(marks.yearlyexamMarks40) || 0));
     } else if (marks.yearlyexamMarks30 !== null) {
@@ -199,20 +199,20 @@ export const calculateMarksAndGrade = (markData: any) => {
         Math.min(5, (Number(marks.yearlysubEnrichment) || 0)) +
         Math.min(80, (Number(marks.yearlyexamMarks) || 0));
     }
-    
+
     // Grand total = half yearly + recalculated yearly (with best UT)
     grandTotalMarks = existingHalfYearly.totalMarks + recalculatedYearlyTotal;
-    
+
     // Calculate percentage based on actual total possible marks
-    const halfYearlyMaxMarks = existingHalfYearly.examMarks40 !== null ? 50 : 
-                              existingHalfYearly.examMarks30 !== null ? 50 : 100;
-                              
-    const yearlyMaxMarks = marks.yearlyexamMarks40 !== null ? 50 : 
-                          marks.yearlyexamMarks30 !== null ? 50 : 100;
-                          
+    const halfYearlyMaxMarks = existingHalfYearly.examMarks40 !== null ? 50 :
+      existingHalfYearly.examMarks30 !== null ? 50 : 100;
+
+    const yearlyMaxMarks = marks.yearlyexamMarks40 !== null ? 50 :
+      marks.yearlyexamMarks30 !== null ? 50 : 100;
+
     const totalPossibleMarks = halfYearlyMaxMarks + yearlyMaxMarks;
     overallPercentage = grandTotalMarks ? (grandTotalMarks / totalPossibleMarks) * 100 : null;
-    
+
     // Calculate grand total grade using the same percentage boundaries
     if (overallPercentage !== null) {
       if (overallPercentage >= 91) grandTotalGrade = 'A1';
@@ -226,7 +226,7 @@ export const calculateMarksAndGrade = (markData: any) => {
     }
   } else if (examType === "HALF_YEARLY") {
     // For half yearly, only store the current total marks
-    grandTotalMarks = totalMarks; 
+    grandTotalMarks = totalMarks;
     grandTotalGrade = grade; // Use same grade as current marks for half yearly
     overallPercentage = percentage;
   }
@@ -245,18 +245,18 @@ export const seniorMarkSchema = z.object({
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
   // Make all fields optional and nullable since they depend on subject type
-  pt1: z.number().min(0).max(5).nullable().optional(),
-  pt2: z.number().min(0).max(5).nullable().optional(),
-  pt3: z.number().min(0).max(5).nullable().optional(),
+  pt1: z.number().min(-1).max(5).nullable().optional(),
+  pt2: z.number().min(-1).max(5).nullable().optional(),
+  pt3: z.number().min(-1).max(5).nullable().optional(),
   bestTwoPTAvg: z.number().nullable().optional(),
-  multipleAssessment: z.number().min(0).max(5).nullable().optional(),
-  portfolio: z.number().min(0).max(5).nullable().optional(),
-  subEnrichment: z.number().min(0).max(5).nullable().optional(),
+  multipleAssessment: z.number().min(-1).max(5).nullable().optional(),
+  portfolio: z.number().min(-1).max(5).nullable().optional(),
+  subEnrichment: z.number().min(-1).max(5).nullable().optional(),
   bestScore: z.number().nullable().optional(),
-  finalExam: z.number().min(0).max(80).nullable().optional(),
+  finalExam: z.number().min(-1).max(80).nullable().optional(),
   // Add IT001 specific fields
-  theory: z.number().min(0).max(70).nullable().optional(),
-  practical: z.number().min(0).max(30).nullable().optional(),
+  theory: z.number().min(-1).max(70).nullable().optional(),
+  practical: z.number().min(-1).max(30).nullable().optional(),
   total: z.number().nullable().optional(),
   // Common fields
   grandTotal: z.number().nullable().optional(),
@@ -299,21 +299,21 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
   }
 
   // Calculate other components (each out of 5)
-  const multipleAssessment = markData.multipleAssessment !== null ? 
+  const multipleAssessment = markData.multipleAssessment !== null ?
     Math.min(5, Number(markData.multipleAssessment)) : null;
-  const portfolio = markData.portfolio !== null ? 
+  const portfolio = markData.portfolio !== null ?
     Math.min(5, Number(markData.portfolio)) : null;
-  const subEnrichment = markData.subEnrichment !== null ? 
+  const subEnrichment = markData.subEnrichment !== null ?
     Math.min(5, Number(markData.subEnrichment)) : null;
-  
+
   // Calculate final exam (out of 80)
-  const finalExam = markData.finalExam !== null ? 
+  const finalExam = markData.finalExam !== null ?
     Math.min(80, Number(markData.finalExam)) : null;
 
   // Calculate theory and practical
-  const theory = markData.theory !== null ? 
+  const theory = markData.theory !== null ?
     Math.min(70, Number(markData.theory)) : null;
-  const practical = markData.practical !== null ? 
+  const practical = markData.practical !== null ?
     Math.min(30, Number(markData.practical)) : null;
 
   // Calculate total (theory + practical)
@@ -321,7 +321,7 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
     theory + practical : null;
 
   // Calculate best score (out of 20: PT avg + MA + Portfolio + SE)
-  const bestScore = (bestTwoPTAvg !== null && multipleAssessment !== null && 
+  const bestScore = (bestTwoPTAvg !== null && multipleAssessment !== null &&
     portfolio !== null && subEnrichment !== null) ?
     bestTwoPTAvg + multipleAssessment + portfolio + subEnrichment :
     null;
@@ -351,10 +351,10 @@ export const calculateSeniorMarksAndGrade = (markData: Partial<SeniorMarkSchema>
 
   // For IT001 subject, calculate total differently
   if (markData.theory !== null && markData.practical !== null) {
-    const theoryMarks = Math.min(70, Number(markData.theory));
-    const practicalMarks = Math.min(30, Number(markData.practical));
+    const theoryMarks = Math.min(70, Math.max(0, Number(markData.theory)));
+    const practicalMarks = Math.min(30, Math.max(0, Number(markData.practical)));
     const total = theoryMarks + practicalMarks;
-    
+
     // Calculate grade based on total
     let grade = null;
     if (total >= 91) grade = 'A1';
@@ -393,18 +393,18 @@ export const HigherMarkSchema = z.object({
   studentId: z.string().min(1, "Student is required"),
   sectionSubjectId: z.number().int().positive("Invalid Section Subject"),
   sessionId: z.number().int().positive("Invalid Session"),
-  
+
   // Regular fields
-  unitTest1: z.number().min(0).max(10).nullable().optional(),
-  halfYearly: z.number().min(0).max(30).nullable().optional(),
-  unitTest2: z.number().min(0).max(10).nullable().optional(),
-  theory: z.number().min(0).max(35).nullable().optional(),
-  practical: z.number().min(0).max(15).nullable().optional(),
-  
+  unitTest1: z.number().min(-1).max(10).nullable().optional(),
+  halfYearly: z.number().min(-1).max(30).nullable().optional(),
+  unitTest2: z.number().min(-1).max(10).nullable().optional(),
+  theory: z.number().min(-1).max(35).nullable().optional(),
+  practical: z.number().min(-1).max(15).nullable().optional(),
+
   // PAI02 specific fields
-  theory30: z.number().min(0).max(30).nullable().optional(),
-  practical70: z.number().min(0).max(70).nullable().optional(),
-  
+  theory30: z.number().min(-1).max(30).nullable().optional(),
+  practical70: z.number().min(-1).max(70).nullable().optional(),
+
   // Common fields
   totalWithout: z.number().nullable().optional(),
   grandTotal: z.number().nullable().optional(),
@@ -451,12 +451,12 @@ export const teacherSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"), 
+  city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   bloodgroup: z.enum([
-    "A_plus", "A_minus", 
-    "B_plus", "B_minus", 
-    "O_plus", "O_minus", 
+    "A_plus", "A_minus",
+    "B_plus", "B_minus",
+    "O_plus", "O_minus",
     "AB_plus", "AB_minus"
   ]),
   joiningdate: z.string().transform(str => new Date(str)),
@@ -515,9 +515,9 @@ export const studentSchema = z.object({
   aadharcard: z.string().optional(),
   house: z.string().optional(),
   bloodgroup: z.enum([
-    "A_plus", "A_minus", 
-    "B_plus", "B_minus", 
-    "O_plus", "O_minus", 
+    "A_plus", "A_minus",
+    "B_plus", "B_minus",
+    "O_plus", "O_minus",
     "AB_plus", "AB_minus"
   ]),
   previousClass: z.string().optional(),

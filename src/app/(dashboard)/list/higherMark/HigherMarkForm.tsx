@@ -181,7 +181,7 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
         percentage: null,
         grade: null,
         overallGrade: null,
-        remarks: "" 
+        remarks: ""
       }));
       return { marks: values };
     };
@@ -227,22 +227,22 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
 
     try {
       const processedMarks = formData.marks
-      .filter(mark => {
-        if (isPaintingSubject) {
-          return mark.theory30 !== null || mark.practical70 !== null;
-        }
-        return mark.unitTest1 !== null || 
-               mark.halfYearly !== null || 
-               mark.unitTest2 !== null ||
-               mark.theory !== null ||
-               mark.practical !== null;
-      })
-      .map(mark => ({
-        ...mark,
-        sectionSubjectId: selectedSubject,
-        sessionId: selectedSession,
-        subjectCode: selectedSubjectCode || undefined
-      }));
+        .filter(mark => {
+          if (isPaintingSubject) {
+            return mark.theory30 !== null || mark.practical70 !== null;
+          }
+          return mark.unitTest1 !== null ||
+            mark.halfYearly !== null ||
+            mark.unitTest2 !== null ||
+            mark.theory !== null ||
+            mark.practical !== null;
+        })
+        .map(mark => ({
+          ...mark,
+          sectionSubjectId: selectedSubject,
+          sessionId: selectedSession,
+          subjectCode: selectedSubjectCode || undefined
+        }));
 
       if (processedMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
@@ -396,76 +396,104 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
             <tbody>{selectedSectionStudents.map((student, index) => (
               <tr key={student.id} className="even:bg-gray-50">
                 <td className="p-2 border">
-                  <input type="hidden" {...register(`marks.${index}.studentId`)} value={student.id}/>
+                  <input type="hidden" {...register(`marks.${index}.studentId`)} value={student.id} />
                   {student.name}
                 </td>
-                
+
                 {selectedSubjectCode === 'PAI02' ? (
                   <>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.theory30`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.theory30`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.practical70`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.practical70`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                   </>
                 ) : (
                   <>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.unitTest1`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.unitTest1`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.halfYearly`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.halfYearly`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.unitTest2`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.unitTest2`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.theory`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.theory`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                     <td className="p-2 border">
-                      <input 
-                        type="number" 
-                        step="0.1" 
+                      <input
+                        type="text"
                         className="w-full p-1 border rounded text-sm"
-                        {...register(`marks.${index}.practical`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })} 
+                        {...register(`marks.${index}.practical`, {
+                          setValueAs: (v) => {
+                            if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                            return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                          }
+                        })}
                       />
                     </td>
                   </>
                 )}
 
                 <td className="p-2 border">
-                  <input type="text" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.remarks`)} placeholder="Add remarks"/>
+                  <input type="text" className="w-full p-1 border rounded text-sm" {...register(`marks.${index}.remarks`)} placeholder="Add remarks" />
                 </td>
               </tr>
             ))}</tbody>
@@ -478,17 +506,16 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
         <button
           type="submit"
           disabled={isSubmitting || isLoading}
-          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-            isSubmitting || isLoading ? "opacity-50" : ""
-          }`}
+          className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${isSubmitting || isLoading ? "opacity-50" : ""
+            }`}
         >
           {isLoading
             ? "Checking Existing Marks..."
             : isSubmitting
-            ? "Submitting..."
-            : formType === "create"
-            ? "Create Marks"
-            : "Update Marks"}
+              ? "Submitting..."
+              : formType === "create"
+                ? "Create Marks"
+                : "Update Marks"}
         </button>
       </div>
     </form>

@@ -467,11 +467,15 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                     <>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className={`w-full p-1 border rounded text-sm ${errors.marks?.[index]?.theory ? "border-red-500" : ""
                             }`}
-                          {...register(`marks.${index}.theory`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.theory`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                         {errors.marks?.[index]?.theory && (
                           <span className="text-red-500 text-xs">
@@ -481,10 +485,14 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.practical`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.practical`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
@@ -501,58 +509,86 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
                     <>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt1`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.pt1`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt2`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.pt2`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.pt3`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.pt3`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.multipleAssessment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.multipleAssessment`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.portfolio`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.portfolio`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.subEnrichment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.subEnrichment`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                       <td className="p-2 border">
                         <input
-                          type="number"
-                          step="0.1"
+                          type="text"
                           className="w-full p-1 border rounded text-sm"
-                          {...register(`marks.${index}.finalExam`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                          {...register(`marks.${index}.finalExam`, {
+                            setValueAs: (v) => {
+                              if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                              return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                            }
+                          })}
                         />
                       </td>
                     </>

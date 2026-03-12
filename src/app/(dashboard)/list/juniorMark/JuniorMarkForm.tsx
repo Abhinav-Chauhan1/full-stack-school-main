@@ -647,40 +647,55 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                       <>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut1`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.ut1`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.ut2`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.ut2`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.noteBook`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.noteBook`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.halfYearly.subEnrichment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.halfYearly.subEnrichment`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
                             {...register(
                               (examType as "HALF_YEARLY" | "YEARLY") === "HALF_YEARLY"
@@ -694,7 +709,12 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                   : isThirtyMarksSubject
                                     ? `marks.${index}.yearly.yearlyexamMarks30`
                                     : `marks.${index}.yearly.yearlyexamMarks`,
-                              { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) }
+                              {
+                                setValueAs: (v) => {
+                                  if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                  return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                                }
+                              }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />
@@ -711,31 +731,43 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                       <>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.ut3`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.ut3`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlynoteBook`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.yearlynoteBook`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
-                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) })}
+                            {...register(`marks.${index}.yearly.yearlysubEnrichment`, {
+                              setValueAs: (v) => {
+                                if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                              }
+                            })}
                           />
                         </td>
                         <td className="p-2 border">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
                             className="w-full p-1 border rounded text-sm"
                             {...register(
                               (examType as "HALF_YEARLY" | "YEARLY") === "HALF_YEARLY"
@@ -749,7 +781,12 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
                                   : isThirtyMarksSubject
                                     ? `marks.${index}.yearly.yearlyexamMarks30`
                                     : `marks.${index}.yearly.yearlyexamMarks`,
-                              { setValueAs: (v) => (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v) }
+                              {
+                                setValueAs: (v) => {
+                                  if (typeof v === 'string' && v.toUpperCase() === 'AB') return -1;
+                                  return (v === "" || v === undefined || v === null || Number.isNaN(parseFloat(v))) ? null : parseFloat(v);
+                                }
+                              }
                             )}
                             max={isFortyMarksSubject ? 40 : isThirtyMarksSubject ? 30 : 80}
                           />

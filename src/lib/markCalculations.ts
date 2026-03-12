@@ -3,15 +3,15 @@ import { HigherMarkSchema } from './formValidationSchemas';
 export const calculateHigherMarksAndGrade = (mark: any) => {
   // Check if it's a painting subject
   const isPaintingSubject = mark.subjectCode === 'PAI02';
-  
+
   let totalWithout = 0;
   let grandTotal = 0;
 
   if (isPaintingSubject) {
     // For PAI02 subject (Painting)
-    const theory30 = mark.theory30 || 0;
-    const practical70 = mark.practical70 || 0;
-    
+    const theory30 = Math.max(0, mark.theory30 || 0);
+    const practical70 = Math.max(0, mark.practical70 || 0);
+
     totalWithout = theory30;
     grandTotal = theory30 + practical70;
   } else {
@@ -22,12 +22,12 @@ export const calculateHigherMarksAndGrade = (mark: any) => {
     // Theory: 30 marks (updated from 35)
     // Practical: 20 marks (updated from 15)
     // Total: 100 marks
-    const unitTest1 = mark.unitTest1 || 0;
-    const halfYearly = mark.halfYearly || 0;
-    const unitTest2 = mark.unitTest2 || 0;
-    const theory = mark.theory || 0;
-    const practical = mark.practical || 0;
-    
+    const unitTest1 = Math.max(0, mark.unitTest1 || 0);
+    const halfYearly = Math.max(0, mark.halfYearly || 0);
+    const unitTest2 = Math.max(0, mark.unitTest2 || 0);
+    const theory = Math.max(0, mark.theory || 0);
+    const practical = Math.max(0, mark.practical || 0);
+
     // Total without practical = 80 marks (10+30+10+30)
     totalWithout = unitTest1 + halfYearly + unitTest2 + theory;
     // Grand total = 100 marks (80+20)

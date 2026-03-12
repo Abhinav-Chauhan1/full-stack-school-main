@@ -21,7 +21,7 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
   marks.forEach(mark => {
     // Check if we have a PAI02 subject (Painting)
     const isPaintingSubject = mark?.sectionSubject?.subject?.code === 'PAI02';
-    
+
     if (isPaintingSubject) {
       // For PAI02 subjects, use theory30 and practical70 if grandTotal is missing
       if (mark.grandTotal) {
@@ -41,13 +41,19 @@ const calculateOverallResults = (marks: StudentResult11['marksHigher']) => {
     }
   });
 
-  const overallPercentage = totalMarks > 0 ? 
+  const overallPercentage = totalMarks > 0 ?
     Number((totalObtained / totalMarks * 100).toFixed(2)) : 0;
 
   return { totalObtained, totalMarks, overallPercentage };
 };
 
 const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], totalObtained: number, totalMarks: number, overallPercentage: number) => {
+  // Format helper for marks
+  const formatMark = (markValue: any) => {
+    if (markValue === -1) return 'AB';
+    return markValue ?? '-';
+  };
+
   // Filter out subjects with all zeros or null values
   const nonEmptyMarks = marks.filter(mark => {
     // For PAI02 subjects, check theory30 and practical70
@@ -59,22 +65,22 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
   });
 
   // Separate regular subjects from additional subjects (like Painting PAI02)
-  const regularSubjects = nonEmptyMarks.filter(mark => 
+  const regularSubjects = nonEmptyMarks.filter(mark =>
     mark?.sectionSubject?.subject?.code !== 'PAI02'
   );
-  
-  const additionalSubjects = nonEmptyMarks.filter(mark => 
+
+  const additionalSubjects = nonEmptyMarks.filter(mark =>
     mark?.sectionSubject?.subject?.code === 'PAI02'
   );
 
   const regularSubjectRows = regularSubjects.map(mark => [
     { text: mark?.sectionSubject?.subject?.name ?? '-', alignment: 'left' },
-    { text: mark?.unitTest1 ?? '-', alignment: 'center' },
-    { text: mark?.halfYearly ?? '-', alignment: 'center' },
-    { text: mark?.unitTest2 ?? '-', alignment: 'center' },
-    { text: mark?.theory ?? '-', alignment: 'center' },
-    { text: mark?.practical ?? '-', alignment: 'center' },
-    { text: mark?.grandTotal ?? '-', alignment: 'center' }
+    { text: formatMark(mark?.unitTest1), alignment: 'center' },
+    { text: formatMark(mark?.halfYearly), alignment: 'center' },
+    { text: formatMark(mark?.unitTest2), alignment: 'center' },
+    { text: formatMark(mark?.theory), alignment: 'center' },
+    { text: formatMark(mark?.practical), alignment: 'center' },
+    { text: formatMark(mark?.grandTotal), alignment: 'center' }
   ]);
 
   // Create a custom header for painting subjects (PAI02)
@@ -95,17 +101,17 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
   ] : [];
 
   const additionalSubjectRows = additionalSubjects.map(mark => {
-    const theory30 = mark?.theory30 || 0;
-    const practical70 = mark?.practical70 || 0;
-    const calculatedGrandTotal = theory30 + practical70;
-  
+    const theory30 = formatMark(mark?.theory30);
+    const practical70 = formatMark(mark?.practical70);
+    const calculatedGrandTotal = formatMark((mark?.theory30 === -1 ? 0 : (mark?.theory30 || 0)) + (mark?.practical70 === -1 ? 0 : (mark?.practical70 || 0)));
+
     return [
       { text: `${mark?.sectionSubject?.subject?.name ?? '-'}`, alignment: 'left' },
       { text: theory30, colSpan: 3, alignment: 'center' },
-      { text: '', alignment: 'center'},
-      { text: '', alignment: 'center'},
+      { text: '', alignment: 'center' },
+      { text: '', alignment: 'center' },
       { text: practical70, colSpan: 2, alignment: 'center' },
-      { text: '', alignment: 'center'},
+      { text: '', alignment: 'center' },
       { text: calculatedGrandTotal, alignment: 'center' }
     ];
   });
@@ -135,19 +141,19 @@ const generateHigherClassesTableBody = (marks: StudentResult11['marksHigher'], t
     [
       { text: 'Total', colSpan: 5, alignment: 'right', style: 'totalsRow' },
       {}, {}, {}, {},
-      { text:`${totalObtained.toString()} / ${totalMarks.toString()}`, alignment: 'center', style: 'totalsRow', colSpan: 2},
+      { text: `${totalObtained.toString()} / ${totalMarks.toString()}`, alignment: 'center', style: 'totalsRow', colSpan: 2 },
       {}
     ],
     [
       { text: 'Percentage', colSpan: 5, alignment: 'right', style: 'totalsRow' },
       {}, {}, {}, {},
-      { text: overallPercentage.toString(), alignment: 'center', style: 'totalsRow', colSpan: 2},
+      { text: overallPercentage.toString(), alignment: 'center', style: 'totalsRow', colSpan: 2 },
       {}
     ],
     [
       { text: 'Grade', colSpan: 5, alignment: 'right', style: 'totalsRow' },
       {}, {}, {}, {},
-      { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'totalsRow', colSpan: 2},
+      { text: getOverallGrade(Number(overallPercentage)), alignment: 'center', style: 'totalsRow', colSpan: 2 },
       {}
     ]
   ];
@@ -239,15 +245,15 @@ const extractCoScholasticData = (marksHigher: StudentResult11['marksHigher']) =>
     workExperience: "-",
     discipline: "-"
   };
-  
+
   // Find any mark with co-scholastic data
   const markWithCoScholastic = marksHigher.find(mark => mark.coScholastic);
-  
+
   // If no co-scholastic data found, return defaults
   if (!markWithCoScholastic || !markWithCoScholastic.coScholastic) {
     return defaultData;
   }
-  
+
   // Return the co-scholastic data
   return {
     physicalEducation: markWithCoScholastic.coScholastic.physicalEducation || "-",
@@ -269,7 +275,7 @@ export const generatePdfDefinition11 = (
   const { totalObtained, totalMarks, overallPercentage } = calculateOverallResults(safeMarksHigher);
   const tableBody = generateHigherClassesTableBody(safeMarksHigher, totalObtained, totalMarks, overallPercentage);
   const grade = getOverallGrade(overallPercentage);
-  
+
   // Extract co-scholastic data
   const coScholasticData = extractCoScholasticData(safeMarksHigher);
 
@@ -355,7 +361,7 @@ export const generatePdfDefinition11 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -366,7 +372,7 @@ export const generatePdfDefinition11 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -377,7 +383,7 @@ export const generatePdfDefinition11 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -388,7 +394,7 @@ export const generatePdfDefinition11 = (
                       {
                         width: 'auto',
                         stack: [
-                          { 
+                          {
                             canvas: [{ type: 'rect', x: 0, y: 0, w: 12, h: 12, lineWidth: 1 }],
                             width: 12
                           }
@@ -513,10 +519,10 @@ export const generateAndDownloadPdf11 = async (
     pdfMake.vfs = pdfFonts;
 
     const docDefinition = generatePdfDefinition11(studentResult, logoData, studentImageData);
-    
+
     const pdfDoc = pdfMake.createPdf(docDefinition);
     pdfDoc.download(`Result_${studentResult.student.admissionno}_Class11.pdf`);
-    
+
     onClose();
   } catch (error) {
     console.error('Error generating PDF:', error);
