@@ -38,6 +38,7 @@ type JuniorMarkFormProps = {
         students: Array<{
           id: string;
           name: string;
+          sessionId: number | null;
         }>;
       }>;
       classSubjects: Array<{
@@ -112,10 +113,15 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   );
 
   const selectedSectionStudents = useMemo(
-    () =>
-      selectedClassData?.sections.find((sec) => sec.id === selectedSection)
-        ?.students || [],
-    [selectedClassData, selectedSection]
+    () => {
+      const students = selectedClassData?.sections.find((sec) => sec.id === selectedSection)
+        ?.students || [];
+      if (selectedSession) {
+        return students.filter((s) => s.sessionId === selectedSession);
+      }
+      return students;
+    },
+    [selectedClassData, selectedSection, selectedSession]
   );
 
   const selectedClassSubjects = useMemo(

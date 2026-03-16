@@ -262,6 +262,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     id: true,
                     name: true,
                     admissionno: true, // Include admission number
+                    sessionId: true,
                   },
                   orderBy: {
                     name: 'asc',
@@ -681,6 +682,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     id: true,
                     name: true,
                     admissionno: true,
+                    sessionId: true,
                   },
                   orderBy: {
                     name: 'asc',
@@ -757,6 +759,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                     id: true,
                     name: true,
                     admissionno: true,
+                    sessionId: true,
                   },
                   orderBy: {
                     name: 'asc',

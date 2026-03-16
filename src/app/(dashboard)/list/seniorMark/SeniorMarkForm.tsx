@@ -85,8 +85,14 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
   );
 
   const selectedSectionStudents = useMemo(
-    () => selectedSectionData?.students || [],
-    [selectedSectionData]
+    () => {
+      const students = selectedSectionData?.students || [];
+      if (selectedSession) {
+        return students.filter((s: any) => s.sessionId === selectedSession);
+      }
+      return students;
+    },
+    [selectedSectionData, selectedSession]
   );
 
   const selectedSectionSubjects = useMemo(
