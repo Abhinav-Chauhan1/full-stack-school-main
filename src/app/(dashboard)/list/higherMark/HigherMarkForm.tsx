@@ -232,25 +232,28 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
     }
 
     try {
-      const processedMarks = formData.marks
-        .filter(mark => {
-          if (isPaintingSubject) {
-            return mark.theory30 !== null || mark.practical70 !== null;
-          }
-          return mark.unitTest1 !== null ||
-            mark.halfYearly !== null ||
-            mark.unitTest2 !== null ||
-            mark.theory !== null ||
-            mark.practical !== null;
-        })
-        .map(mark => ({
+      // In update mode, send ALL marks (including cleared ones) so the server can delete them.
+      // In create mode, filter out empty marks and require at least one student with data.
+      const processedMarks = (formType === "update"
+        ? formData.marks
+        : formData.marks.filter(mark => {
+            if (isPaintingSubject) {
+              return mark.theory30 !== null || mark.practical70 !== null;
+            }
+            return mark.unitTest1 !== null ||
+              mark.halfYearly !== null ||
+              mark.unitTest2 !== null ||
+              mark.theory !== null ||
+              mark.practical !== null;
+          })
+      ).map(mark => ({
           ...mark,
           sectionSubjectId: selectedSubject,
           sessionId: selectedSession,
           subjectCode: selectedSubjectCode || undefined
         }));
 
-      if (processedMarks.length === 0) {
+      if (formType === "create" && processedMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }

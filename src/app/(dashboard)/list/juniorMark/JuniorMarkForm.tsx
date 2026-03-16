@@ -340,22 +340,25 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
     }
 
     try {
-      // Filter out empty marks first
-      const validMarks = formData.marks.filter(mark => {
-        const type = mark.examType;
-        const marksData: any = type === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
-        if (!marksData) return false;
-        if (type === "HALF_YEARLY") {
-          return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
-            marksData.subEnrichment !== null || marksData.examMarks !== null ||
-            marksData.examMarks40 !== null || marksData.examMarks30 !== null;
-        } else {
-          return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
-            marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
-        }
-      });
+      // In update mode, send ALL marks (including cleared ones) so the server can delete them.
+      // In create mode, filter out empty marks and require at least one student with data.
+      const validMarks = formType === "update"
+        ? formData.marks
+        : formData.marks.filter(mark => {
+            const type = mark.examType;
+            const marksData: any = type === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+            if (!marksData) return false;
+            if (type === "HALF_YEARLY") {
+              return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
+                marksData.subEnrichment !== null || marksData.examMarks !== null ||
+                marksData.examMarks40 !== null || marksData.examMarks30 !== null;
+            } else {
+              return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
+                marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
+            }
+          });
 
-      if (validMarks.length === 0) {
+      if (formType === "create" && validMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }

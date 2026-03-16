@@ -256,20 +256,23 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     }
 
     try {
-      // Filter out empty marks
-      const validMarks = formData.marks.filter(mark => {
-        const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
-        const hasRegularMarks = mark.pt1 !== null ||
-          mark.pt2 !== null ||
-          mark.pt3 !== null ||
-          mark.multipleAssessment !== null ||
-          mark.portfolio !== null ||
-          mark.subEnrichment !== null ||
-          mark.finalExam !== null;
-        return hasTheoryPractical || hasRegularMarks;
-      });
+      // In update mode, send ALL marks (including cleared ones) so the server can delete them.
+      // In create mode, filter out empty marks and require at least one student with data.
+      const validMarks = formType === "update"
+        ? formData.marks
+        : formData.marks.filter(mark => {
+            const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
+            const hasRegularMarks = mark.pt1 !== null ||
+              mark.pt2 !== null ||
+              mark.pt3 !== null ||
+              mark.multipleAssessment !== null ||
+              mark.portfolio !== null ||
+              mark.subEnrichment !== null ||
+              mark.finalExam !== null;
+            return hasTheoryPractical || hasRegularMarks;
+          });
 
-      if (validMarks.length === 0) {
+      if (formType === "create" && validMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }
