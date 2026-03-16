@@ -172,8 +172,8 @@ export const createSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => 
 export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => {
   try {
     const updatePromises = data.marks
-      .filter(mark => {
-        // Filter out empty entries
+      .map(async (mark) => {
+        // Check if all marks are empty (user cleared them)
         const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
         const hasRegularMarks = mark.pt1 !== null ||
           mark.pt2 !== null ||
@@ -182,9 +182,33 @@ export const updateSeniorMarks = async (data: { marks: SeniorMarkSchema[] }) => 
           mark.portfolio !== null ||
           mark.subEnrichment !== null ||
           mark.finalExam !== null;
-        return hasTheoryPractical || hasRegularMarks;
-      })
-      .map(async (mark) => {
+        const hasAnyMarks = hasTheoryPractical || hasRegularMarks;
+
+        // If no marks at all, check if a record exists and delete it
+        if (!hasAnyMarks) {
+          const existing = await prisma.seniorMark.findUnique({
+            where: {
+              studentId_sectionSubjectId_sessionId: {
+                studentId: mark.studentId,
+                sectionSubjectId: mark.sectionSubjectId,
+                sessionId: mark.sessionId
+              }
+            }
+          });
+          if (existing) {
+            await prisma.seniorMark.delete({
+              where: {
+                studentId_sectionSubjectId_sessionId: {
+                  studentId: mark.studentId,
+                  sectionSubjectId: mark.sectionSubjectId,
+                  sessionId: mark.sessionId
+                }
+              }
+            });
+          }
+          return null;
+        }
+
         const subject = await prisma.sectionSubject.findUnique({
           where: { id: mark.sectionSubjectId },
           include: { subject: true }

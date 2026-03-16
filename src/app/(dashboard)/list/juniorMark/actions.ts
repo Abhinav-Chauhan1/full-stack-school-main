@@ -157,25 +157,75 @@ export const updateJuniorMarks = async (data: { marks: JuniorMarkSchema[] }) => 
     console.log('Update function called with data:', JSON.stringify(data, null, 2));
 
     const updatePromises = data.marks
-      .filter(mark => {
-        if (mark.examType === "HALF_YEARLY") {
-          const marksData = mark.halfYearly;
-          if (!marksData) return false;
-          return marksData.ut1 !== null || marksData.ut2 !== null || marksData.noteBook !== null ||
-            marksData.subEnrichment !== null || marksData.examMarks !== null ||
-            marksData.examMarks40 !== null || marksData.examMarks30 !== null;
-        } else {
-          const marksData = mark.yearly;
-          if (!marksData) return false;
-          return marksData.ut3 !== null || marksData.yearlynoteBook !== null || marksData.yearlysubEnrichment !== null ||
-            marksData.yearlyexamMarks !== null || marksData.yearlyexamMarks40 !== null || marksData.yearlyexamMarks30 !== null;
-        }
-      })
       .map(async (mark) => {
         console.log('Processing mark for student:', mark.studentId);
 
         const examType = mark.examType;
         const marksData = examType === "HALF_YEARLY" ? mark.halfYearly : mark.yearly;
+
+        // Check if all marks are empty (user cleared them)
+        let hasAnyMarks = false;
+        if (marksData) {
+          if (examType === "HALF_YEARLY") {
+            const d = mark.halfYearly;
+            if (d) {
+              hasAnyMarks = d.ut1 !== null || d.ut2 !== null || d.noteBook !== null ||
+                d.subEnrichment !== null || d.examMarks !== null ||
+                d.examMarks40 !== null || d.examMarks30 !== null;
+            }
+          } else {
+            const d = mark.yearly;
+            if (d) {
+              hasAnyMarks = d.ut3 !== null || d.yearlynoteBook !== null || d.yearlysubEnrichment !== null ||
+                d.yearlyexamMarks !== null || d.yearlyexamMarks40 !== null || d.yearlyexamMarks30 !== null;
+            }
+          }
+        }
+
+        // If no marks at all, check if a record exists and delete the exam-type sub-record
+        if (!hasAnyMarks) {
+          const existing = await prisma.juniorMark.findUnique({
+            where: {
+              studentId_classSubjectId_sessionId: {
+                studentId: mark.studentId,
+                classSubjectId: mark.classSubjectId,
+                sessionId: mark.sessionId
+              }
+            },
+            include: {
+              halfYearly: true,
+              yearly: true
+            }
+          });
+
+          if (existing) {
+            await prisma.$transaction(async (tx) => {
+              // Delete the specific exam type sub-record
+              if (examType === "HALF_YEARLY" && existing.halfYearly) {
+                await tx.halfYearlyMarks.delete({
+                  where: { juniorMarkId: existing.id }
+                });
+              } else if (examType === "YEARLY" && existing.yearly) {
+                await tx.yearlyMarks.delete({
+                  where: { juniorMarkId: existing.id }
+                });
+              }
+
+              // Check if the other exam type still has data
+              const otherHasData = examType === "HALF_YEARLY" ? !!existing.yearly : !!existing.halfYearly;
+              
+              // If neither exam type has data, delete the parent record too
+              if (!otherHasData) {
+                await tx.juniorMark.delete({
+                  where: { id: existing.id }
+                });
+              }
+            });
+          }
+
+          console.log('Cleared marks for student:', mark.studentId);
+          return null;
+        }
 
         if (!marksData) {
           console.log('No marks data found for student:', mark.studentId);

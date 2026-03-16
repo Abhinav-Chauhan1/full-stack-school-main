@@ -116,17 +116,6 @@ export const createHigherMarks = async (data: { marks: (HigherMarkSchema & { sub
 export const updateHigherMarks = async (data: { marks: (HigherMarkSchema & { subjectCode?: string })[] }) => {
   try {
     const updatePromises = data.marks
-      .filter(mark => {
-        const isPaintingSubject = mark.subjectCode === 'PAI02';
-        if (isPaintingSubject) {
-          return mark.theory30 !== null || mark.practical70 !== null;
-        }
-        return mark.unitTest1 !== null || 
-               mark.halfYearly !== null || 
-               mark.unitTest2 !== null ||
-               mark.theory !== null ||
-               mark.practical !== null;
-      })
       .map(async (mark) => {
         // Get subject code if not provided
         if (!mark.subjectCode) {
@@ -136,9 +125,47 @@ export const updateHigherMarks = async (data: { marks: (HigherMarkSchema & { sub
           });
           mark.subjectCode = subject?.subject.code || undefined;
         }
+
+        const isPaintingSubject = mark.subjectCode === 'PAI02';
+
+        // Check if all marks are empty (user cleared them)
+        let hasAnyMarks: boolean;
+        if (isPaintingSubject) {
+          hasAnyMarks = mark.theory30 !== null || mark.practical70 !== null;
+        } else {
+          hasAnyMarks = mark.unitTest1 !== null || 
+                 mark.halfYearly !== null || 
+                 mark.unitTest2 !== null ||
+                 mark.theory !== null ||
+                 mark.practical !== null;
+        }
+
+        // If no marks at all, check if a record exists and delete it
+        if (!hasAnyMarks) {
+          const existing = await prisma.higherMark.findUnique({
+            where: {
+              studentId_sectionSubjectId_sessionId: {
+                studentId: mark.studentId,
+                sectionSubjectId: mark.sectionSubjectId,
+                sessionId: mark.sessionId
+              }
+            }
+          });
+          if (existing) {
+            await prisma.higherMark.delete({
+              where: {
+                studentId_sectionSubjectId_sessionId: {
+                  studentId: mark.studentId,
+                  sectionSubjectId: mark.sectionSubjectId,
+                  sessionId: mark.sessionId
+                }
+              }
+            });
+          }
+          return null;
+        }
         
         const calculations = calculateHigherMarksAndGrade(mark);
-        const isPaintingSubject = mark.subjectCode === 'PAI02';
 
         return prisma.higherMark.upsert({
           where: {
