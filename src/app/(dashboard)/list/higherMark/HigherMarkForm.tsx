@@ -232,9 +232,13 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
     }
 
     try {
+      // Determine if we should use update mode based on whether ANY existing marks data was found
+      const hasExistingData = existingMarksData && existingMarksData.length > 0;
+      const shouldUpdate = hasExistingData || formType === "update";
+
       // In update mode, send ALL marks (including cleared ones) so the server can delete them.
       // In create mode, filter out empty marks and require at least one student with data.
-      const processedMarks = (formType === "update"
+      const processedMarks = (shouldUpdate
         ? formData.marks
         : formData.marks.filter(mark => {
             if (isPaintingSubject) {
@@ -253,17 +257,17 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
           subjectCode: selectedSubjectCode || undefined
         }));
 
-      if (formType === "create" && processedMarks.length === 0) {
+      if (!shouldUpdate && processedMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }
 
-      const result = formType === "create"
-        ? await createHigherMarks({ marks: processedMarks })
-        : await updateHigherMarks({ marks: processedMarks });
+      const result = shouldUpdate
+        ? await updateHigherMarks({ marks: processedMarks })
+        : await createHigherMarks({ marks: processedMarks });
 
       if (result.success) {
-        toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully`);
+        toast.success(`Marks ${shouldUpdate ? "updated" : "created"} successfully`);
         setOpen(false);
         router.refresh();
       } else {

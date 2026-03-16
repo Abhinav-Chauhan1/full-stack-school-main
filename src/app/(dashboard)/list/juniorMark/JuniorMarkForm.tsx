@@ -340,9 +340,15 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
     }
 
     try {
+      // Determine if we should use update mode based on whether ANY existing marks data was found
+      // This is more reliable than formType, which can incorrectly be "create" when some students
+      // have marks for the other exam type but not the current one
+      const hasExistingData = existingMarksData && existingMarksData.length > 0;
+      const shouldUpdate = hasExistingData || formType === "update";
+
       // In update mode, send ALL marks (including cleared ones) so the server can delete them.
       // In create mode, filter out empty marks and require at least one student with data.
-      const validMarks = formType === "update"
+      const validMarks = shouldUpdate
         ? formData.marks
         : formData.marks.filter(mark => {
             const type = mark.examType;
@@ -358,7 +364,7 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
             }
           });
 
-      if (formType === "create" && validMarks.length === 0) {
+      if (!shouldUpdate && validMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }
@@ -424,12 +430,12 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
 
       const resolvedMarks = await Promise.all(processedMarks);
 
-      const result = formType === "create"
-        ? await createJuniorMarks({ marks: resolvedMarks })
-        : await updateJuniorMarks({ marks: resolvedMarks });
+      const result = shouldUpdate
+        ? await updateJuniorMarks({ marks: resolvedMarks })
+        : await createJuniorMarks({ marks: resolvedMarks });
 
       if (result.success) {
-        toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
+        toast.success(`Marks ${shouldUpdate ? "updated" : "created"} successfully!`);
         setOpen(false);
         router.refresh();
       } else {

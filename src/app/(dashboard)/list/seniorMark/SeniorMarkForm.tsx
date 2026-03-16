@@ -256,9 +256,13 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
     }
 
     try {
+      // Determine if we should use update mode based on whether ANY existing marks data was found
+      const hasExistingData = existingMarksData && existingMarksData.length > 0;
+      const shouldUpdate = hasExistingData || formType === "update";
+
       // In update mode, send ALL marks (including cleared ones) so the server can delete them.
       // In create mode, filter out empty marks and require at least one student with data.
-      const validMarks = formType === "update"
+      const validMarks = shouldUpdate
         ? formData.marks
         : formData.marks.filter(mark => {
             const hasTheoryPractical = mark.theory !== null || mark.practical !== null;
@@ -272,18 +276,18 @@ const SeniorMarkForm: React.FC<SeniorMarkFormProps> = ({
             return hasTheoryPractical || hasRegularMarks;
           });
 
-      if (formType === "create" && validMarks.length === 0) {
+      if (!shouldUpdate && validMarks.length === 0) {
         toast.error("Please enter marks for at least one student");
         return;
       }
 
-      const result = await (formType === "create"
-        ? createSeniorMarks({ marks: validMarks })
-        : updateSeniorMarks({ marks: validMarks })
+      const result = await (shouldUpdate
+        ? updateSeniorMarks({ marks: validMarks })
+        : createSeniorMarks({ marks: validMarks })
       );
 
       if (result.success) {
-        toast.success(`Marks ${formType === "create" ? "created" : "updated"} successfully!`);
+        toast.success(`Marks ${shouldUpdate ? "updated" : "created"} successfully!`);
         setOpen(false);
         router.refresh();
       } else {
