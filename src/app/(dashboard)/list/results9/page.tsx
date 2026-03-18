@@ -9,12 +9,12 @@ import Select from "@/components/Select";
 const Results9Page = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) => {
-  const { sessionClaims } = auth();
+  const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const { page, sessionId, classId, sectionId } = searchParams;
+  const { page, sessionId, classId, sectionId } = await searchParams;
   const p = page ? parseInt(page) : 1;
 
   // Fetch all sessions
