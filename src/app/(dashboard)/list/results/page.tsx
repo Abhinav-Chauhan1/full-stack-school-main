@@ -219,8 +219,11 @@ const ResultsPage = async ({
             >
               <td className="p-4">{student.name}</td>
               <td>{student.admissionno}</td>
-              <td>{student.Class.name}</td>
-              <td>{student.Section.name}</td>
+              <td>{student.Class?.name ?? '-'}</td>
+              <td>{student.Section?.name ?? '-'}</td>         <td className="p-4">{student.name}</td>
+              <td>{student.admissionno}</td>
+              <td>{student.Class?.name ?? '-'}</td>
+              <td>{student.Section?.name ?? '-'}</td>
               <td>
                 <div className="flex items-center gap-2">
                   <FormContainer
