@@ -19,14 +19,14 @@ export const calculateHigherMarksAndGrade = (mark: any) => {
     // Unit Test 1: 10 marks
     // Half Yearly: 30 marks
     // Unit Test 2: 10 marks
-    // Theory: 30 marks (updated from 35)
-    // Practical: 20 marks (updated from 15)
+    // Theory: 30 marks
+    // Practical: 20 marks
     // Total: 100 marks
-    const unitTest1 = Math.max(0, mark.unitTest1 || 0);
-    const halfYearly = Math.max(0, mark.halfYearly || 0);
-    const unitTest2 = Math.max(0, mark.unitTest2 || 0);
-    const theory = Math.max(0, mark.theory || 0);
-    const practical = Math.max(0, mark.practical || 0);
+    const unitTest1 = Math.min(10, Math.max(0, mark.unitTest1 || 0));
+    const halfYearly = Math.min(30, Math.max(0, mark.halfYearly || 0));
+    const unitTest2 = Math.min(10, Math.max(0, mark.unitTest2 || 0));
+    const theory = Math.min(30, Math.max(0, mark.theory || 0));
+    const practical = Math.min(20, Math.max(0, mark.practical || 0));
 
     // Total without practical = 80 marks (10+30+10+30)
     totalWithout = unitTest1 + halfYearly + unitTest2 + theory;

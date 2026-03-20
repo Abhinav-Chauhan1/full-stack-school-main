@@ -280,7 +280,10 @@ const HigherMarkForm: React.FC<HigherMarkFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4">
+    <form onSubmit={handleSubmit(onSubmit, (errs) => {
+      console.error("Validation errors:", errs);
+      toast.error("Validation failed — check that marks are within allowed ranges");
+    })} className="space-y-4 p-4">
       <h2 className="text-xl font-semibold mb-4">
         {formType === "create" ? "Create Higher Marks Entry" : "Update Higher Marks Entry"}
       </h2>

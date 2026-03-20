@@ -398,8 +398,8 @@ export const HigherMarkSchema = z.object({
   unitTest1: z.number().min(-1).max(10).nullable().optional(),
   halfYearly: z.number().min(-1).max(30).nullable().optional(),
   unitTest2: z.number().min(-1).max(10).nullable().optional(),
-  theory: z.number().min(-1).max(35).nullable().optional(),
-  practical: z.number().min(-1).max(15).nullable().optional(),
+  theory: z.number().min(-1).max(30).nullable().optional(),
+  practical: z.number().min(-1).max(20).nullable().optional(),
 
   // PAI02 specific fields
   theory30: z.number().min(-1).max(30).nullable().optional(),
