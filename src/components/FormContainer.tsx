@@ -258,6 +258,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
@@ -678,6 +679,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
@@ -755,6 +757,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
@@ -838,6 +841,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
@@ -893,6 +897,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
@@ -949,6 +954,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                 id: true,
                 name: true,
                 students: {
+                  where: { isAlumni: false },
                   select: {
                     id: true,
                     name: true,
