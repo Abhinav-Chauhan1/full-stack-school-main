@@ -79,7 +79,8 @@ const SeniorMarkListPage = async ({
         student: {
           AND: [
             { classId: parseInt(classId) },
-            { sectionId: parseInt(sectionId) }
+            { sectionId: parseInt(sectionId) },
+            { isAlumni: false }
           ]
         }
       },
