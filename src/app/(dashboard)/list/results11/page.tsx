@@ -34,6 +34,7 @@ const Results11Page = async ({
 
   // Build query for students
   const query: any = {
+    isAlumni: false,
     Class: {
       classNumber: 11
     }
@@ -47,9 +48,8 @@ const Results11Page = async ({
     query.sectionId = parseInt(sectionId);
   }
 
-  if (sessionId) {
-    query.sessionId = parseInt(sessionId);
-  }
+  // NOTE: Do NOT filter students by sessionId — students are shown based on
+  // class/section. The marks relation is already filtered by sessionId below.
 
   // Fetch students with their marks
   const [students, count] = await prisma.$transaction([

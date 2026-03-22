@@ -78,7 +78,14 @@ const ResultsPage = async ({
   });
 
   // Build query for students
-  const query: any = {};
+  const query: any = {
+    isAlumni: false,
+    Class: {
+      classNumber: {
+        lte: 8
+      }
+    }
+  };
 
   if (classId) {
     query.classId = parseInt(classId);
@@ -88,9 +95,8 @@ const ResultsPage = async ({
     query.sectionId = parseInt(sectionId);
   }
 
-  if (sessionId) {
-    query.sessionId = parseInt(sessionId);
-  }
+  // NOTE: Do NOT filter students by sessionId here — students are shown based on
+  // class/section. The marks relation is already filtered by sessionId below.
 
   // Update the students query to include all necessary relations
   const [students, count] = await prisma.$transaction([
