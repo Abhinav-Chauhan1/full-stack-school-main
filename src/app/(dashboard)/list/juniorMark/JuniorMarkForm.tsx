@@ -113,15 +113,10 @@ const JuniorMarkForm: React.FC<JuniorMarkFormProps> = ({
   );
 
   const selectedSectionStudents = useMemo(
-    () => {
-      const students = selectedClassData?.sections.find((sec) => sec.id === selectedSection)
-        ?.students || [];
-      if (selectedSession) {
-        return students.filter((s) => s.sessionId === selectedSession);
-      }
-      return students;
-    },
-    [selectedClassData, selectedSection, selectedSession]
+    () =>
+      selectedClassData?.sections.find((sec) => sec.id === selectedSection)
+        ?.students || [],
+    [selectedClassData, selectedSection]
   );
 
   const selectedClassSubjects = useMemo(
