@@ -127,9 +127,9 @@ export const calculateOverallResults = (marks: any[]) => {
 
 // Helper function to get best score between two unit tests
 const getBestUnitTest = (test1: any, test2: any) => {
-  if (test1 === null && test2 === null) return '-';
-  if (test1 === null) return Math.round(Number(test2));
-  if (test2 === null) return Math.round(Number(test1));
+  if ((test1 == null) && (test2 == null)) return '-';
+  if (test1 == null) return Math.round(Number(test2));
+  if (test2 == null) return Math.round(Number(test1));
   return Math.round(Math.max(Number(test1), Number(test2)));
 };
 
