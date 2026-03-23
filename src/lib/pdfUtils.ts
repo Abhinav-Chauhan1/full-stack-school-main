@@ -101,17 +101,20 @@ export const filterLanguageSubjects = (marks: any[]) => {
 export const calculateOverallResults = (marks: any[]) => {
   const totals = marks.reduce((acc, mark) => {
     const subject = mark?.classSubject?.subject;
-    const isFortyMarksSubject = false; // Comp01, GK01, DRAW02 are now 30-mark subjects
     const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
 
     // Calculate max marks per term based on subject type
-    // Both 30-mark and 40-mark subjects have a maximum total of 50 points
-    let maxMarksPerTerm = isFortyMarksSubject ? 50 : isThirtyMarksSubject ? 50 : 100;
+    const maxMarksPerTerm = isThirtyMarksSubject ? 50 : 100;
 
-    const halfYearlyMarks = mark.halfYearly?.totalMarks || 0;
-    const yearlyMarks = mark.yearly?.yearlytotalMarks || 0;
+    const hasHalfYearly = mark.halfYearly?.totalMarks != null;
+    const hasYearly = mark.yearly?.yearlytotalMarks != null;
+
+    const halfYearlyMarks = hasHalfYearly ? (mark.halfYearly.totalMarks || 0) : 0;
+    const yearlyMarks = hasYearly ? (mark.yearly.yearlytotalMarks || 0) : 0;
+
+    // Only count terms that actually have marks entered
     acc.totalMarks += (halfYearlyMarks + yearlyMarks);
-    acc.maxPossibleMarks += (maxMarksPerTerm * 2); // multiply by 2 for both terms
+    acc.maxPossibleMarks += maxMarksPerTerm * ((hasHalfYearly ? 1 : 0) + (hasYearly ? 1 : 0));
     return acc;
   }, { totalMarks: 0, maxPossibleMarks: 0 });
 
@@ -191,6 +194,40 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
     return mark ?? '-';
   };
 
+  // Compute grand total dynamically from available term data
+  const computeGrandTotal = (mark: any) => {
+    const hy = mark?.halfYearly?.totalMarks;
+    const yr = mark?.yearly?.yearlytotalMarks;
+    if (hy != null && yr != null) return hy + yr;
+    if (hy != null) return hy;
+    if (yr != null) return yr;
+    return null;
+  };
+
+  const computeGrandTotalGrade = (mark: any) => {
+    const hy = mark?.halfYearly?.totalMarks;
+    const yr = mark?.yearly?.yearlytotalMarks;
+    const subject = mark?.classSubject?.subject;
+    const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
+    const maxPerTerm = isThirtyMarksSubject ? 50 : 100;
+
+    let total = 0;
+    let maxTotal = 0;
+    if (hy != null) { total += hy; maxTotal += maxPerTerm; }
+    if (yr != null) { total += yr; maxTotal += maxPerTerm; }
+    if (maxTotal === 0) return '-';
+
+    const pct = (total / maxTotal) * 100;
+    if (pct >= 91) return 'A1';
+    if (pct >= 81) return 'A2';
+    if (pct >= 71) return 'B1';
+    if (pct >= 61) return 'B2';
+    if (pct >= 51) return 'C1';
+    if (pct >= 41) return 'C2';
+    if (pct >= 33) return 'D';
+    return 'E';
+  };
+
   // Generate rows for regular subjects
   const regularSubjectRows = regularSubjects.map(mark => {
     const bestHalfYearlyUT = getBestUnitTest(mark?.halfYearly?.ut1, mark?.halfYearly?.ut2);
@@ -211,8 +248,8 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
       { text: getExamMarks(mark.yearly, true, false, false), alignment: 'center' },
       { text: formatMark(mark?.yearly?.yearlytotalMarks), alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
-      { text: formatMark(mark?.grandTotalMarks), alignment: 'center' },
-      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+      { text: formatMark(computeGrandTotal(mark)), alignment: 'center' },
+      { text: computeGrandTotalGrade(mark), alignment: 'center' }
     ];
   });
 
@@ -245,8 +282,8 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
       { text: getExamMarks(mark.yearly, true, true, false), alignment: 'center' },
       { text: formatMark(mark?.yearly?.yearlytotalMarks), alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
-      { text: formatMark(mark?.grandTotalMarks), alignment: 'center' },
-      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+      { text: formatMark(computeGrandTotal(mark)), alignment: 'center' },
+      { text: computeGrandTotalGrade(mark), alignment: 'center' }
     ];
   });
 
@@ -271,8 +308,8 @@ export const generateTableBody = (safeMarksJunior: any[], { totalMarks, maxPossi
       { text: getExamMarks(mark.yearly, true, false, true), alignment: 'center' },
       { text: formatMark(mark?.yearly?.yearlytotalMarks), alignment: 'center' },
       { text: mark?.yearly?.yearlygrade ?? '-', alignment: 'center' },
-      { text: formatMark(mark?.grandTotalMarks), alignment: 'center' },
-      { text: mark?.grandTotalGrade ?? '-', alignment: 'center' }
+      { text: formatMark(computeGrandTotal(mark)), alignment: 'center' },
+      { text: computeGrandTotalGrade(mark), alignment: 'center' }
     ];
   });
 
