@@ -200,6 +200,24 @@ export const calculateMarksAndGrade = (markData: any) => {
         Math.min(80, (Number(marks.yearlyexamMarks) || 0));
     }
 
+    // Update yearlytotalMarks with the recalculated value (using overallBestUT)
+    // so the stored DB value matches what's used for grand total
+    marks.yearlytotalMarks = recalculatedYearlyTotal;
+    totalMarks = recalculatedYearlyTotal;
+
+    // Recalculate grade based on the corrected yearly total
+    const recalcMaxMarks = marks.yearlyexamMarks40 !== null ? 50 : marks.yearlyexamMarks30 !== null ? 50 : 100;
+    const recalcPct = (recalculatedYearlyTotal / recalcMaxMarks) * 100;
+    if (recalcPct >= 91) grade = 'A1';
+    else if (recalcPct >= 81) grade = 'A2';
+    else if (recalcPct >= 71) grade = 'B1';
+    else if (recalcPct >= 61) grade = 'B2';
+    else if (recalcPct >= 51) grade = 'C1';
+    else if (recalcPct >= 41) grade = 'C2';
+    else if (recalcPct >= 33) grade = 'D';
+    else grade = 'E';
+    marks.yearlygrade = grade;
+
     // Grand total = half yearly + recalculated yearly (with best UT)
     grandTotalMarks = existingHalfYearly.totalMarks + recalculatedYearlyTotal;
 
