@@ -148,9 +148,14 @@ export const calculateMarksAndGrade = (markData: any) => {
   }
 
   // Calculate grade based on percentage
-  const maxMarks = examType === "HALF_YEARLY"
-    ? (marks.examMarks40 !== null ? 50 : marks.examMarks30 !== null ? 50 : 100)
-    : (marks.yearlyexamMarks40 !== null ? 50 : marks.yearlyexamMarks30 !== null ? 50 : 100);
+  // A subject is a 30-mark subject if examMarks30/yearlyexamMarks30 was used (non-null) OR
+  // if examMarks/yearlyexamMarks was NOT used (null) and examMarks30 field is present (even as 0).
+  // We detect 30-mark subjects by checking if the 80-mark field is null/undefined.
+  const isThirtyMarkSubject = examType === "HALF_YEARLY"
+    ? (marks.examMarks == null && marks.examMarks40 == null)
+    : (marks.yearlyexamMarks == null && marks.yearlyexamMarks40 == null);
+
+  const maxMarks = isThirtyMarkSubject ? 50 : 100;
 
   const percentage = (totalMarks / maxMarks) * 100;
 
@@ -206,7 +211,7 @@ export const calculateMarksAndGrade = (markData: any) => {
     totalMarks = recalculatedYearlyTotal;
 
     // Recalculate grade based on the corrected yearly total
-    const recalcMaxMarks = marks.yearlyexamMarks40 !== null ? 50 : marks.yearlyexamMarks30 !== null ? 50 : 100;
+    const recalcMaxMarks = (marks.yearlyexamMarks == null && marks.yearlyexamMarks40 == null) ? 50 : 100;
     const recalcPct = (recalculatedYearlyTotal / recalcMaxMarks) * 100;
     if (recalcPct >= 91) grade = 'A1';
     else if (recalcPct >= 81) grade = 'A2';
@@ -222,11 +227,8 @@ export const calculateMarksAndGrade = (markData: any) => {
     grandTotalMarks = existingHalfYearly.totalMarks + recalculatedYearlyTotal;
 
     // Calculate percentage based on actual total possible marks
-    const halfYearlyMaxMarks = existingHalfYearly.examMarks40 !== null ? 50 :
-      existingHalfYearly.examMarks30 !== null ? 50 : 100;
-
-    const yearlyMaxMarks = marks.yearlyexamMarks40 !== null ? 50 :
-      marks.yearlyexamMarks30 !== null ? 50 : 100;
+    const halfYearlyMaxMarks = (existingHalfYearly.examMarks == null && existingHalfYearly.examMarks40 == null) ? 50 : 100;
+    const yearlyMaxMarks = (marks.yearlyexamMarks == null && marks.yearlyexamMarks40 == null) ? 50 : 100;
 
     const totalPossibleMarks = halfYearlyMaxMarks + yearlyMaxMarks;
     overallPercentage = grandTotalMarks ? (grandTotalMarks / totalPossibleMarks) * 100 : null;
