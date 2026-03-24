@@ -5,6 +5,7 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
+import ClassBulkPdfButton9 from "@/components/ClassBulkPdfButton9";
 
 const Results9Page = async ({
   searchParams,
@@ -118,6 +119,19 @@ const Results9Page = async ({
                 data={{ classId, sectionId }}
               />
             )}
+            {classId && sectionId && sessionId && (() => {
+              const selectedClass = classes.find(c => c.id === parseInt(classId));
+              const selectedSection = selectedClass?.sections.find(s => s.id === parseInt(sectionId));
+              return (
+                <ClassBulkPdfButton9
+                  classId={classId}
+                  sectionId={sectionId}
+                  sessionId={sessionId}
+                  className={selectedClass?.name}
+                  sectionName={selectedSection?.name}
+                />
+              );
+            })()}
           </div>
         </div>
 
