@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Student, Prisma } from "@prisma/client";
 import Image from "next/image";
+import DeleteAllAlumniButton from "./DeleteAllAlumniButton";
 
 const AlumniListPage = async ({
   searchParams,
@@ -133,6 +134,7 @@ const AlumniListPage = async ({
                 style={{ width: 'auto', height: 'auto' }}
               />
             </button>
+            <DeleteAllAlumniButton count={count} />
           </div>
         </div>
       </div>
