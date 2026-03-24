@@ -8,9 +8,11 @@ interface ClassBulkPdfButtonProps {
   classId: string;
   sectionId: string;
   sessionId: string;
+  className?: string;
+  sectionName?: string;
 }
 
-export default function ClassBulkPdfButton({ classId, sectionId, sessionId }: ClassBulkPdfButtonProps) {
+export default function ClassBulkPdfButton({ classId, sectionId, sessionId, className: cls, sectionName }: ClassBulkPdfButtonProps) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
 
@@ -48,30 +50,56 @@ export default function ClassBulkPdfButton({ classId, sectionId, sessionId }: Cl
       );
       const imageMap = new Map(imageEntries);
 
-      setProgress('Generating PDFs...');
+      setProgress('Building merged PDF...');
+
+      // Collect all page content from each student's PDF definition
+      const allContent: any[] = [];
+      const mergedStyles: any = {};
+
       for (let i = 0; i < students.length; i++) {
         const studentResult = students[i];
-        setProgress(`Generating ${i + 1} / ${students.length}: ${studentResult.student.name}`);
+        setProgress(`Processing ${i + 1} / ${students.length}: ${studentResult.student.name}`);
 
-        // Filter language subjects
         const filteredMarks = filterLanguageSubjects(studentResult.marksJunior);
         const resultWithFiltered = { ...studentResult, marksJunior: filteredMarks };
-
         const studentImage = imageMap.get(studentResult.student.id) ?? null;
-        const docDef = generatePdfDefinition(resultWithFiltered, logoData, studentImage);
-        pdfMake.createPdf(docDef).download(
-          `Result_${studentResult.student.admissionno || studentResult.student.name}.pdf`
-        );
 
-        // Small delay to avoid browser blocking multiple downloads
-        await new Promise(r => setTimeout(r, 300));
+        const docDef = generatePdfDefinition(resultWithFiltered, logoData, studentImage);
+
+        // Add page break before each student except the first
+        if (i > 0) {
+          const firstItem = (docDef.content as any[])[0];
+          if (firstItem && typeof firstItem === 'object') {
+            firstItem.pageBreak = 'before';
+          }
+        }
+
+        allContent.push(...(docDef.content as any[]));
+
+        // Merge styles (they're the same for all students, so this is fine)
+        if (docDef.styles) {
+          Object.assign(mergedStyles, docDef.styles);
+        }
       }
+
+      // Build a single merged document
+      const mergedDoc = {
+        pageSize: 'A4' as const,
+        pageOrientation: 'portrait' as const,
+        pageMargins: [15, 10, 15, 10] as [number, number, number, number],
+        compress: true,
+        content: allContent,
+        styles: mergedStyles,
+      };
+
+      const fileName = `Results_${cls || 'Class'}_${sectionName || 'Section'}.pdf`;
+      pdfMake.createPdf(mergedDoc).download(fileName);
 
       setProgress('Done!');
       setTimeout(() => setProgress(''), 2000);
     } catch (err) {
       console.error(err);
-      setProgress('Error generating PDFs');
+      setProgress('Error generating PDF');
       setTimeout(() => setProgress(''), 3000);
     } finally {
       setLoading(false);
@@ -83,7 +111,7 @@ export default function ClassBulkPdfButton({ classId, sectionId, sessionId }: Cl
       <button
         onClick={handleExport}
         disabled={loading}
-        title="Download all student report cards as individual PDFs"
+        title="Download all student report cards as a single merged PDF"
         className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm"
       >
         {loading ? (

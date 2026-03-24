@@ -174,13 +174,19 @@ const ResultsPage = async ({
                 data={{ classId, sectionId }}
               />
             )}
-            {classId && sectionId && sessionId && (
-              <ClassBulkPdfButton
-                classId={classId}
-                sectionId={sectionId}
-                sessionId={sessionId}
-              />
-            )}
+            {classId && sectionId && sessionId && (() => {
+              const selectedClass = classes.find(c => c.id === parseInt(classId));
+              const selectedSection = selectedClass?.sections.find(s => s.id === parseInt(sectionId));
+              return (
+                <ClassBulkPdfButton
+                  classId={classId}
+                  sectionId={sectionId}
+                  sessionId={sessionId}
+                  className={selectedClass?.name}
+                  sectionName={selectedSection?.name}
+                />
+              );
+            })()}
           </div>
         </div>
 
