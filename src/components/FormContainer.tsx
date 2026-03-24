@@ -670,6 +670,9 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
 
       case "seniorMark":
         const classes4SeniorMark = await prisma.class.findMany({
+          where: {
+            classNumber: 9,
+          },
           select: {
             id: true,
             name: true,
@@ -697,7 +700,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
                       select: {
                         id: true,
                         name: true,
-                        code: true,  // Add this field
+                        code: true,
                       },
                     },
                   },

@@ -141,7 +141,8 @@ const SeniorCoScholasticPage = async ({
       ...query.seniorMark,
       student: {
         ...query.seniorMark?.student,
-        sectionId: parseInt(sectionId)
+        sectionId: parseInt(sectionId),
+        isAlumni: false,
       }
     };
   }

@@ -105,6 +105,7 @@ const JuniorMarkListPage = async ({
       where: {
         classId: parseInt(classId),
         sectionId: parseInt(sectionId),
+        isAlumni: false,
       },
       orderBy: { name: "asc" },
     });
