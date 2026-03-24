@@ -43,12 +43,12 @@ export default function ClassBulkPdfButton({ classId, sectionId, sessionId, clas
         students.map(async (s: any) => {
           if (s.student.img) {
             const imgData = await loadImage(s.student.img);
-            return [s.student.id, imgData] as [string, string | null];
+            return [s.student.id, imgData ?? null] as [string, string | null];
           }
-          return [s.student.id, null] as [string, null];
+          return [s.student.id, null] as [string, string | null];
         })
       );
-      const imageMap = new Map(imageEntries);
+      const imageMap = new Map<string, string | null>(imageEntries);
 
       setProgress('Building merged PDF...');
 
