@@ -5,7 +5,7 @@ import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Select from "@/components/Select";
-import Image from "next/image";
+import ClassBulkPdfButton from "@/components/ClassBulkPdfButton";
 
 const ResultsPage = async ({
   searchParams,
@@ -172,6 +172,13 @@ const ResultsPage = async ({
                 table="result"
                 type="print"
                 data={{ classId, sectionId }}
+              />
+            )}
+            {classId && sectionId && sessionId && (
+              <ClassBulkPdfButton
+                classId={classId}
+                sectionId={sectionId}
+                sessionId={sessionId}
               />
             )}
           </div>
