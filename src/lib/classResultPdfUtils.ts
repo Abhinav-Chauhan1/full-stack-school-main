@@ -9,6 +9,39 @@ const getBestUnitTest = (ut1: number | null | undefined, ut2: number | null | un
     return Math.max(ut1 || 0, ut2 || 0);
 };
 
+const getOverallGrade = (percentage: number) => {
+    if (percentage >= 91) return 'A1';
+    if (percentage >= 81) return 'A2';
+    if (percentage >= 71) return 'B1';
+    if (percentage >= 61) return 'B2';
+    if (percentage >= 51) return 'C1';
+    if (percentage >= 41) return 'C2';
+    if (percentage >= 33) return 'D';
+    return 'E';
+};
+
+const calculateOverallResults = (marks: any[]) => {
+    const totals = marks.reduce((acc, mark) => {
+        const subject = mark?.classSubject?.subject;
+        const isThirtyMarksSubject = subject?.code.match(/^(Urdu01|SAN01|Comp01|GK01|DRAW02|PAI01)$/);
+        const maxMarksPerTerm = isThirtyMarksSubject ? 50 : 100;
+
+        const hasHalfYearly = mark.halfYearly?.totalMarks != null;
+        const hasYearly = mark.yearly?.yearlytotalMarks != null;
+
+        acc.totalMarks += (hasHalfYearly ? (mark.halfYearly.totalMarks || 0) : 0) +
+                          (hasYearly ? (mark.yearly.yearlytotalMarks || 0) : 0);
+        acc.maxPossibleMarks += maxMarksPerTerm * ((hasHalfYearly ? 1 : 0) + (hasYearly ? 1 : 0));
+        return acc;
+    }, { totalMarks: 0, maxPossibleMarks: 0 });
+
+    const overallPercentage = totals.maxPossibleMarks > 0
+        ? Number((totals.totalMarks / totals.maxPossibleMarks * 100).toFixed(2))
+        : 0;
+
+    return { ...totals, overallPercentage };
+};
+
 export const generateClassResultPdfDefinition = (
     sessionCode: string,
     className: string,
@@ -98,6 +131,26 @@ export const generateClassResultPdfDefinition = (
             });
         };
 
+        const { totalMarks, maxPossibleMarks, overallPercentage } = calculateOverallResults(safeMarksJunior);
+
+        // Summary rows (14 columns: 0-13)
+        const totalRow = [
+            { text: 'OVER ALL TOTAL (TERM 1 & TERM 2) OF MAIN SUBJECTS', colSpan: 12, alignment: 'center', style: 'summaryLabel', fillColor: '#f0fdf4' },
+            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+            { text: `${totalMarks} / ${maxPossibleMarks}`, colSpan: 2, alignment: 'center', style: 'summaryValue', fillColor: '#f0fdf4' },
+            {}
+        ];
+
+        const percentageRow = [
+            { text: 'Over All Percentage:', colSpan: 2, alignment: 'center', style: 'summaryLabel', fillColor: '#eff6ff' }, {},
+            { text: `${overallPercentage}%`, colSpan: 8, alignment: 'left', style: 'summaryValue', fillColor: '#eff6ff' },
+            {}, {}, {}, {}, {}, {}, {},
+            { text: 'Overall Grade:', alignment: 'center', style: 'summaryLabel', fillColor: '#eff6ff' },
+            { text: '', fillColor: '#eff6ff' },
+            { text: getOverallGrade(overallPercentage), colSpan: 2, alignment: 'center', style: 'summaryValue', fillColor: '#eff6ff' },
+            {}
+        ];
+
         const tableBody = [
             // Row 1: Headers
             [
@@ -146,6 +199,8 @@ export const generateClassResultPdfDefinition = (
                 ],
                 ...generateRows(thirtyMarkSubjects, true)
             ] : []),
+            totalRow,
+            percentageRow,
         ];
 
         // Break every 3 students (0, 1, 2 => break at 3, 6, 9)
@@ -254,6 +309,18 @@ export const generateClassResultPdfDefinition = (
                 fontSize: 8,
                 alignment: 'left',
                 margin: [2, 0, 0, 0]
+            },
+            summaryLabel: {
+                fontSize: 7,
+                bold: true,
+                alignment: 'center',
+                color: '#1e3a5f'
+            },
+            summaryValue: {
+                fontSize: 8,
+                bold: true,
+                alignment: 'center',
+                color: '#1e3a5f'
             }
         },
         defaultStyle: {
