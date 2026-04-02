@@ -6,6 +6,8 @@ import Pagination from "@/components/Pagination";
 import Select from "@/components/Select";
 import ExcelExportButton from "./ExcelExportButton";
 import ClassPdfExportButton from "./ClassPdfExportButton";
+import Class9ExportButtons from "./Class9ExportButtons";
+import Class11ExportButtons from "./Class11ExportButtons";
 
 const ResultsAllPage = async ({
     searchParams,
@@ -142,6 +144,12 @@ const ResultsAllPage = async ({
                                 <ExcelExportButton sessionId={parseInt(sessionId!)} classId={parseInt(classId!)} sectionId={parseInt(sectionId!)} />
                                 <FormContainer table="result" type="print" data={{ classId, sectionId, sessionId: parseInt(sessionId!) }} />
                             </>
+                        )}
+                        {filtersSelected && isClass9 && (
+                            <Class9ExportButtons sessionId={parseInt(sessionId!)} classId={parseInt(classId!)} sectionId={parseInt(sectionId!)} />
+                        )}
+                        {filtersSelected && isClass11 && (
+                            <Class11ExportButtons sessionId={parseInt(sessionId!)} classId={parseInt(classId!)} sectionId={parseInt(sectionId!)} />
                         )}
                     </div>
                 </div>
