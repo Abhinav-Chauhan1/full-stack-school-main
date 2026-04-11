@@ -6,7 +6,11 @@ const getOverallGrade = (pct: number) => {
     if (pct >= 33) return 'D'; return 'E';
 };
 
-const fmt = (v: any) => { if (v === -1) return 'AB'; return v ?? '-'; };
+const fmt = (v: any): string => {
+    if (v === null || v === undefined) return '-';
+    if (v === -1) return 'AB';
+    return String(v);
+};
 
 export const generateClass11ResultPdfDefinition = (
     sessionCode: string,
@@ -159,5 +163,23 @@ export const generateAndDownloadClass11ResultPdf = async (
     const pdfFonts = (await import('pdfmake/build/vfs_fonts')).vfs;
     pdfMake.vfs = pdfFonts;
     const doc = generateClass11ResultPdfDefinition(sessionCode, className, sectionName, students);
-    pdfMake.createPdf(doc).download(`Class_${className}_${sectionName}_Results_${sessionCode}.pdf`);
+    const filename = `Class_${className}_${sectionName}_Results_${sessionCode}.pdf`;
+    return new Promise<void>((resolve, reject) => {
+        try {
+            pdfMake.createPdf(doc).getBuffer((buffer: Uint8Array) => {
+                const blob = new Blob([buffer], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                resolve();
+            });
+        } catch (err) {
+            reject(err);
+        }
+    });
 };
