@@ -107,21 +107,20 @@ export const generateClass11ResultPdfDefinition = (
             pctRow,
         ];
 
+        if (index > 0 && index % 4 === 0) {
+            content.push({ text: '', pageBreak: 'before' });
+        }
+
         content.push({
-            unbreakable: true,
-            pageBreak: index > 0 && index % 4 === 0 ? 'before' : undefined,
             margin: [0, 0, 0, 15],
             stack: [
                 {
-                    table: {
-                        widths: ['*', 80, '*'],
-                        body: [[
-                            { stack: [{ text: `Name: ${studentResult.student?.name ?? '-'}`, style: 'infoBlockText', bold: true }, { text: `Adm No: ${studentResult.student?.admissionno ?? '-'}`, style: 'infoBlockText' }], border: [false, false, false, false] },
-                            { stack: [{ text: `Class: ${studentResult.student?.Class?.name?.replace('Class ', '')} - ${studentResult.student?.Section?.name ?? '-'}`, style: 'infoBlockText' }], border: [false, false, false, false] },
-                            { stack: [{ text: `Father: ${studentResult.student?.fathername ?? '-'}`, style: 'infoBlockText' }, { text: `Mother: ${studentResult.student?.mothername ?? '-'}`, style: 'infoBlockText' }], border: [false, false, false, false] },
-                        ]],
-                    },
-                    margin: [0, 0, 0, 2],
+                    columns: [
+                        { width: '*', stack: [{ text: `Name: ${studentResult.student?.name ?? '-'}`, style: 'infoBlockText', bold: true }, { text: `Adm No: ${studentResult.student?.admissionno ?? '-'}`, style: 'infoBlockText' }] },
+                        { width: 120, text: `Class: ${studentResult.student?.Class?.name?.replace('Class ', '') ?? '-'} - ${studentResult.student?.Section?.name ?? '-'}`, style: 'infoBlockText' },
+                        { width: '*', stack: [{ text: `Father: ${studentResult.student?.fathername ?? '-'}`, style: 'infoBlockText' }, { text: `Mother: ${studentResult.student?.mothername ?? '-'}`, style: 'infoBlockText' }] },
+                    ],
+                    margin: [0, 0, 0, 3],
                 },
                 {
                     table: {
