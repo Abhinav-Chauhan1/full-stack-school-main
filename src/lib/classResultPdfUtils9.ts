@@ -156,7 +156,7 @@ export const generateClass9ResultPdfDefinition = (
             },
         };
 
-        if (index > 0 && index % 3 === 0) {
+        if (index > 0 && index % 2 === 0) {
             content.push({ text: '', pageBreak: 'before' });
         }
 
